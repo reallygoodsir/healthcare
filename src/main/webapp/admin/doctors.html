@@ -1,0 +1,310 @@
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <title>Healthcare — Doctors</title>
+    <style>
+        :root{
+          --bg:#f4f7fb;
+          --card:#fff;
+          --accent:#2563eb;
+          --accent-hover:#1d4ed8;
+          --danger:#dc2626;
+          --text:#111827;
+          --muted:#6b7280;
+        }
+        body{margin:0;font-family:system-ui,Arial,sans-serif;background:var(--bg);color:var(--text);}
+        header{background:var(--accent);color:#fff;padding:1rem 2rem;display:flex;justify-content:space-between;align-items:center;}
+        header h1{margin:0;font-size:1.5rem;}
+        header button{background:#fff;color:var(--accent);border:none;padding:0.5rem 1rem;border-radius:0.5rem;cursor:pointer;font-weight:600;}
+        main{padding:2rem;max-width:1200px;margin:auto;}
+        table{width:100%;border-collapse:collapse;background:var(--card);box-shadow:0 1px 3px rgba(0,0,0,0.1);}
+        th,td{padding:0.75rem 1rem;text-align:left;border-bottom:1px solid #e5e7eb;}
+        th{background:#f9fafb;font-weight:600;}
+        tr:hover td{background:#f3f4f6;}
+        td img{width:40px;height:40px;border-radius:50%;object-fit:cover;border:1px solid #ddd;}
+        .actions button{margin-right:0.5rem;padding:0.25rem 0.75rem;border-radius:0.375rem;border:none;cursor:pointer;font-size:0.9rem;}
+        .actions .edit{background:var(--accent);color:#fff;}
+        .actions .edit:hover{background:var(--accent-hover);}
+        .actions .delete{background:var(--danger);color:#fff;}
+        .actions .delete:hover{background:#b91c1c;}
+        /* Modal */
+        #modalBackdrop{position:fixed;inset:0;background:rgba(0,0,0,0.5);display:none;align-items:center;justify-content:center;z-index:1000;}
+        #doctorModal{background:#fff;border-radius:0.75rem;max-width:500px;width:100%;padding:1.5rem;box-shadow:0 10px 25px rgba(0,0,0,0.2);}
+        #doctorModal h2{margin-top:0;font-size:1.25rem;}
+        .form-group{margin-bottom:1rem;}
+        label{display:block;font-weight:600;margin-bottom:0.25rem;}
+        input,select{width:100%;padding:0.5rem;border:1px solid #d1d5db;border-radius:0.375rem;font-size:1rem;}
+        .modal-actions{display:flex;justify-content:flex-end;gap:0.5rem;margin-top:1rem;}
+        .btn{padding:0.5rem 1rem;border-radius:0.5rem;font-weight:600;border:none;cursor:pointer;}
+        .btn.save{background:var(--accent);color:#fff;}
+        .btn.save:hover{background:var(--accent-hover);}
+        .btn.cancel{background:#e5e7eb;}
+        .btn.cancel:hover{background:#d1d5db;}
+        .error{color:var(--danger);font-size:0.9rem;margin-top:0.25rem;}
+        .small{font-size:0.8rem;color:var(--muted);}
+    </style>
+</head>
+<body>
+<header>
+    <h1>Doctors</h1>
+    <button id="createBtn">Create Doctor</button>
+</header>
+<main>
+    <table id="doctorsTable">
+        <thead>
+        <tr>
+            <th>Photo</th>
+            <th>First Name</th>
+            <th>Last Name</th>
+            <th>Email</th>
+            <th>Phone</th>
+            <th>Specialization</th>
+            <th>Actions</th>
+        </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+</main>
+
+<!-- Modal -->
+<div id="modalBackdrop" aria-hidden="true">
+    <div id="doctorModal">
+        <h2 id="modalTitle">Create Doctor</h2>
+        <input type="hidden" id="doctorId"/>
+        <div class="form-group">
+            <label for="firstName">First Name</label>
+            <input type="text" id="firstName"/>
+        </div>
+        <div class="form-group">
+            <label for="lastName">Last Name</label>
+            <input type="text" id="lastName"/>
+        </div>
+        <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email"/>
+        </div>
+        <div class="form-group">
+            <label for="phone">Phone</label>
+            <input type="text" id="phone"/>
+        </div>
+        <div class="form-group">
+            <label for="specialization">Specialization</label>
+            <select id="specialization"></select>
+        </div>
+        <div class="form-group">
+            <label for="photo">Photo</label>
+            <input type="file" id="photo" accept="image/*"/>
+            <div id="photoPreviewWrapper" style="margin-top:8px;display:none">
+                <img id="photoPreview" src="" alt="Doctor photo"
+                     style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:1px solid #ddd"/>
+            </div>
+            <div class="small">Optional: upload a profile picture (JPEG/PNG).</div>
+        </div>
+        <div class="error" id="formError" style="display:none"></div>
+        <div id="modalMessage" style="display:none;margin-top:0.5rem;font-size:0.9rem"></div>
+        <div class="modal-actions">
+            <button class="btn cancel" id="cancelBtn">Cancel</button>
+            <button class="btn save" id="saveBtn">Create</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const API_BASE='http://localhost:8080/healthcare/api/doctors';
+    const SPEC_BASE='http://localhost:8080/healthcare/api/specializations';
+
+    const tableBody=document.querySelector('#doctorsTable tbody');
+    const createBtn=document.getElementById('createBtn');
+    const modalBackdrop=document.getElementById('modalBackdrop');
+    const modalTitle=document.getElementById('modalTitle');
+    const cancelBtn=document.getElementById('cancelBtn');
+    const saveBtn=document.getElementById('saveBtn');
+    const formError=document.getElementById('formError');
+    const modalMessage=document.getElementById('modalMessage');
+
+    const form={
+      doctorId:document.getElementById('doctorId'),
+      firstName:document.getElementById('firstName'),
+      lastName:document.getElementById('lastName'),
+      email:document.getElementById('email'),
+      phone:document.getElementById('phone'),
+      specialization:document.getElementById('specialization'),
+      photo:document.getElementById('photo'),
+      photoPreviewWrapper:document.getElementById('photoPreviewWrapper'),
+      photoPreview:document.getElementById('photoPreview')
+    };
+
+    let currentPhotoBase64=null;
+    let selectedSpecId=null;
+
+    async function loadDoctors(){
+      try{
+        const resp=await fetch(API_BASE);
+        if(!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const doctors=await resp.json();
+        tableBody.innerHTML='';
+        for(const d of doctors){
+          const tr=document.createElement('tr');
+          const photoTd=document.createElement('td');
+          if(d.photo){
+            const img=document.createElement('img');
+            img.src=`data:image/png;base64,${d.photo}`;
+            photoTd.appendChild(img);
+          } else { photoTd.textContent='—'; }
+          tr.appendChild(photoTd);
+          tr.innerHTML+=`<td>${d.firstName||''}</td>
+                         <td>${d.lastName||''}</td>
+                         <td>${d.email||''}</td>
+                         <td>${d.phone||''}</td>
+                         <td data-spec-id="${d.specializationId||''}">Loading...</td>
+                         <td class="actions">
+                            <button class="edit">Edit</button>
+                            <button class="delete">Delete</button>
+                         </td>`;
+          tableBody.appendChild(tr);
+          tr.querySelector('.edit').onclick=()=>openModal('edit',d);
+          tr.querySelector('.delete').onclick=()=>deleteDoctor(d.id);
+          if(d.specializationId){
+            fetch(`${SPEC_BASE}/${d.specializationId}`).then(r=>r.json())
+            .then(spec=>{tr.querySelector('td[data-spec-id]').textContent=spec.name;})
+            .catch(()=>{tr.querySelector('td[data-spec-id]').textContent='Unknown';});
+          } else {
+            tr.querySelector('td[data-spec-id]').textContent='—';
+          }
+        }
+      }catch(err){console.error('Failed to load doctors',err);}
+    }
+
+    async function deleteDoctor(id){
+      if(!confirm('Delete this doctor?')) return;
+      try{
+        const resp=await fetch(`${API_BASE}/${id}`,{method:'DELETE'});
+        if(!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        await loadDoctors();
+      }catch(err){alert('Failed to delete doctor');}
+    }
+
+    async function submitDoctor(payload){
+      try{
+        const method=payload.id?'PUT':'POST';
+        const url=API_BASE; // ✅ always same endpoint, no /id
+        const resp=await fetch(url,{
+          method,
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify(payload)
+        });
+        if(!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        await loadDoctors();
+        closeModal();
+      }catch(err){
+        modalMessage.textContent='Failed to save doctor';
+        modalMessage.style.color='var(--danger)';
+        modalMessage.style.display='block';
+      }
+    }
+
+    async function openModal(mode='create',doctor=null){
+      formError.style.display='none';
+      modalMessage.style.display='none';
+      currentPhotoBase64=null;
+      form.photo.value='';
+      form.photoPreviewWrapper.style.display='none';
+      selectedSpecId=null;
+
+      if(mode==='create'){
+        modalTitle.textContent='Create Doctor';
+        saveBtn.textContent='Create';
+        form.doctorId.value=''; form.firstName.value=''; form.lastName.value='';
+        form.email.value=''; form.phone.value=''; form.specialization.value='';
+      } else {
+        modalTitle.textContent='Edit Doctor';
+        saveBtn.textContent='Update';
+        form.doctorId.value=doctor.id??'';
+        form.firstName.value=doctor.firstName??'';
+        form.lastName.value=doctor.lastName??'';
+        form.email.value=doctor.email??'';
+        form.phone.value=doctor.phone??'';
+        selectedSpecId=doctor.specializationId??'';
+        form.specialization.value=selectedSpecId;
+        if(doctor.photo){
+          currentPhotoBase64=doctor.photo;
+          form.photoPreview.src=`data:image/png;base64,${doctor.photo}`;
+          form.photoPreviewWrapper.style.display='block';
+        }
+      }
+      modalBackdrop.style.display='flex';
+      modalBackdrop.setAttribute('aria-hidden','false');
+    }
+
+    function closeModal(){
+      modalBackdrop.style.display='none';
+      modalBackdrop.setAttribute('aria-hidden','true');
+    }
+
+    saveBtn.addEventListener('click',async()=>{
+      formError.style.display='none'; modalMessage.style.display='none';
+      const firstName=form.firstName.value.trim();
+      const lastName=form.lastName.value.trim();
+      const email=form.email.value.trim();
+      const specializationId=form.specialization.value;
+      if(!firstName||!lastName||!email||!specializationId){
+        formError.textContent='First name, last name, email and specialization are required.';
+        formError.style.display='block'; return;
+      }
+      const payload={
+        id:form.doctorId.value?Number(form.doctorId.value):undefined,
+        firstName,lastName,email,
+        phone:form.phone.value.trim(),
+        specializationId:Number(specializationId)
+      };
+      const photoFile=form.photo.files[0]||null;
+      if(photoFile){
+        const base64=await new Promise((resolve,reject)=>{
+          const reader=new FileReader();
+          reader.onload=()=>resolve(reader.result.split(',')[1]);
+          reader.onerror=err=>reject(err);
+          reader.readAsDataURL(photoFile);
+        });
+        payload.photo=base64;
+      } else if(currentPhotoBase64){
+        payload.photo=currentPhotoBase64;
+      }
+      await submitDoctor(payload);
+    });
+
+    cancelBtn.addEventListener('click',closeModal);
+    createBtn.addEventListener('click',()=>openModal('create'));
+
+    form.photo.addEventListener('change',()=>{
+      const file=form.photo.files[0];
+      if(file){
+        const reader=new FileReader();
+        reader.onload=()=>{
+          form.photoPreview.src=reader.result;
+          form.photoPreviewWrapper.style.display='block';
+        };
+        reader.readAsDataURL(file);
+      } else { form.photoPreviewWrapper.style.display='none'; }
+    });
+
+    async function loadSpecializations(){
+      try{
+        const resp=await fetch(SPEC_BASE);
+        if(!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const specs=await resp.json();
+        form.specialization.innerHTML='<option value="">Select specialization</option>';
+        for(const s of specs){
+          const opt=document.createElement('option');
+          opt.value=s.id; opt.textContent=s.name;
+          form.specialization.appendChild(opt);
+        }
+        if(selectedSpecId){ form.specialization.value=selectedSpecId; }
+      }catch(err){console.error(err);}
+    }
+
+    loadSpecializations();
+    loadDoctors();
+</script>
+</body>
+</html>
