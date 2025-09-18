@@ -1,0 +1,26 @@
+I have the following components:
+1. Maven 3
+2. Web Application
+3. Java 21
+4. Tomcat 9
+5. Windows 11
+I do the following steps to deploy my application to Tomcat:
+1. I execute "mvn clean" command to remove target folder.
+2. I execute "mvn package" command to build the project and healthcare.war artifact is created.
+3. I stop Tomcat if it is running.
+4. I delete "work" folder in Tomcat's directory.
+5. I delete "logs" folder in Tomcat's directory.
+6. I delete all content in "webapps/healthcare" directory in Tomcat's directory.
+7. I unarchive healthcare.war artifact to "webapps/healthcare" directory in Tomcat's directory.
+8. I start the Tomcat.
+You must implement deployment script.
+This script must include the following steps:
+1. Execute "mvn clean" command to remove target folder.
+2. Execute "mvn package" command to build the project and healthcare.war artifact must be created.
+3. If Tomcat is running the stop Tomcat.
+4. Delete "work" folder in Tomcat's directory.
+5. Delete "logs" folder in Tomcat's directory.
+6. Delete all content in "webapps/healthcare" directory in Tomcat's directory.
+7. Unarchive healthcare.war artifact to "webapps/healthcare" directory in Tomcat's directory.
+8. Start the Tomcat.
+I want to run this script on Windows machine from CMD.
