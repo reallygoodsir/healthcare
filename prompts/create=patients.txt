@@ -1,3 +1,106 @@
+i have the following rest api:
+
+
+1. get all doctors
+GET http://localhost:8080/healthcare/api/patients
+response payload:
+[
+    {
+        "id": 2,
+        "firstName": "Trother",
+        "lastName": "asd",
+        "email": "asdf@example.com",
+        "phone": "987654321",
+        "dateOfBirth": "1994-05-15",
+        "address": "456 Elm St"
+    },
+    {
+        "id": 3,
+        "firstName": "John",
+        "lastName": "Doe",
+        "email": "john@example.com",
+        "phone": "123456789",
+        "dateOfBirth": "1990-05-15",
+        "address": "123 Main St"
+    },
+    {
+        "id": 5,
+        "firstName": "John",
+        "lastName": "Doe",
+        "email": "not@example.com",
+        "phone": "123456789",
+        "dateOfBirth": "1990-05-15",
+        "address": "123 Main St"
+    },
+    {
+        "id": 7,
+        "firstName": "b",
+        "lastName": "Doe",
+        "email": "aqh@example.com",
+        "phone": "123456789",
+        "dateOfBirth": "1987-05-15",
+        "address": "123 Main St"
+    },
+    {
+        "id": 8,
+        "firstName": "Trother",
+        "lastName": "asd",
+        "email": "iiiill@example.com",
+        "phone": "987654321",
+        "dateOfBirth": "1994-05-15",
+        "address": "456 Elm St"
+    }
+]
+
+
+2. get 1 doctor (by id)
+GET http://localhost:8080/healthcare/api/patients/10
+response payload:
+{
+    "id": 10,
+    "firstName": "NMykhaylo",
+    "lastName": "HHrytsiv",
+    "email": "AAAAiiiiiii@gmail.com",
+    "phone": "2931086261",
+    "dateOfBirth": "1942-10-31",
+    "address": "Ukraine Kyiv"
+}
+
+
+3. edit patient
+PUT http://localhost:8080/healthcare/api/patients
+request payload:
+{
+  "id": 8,
+  "firstName": "Trother",
+  "lastName": "asd",
+  "email": "iiiill@example.com",
+  "phone": "987654321",
+  "dateOfBirth": "1994-05-15",
+  "address": "456 Elm St"
+}
+
+
+response payload:
+{
+    "id": 8,
+    "firstName": "Trother",
+    "lastName": "asd",
+    "email": "iiiill@example.com",
+    "phone": "987654321",
+    "dateOfBirth": "1994-05-15",
+    "address": "456 Elm St"
+}
+
+
+
+4. delete patient
+DELETE http://localhost:8080/healthcare/api/patients/10
+response payload:
+no content
+
+i have the following doctors.html page:
+
 <!doctype html>
 <html lang="en">
 <head>
@@ -314,3 +417,11 @@
 </script>
 </body>
 </html>
+
+
+i need you to do the following:
+1. create a new page (with the design heavily inspired by the doctors page) to display the patients
+2. the page must have create update delete operations for the patients
+3. for displaying the patients, you have to show their first and last name
+4. Name the new page "patients.html", implement the page using HTML, CSS and Javascript.
+5. Javascript will communicate with server sending and receiving JSON payload.

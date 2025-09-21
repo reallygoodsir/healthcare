@@ -1,4 +1,62 @@
-<!doctype html>
+I have the following BE REST API:
+
+1. Create schedule for doctor:
+	POST http://localhost:8080/healthcare/api/doctor-schedules
+	Request Payload:
+	{
+		"doctorId": 33,
+		"scheduleDate": "2024-11-11",
+		"startTime": "16:30:00",
+		"endTime": "17:00:00"
+	}
+	Response Payload:
+	{
+		"id": 9,
+		"doctorId": 33,
+		"scheduleDate": "2024-11-11",
+		"startTime": "16:30:00",
+		"endTime": "17:00:00"
+	}
+
+2. Update schedule for doctor:
+	PUT http://localhost:8080/healthcare/api/doctor-schedules
+	Request Payload:
+	{
+		"id": 2,
+		"doctorId": 33,
+		"scheduleDate": "2024-11-12",
+		"startTime": "17:00:00",
+		"endTime": "18:00:00"
+	}
+	Response Payload:
+	{
+		"id": 2,
+		"doctorId": 33,
+		"scheduleDate": "2024-11-12",
+		"startTime": "17:00:00",
+		"endTime": "18:00:00"
+	}
+
+3. Get schedules for doctor:
+	GET http://localhost:8080/healthcare/api/doctor-schedules/33
+	Response Payload:
+	[
+		{
+			"id": 1,
+			"doctorId": 33,
+			"scheduleDate": "2025-09-18",
+			"startTime": "13:55:00",
+			"endTime": "14:22:00"
+		}
+	]
+
+4. Delete one schedule for doctor passing doctor id and schedule id in URL path:
+	DELETE http://localhost:8080/healthcare/api/doctor-schedules/33/2
+	Response Payload:
+		No Content
+
+
+I have the following page for doctors:
 <html lang="en">
 <head>
     <meta charset="utf-8"/>
@@ -29,8 +87,6 @@
         .actions .edit:hover{background:var(--accent-hover);}
         .actions .delete{background:var(--danger);color:#fff;}
         .actions .delete:hover{background:#b91c1c;}
-        .actions .schedule{background:#10b981;color:#fff;}
-        .actions .schedule:hover{background:#059669;}
         /* Modal */
         #modalBackdrop{position:fixed;inset:0;background:rgba(0,0,0,0.5);display:none;align-items:center;justify-content:center;z-index:1000;}
         #doctorModal{background:#fff;border-radius:0.75rem;max-width:500px;width:100%;padding:1.5rem;box-shadow:0 10px 25px rgba(0,0,0,0.2);}
@@ -164,13 +220,10 @@
                          <td class="actions">
                             <button class="edit">Edit</button>
                             <button class="delete">Delete</button>
-                            <button class="schedule">Schedule</button>
                          </td>`;
           tableBody.appendChild(tr);
           tr.querySelector('.edit').onclick=()=>openModal('edit',d);
           tr.querySelector('.delete').onclick=()=>deleteDoctor(d.id);
-          tr.querySelector('.schedule').onclick=()=>window.location.href=`doctor-schedule.html?doctorId=${d.id}`;
-
           if(d.specializationId){
             fetch(`${SPEC_BASE}/${d.specializationId}`).then(r=>r.json())
             .then(spec=>{tr.querySelector('td[data-spec-id]').textContent=spec.name;})
@@ -194,7 +247,7 @@
     async function submitDoctor(payload){
       try{
         const method=payload.id?'PUT':'POST';
-        const url=API_BASE; // always same endpoint
+        const url=API_BASE; // ✅ always same endpoint, no /id
         const resp=await fetch(url,{
           method,
           headers:{'Content-Type':'application/json'},
@@ -314,3 +367,13 @@
 </script>
 </body>
 </html>
+
+
+I want you to do the following things:
+1. Add to existing html page the "Schedule" button to the right of "Delete" button.
+2. When I click to "Schedule" button then I will be navigated to new page called "doctor-schedule.html" where I will see formation about doctor's schedule time slots.
+3. On this "doctor-schedule.html" page I should have functionality to create, update, delete schedule slots for doctor and also see the list of existing schedules.
+4. On this "doctor-schedule.html" page I should select the date, start time and end time what is doctor's schedule time slot.
+5. Keep the similar design as on the page which I provided with doctors.
+6. Implement "doctor-schedule.html" page using HTML, CSS and Javascript.
+7. Javascript will communicate with server sending and receiving JSON payload.

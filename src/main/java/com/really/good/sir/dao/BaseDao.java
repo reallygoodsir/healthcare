@@ -14,7 +14,7 @@ public class BaseDao {
     private static final String PASSWORD;
 
     static {
-        try (final InputStream input = DoctorDAO.class.getClassLoader()
+        try (final InputStream input = BaseDao.class.getClassLoader()
                 .getResourceAsStream(DB_PROPERTY_FILE)) {
             Class.forName(DRIVER);
             if (input == null) {

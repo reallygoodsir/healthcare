@@ -1,13 +1,13 @@
-package com.really.good.sir.models;
+package com.really.good.sir.dto;
 
-public class Doctor {
+public class PatientDTO {
     private int id;
     private String firstName;
     private String lastName;
     private String email;
     private String phone;
-    private int specializationId;
-    private byte[] photo;
+    private String dateOfBirth;
+    private String address;
 
     public int getId() {
         return id;
@@ -49,19 +49,32 @@ public class Doctor {
         this.phone = phone;
     }
 
-    public int getSpecializationId() {
-        return specializationId;
+    public String getDateOfBirth() {
+        return dateOfBirth;
     }
 
-    public void setSpecializationId(int specializationId) {
-        this.specializationId = specializationId;
+    public void setDateOfBirth(String dateOfBirth) {
+        this.dateOfBirth = dateOfBirth;
     }
 
-    public byte[] getPhoto() {
-        return photo;
+    public String getAddress() {
+        return address;
     }
 
-    public void setPhoto(byte[] photo) {
-        this.photo = photo;
+    public void setAddress(String address) {
+        this.address = address;
+    }
+
+    @Override
+    public String toString() {
+        return "Patient{" +
+                "id=" + id +
+                ", firstName='" + firstName + '\'' +
+                ", lastName='" + lastName + '\'' +
+                ", email='" + email + '\'' +
+                ", phone='" + phone + '\'' +
+                ", dateOfBirth=" + dateOfBirth +
+                ", address='" + address + '\'' +
+                '}';
     }
 }

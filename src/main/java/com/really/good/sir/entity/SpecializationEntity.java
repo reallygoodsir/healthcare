@@ -1,13 +1,13 @@
-package com.really.good.sir.models;
+package com.really.good.sir.entity;
 
-public class Specialization {
+public class SpecializationEntity {
     private int id;
     private String name;
 
-    public Specialization() {
+    public SpecializationEntity() {
     }
 
-    public Specialization(int id, String name) {
+    public SpecializationEntity(int id, String name) {
         this.id = id;
         this.name = name;
     }

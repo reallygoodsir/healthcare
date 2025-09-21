@@ -1,7 +1,11 @@
 package com.really.good.sir.resources;
 
+import com.really.good.sir.converter.DoctorConverter;
 import com.really.good.sir.dao.DoctorDAO;
-import com.really.good.sir.models.Doctor;
+import com.really.good.sir.dto.DoctorDTO;
+import com.really.good.sir.entity.DoctorEntity;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
@@ -14,40 +18,48 @@ import java.util.List;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class DoctorResource {
-
+    private static final Logger LOGGER = LogManager.getLogger(DoctorResource.class);
+    private final DoctorConverter doctorConverter = new DoctorConverter();
     private final DoctorDAO doctorDAO = new DoctorDAO();
 
     @GET
     public Response getAllDoctors() {
-        final List<Doctor> doctors = doctorDAO.getAllDoctors();
-        return Response.ok(doctors).build();
+        final List<DoctorEntity> doctorEntities = doctorDAO.getAllDoctors();
+        final List<DoctorDTO> doctorDTOs = doctorConverter.convert(doctorEntities);
+        return Response.ok(doctorDTOs).build();
     }
 
     @GET
     @Path("/{doctorId}")
     public Response getDoctor(@PathParam("doctorId") final int doctorId) {
-        final Doctor doctor = doctorDAO.getDoctorById(doctorId);
-        return Response.ok(doctor).build();
+        final DoctorEntity doctorEntity = doctorDAO.getDoctorById(doctorId);
+        final DoctorDTO doctorDTO = doctorConverter.convert(doctorEntity);
+        return Response.ok(doctorDTO).build();
     }
 
     @POST
-    public Response createDoctor(final Doctor doctor, @Context final UriInfo uriInfo) {
-        final Doctor created = doctorDAO.createDoctor(doctor);
-        return Response.created(uriInfo.getAbsolutePathBuilder().path(String.valueOf(created.getId())).build())
-                .entity(created).build();
+    public Response createDoctor(final DoctorDTO doctorDTO, @Context final UriInfo uriInfo) {
+        final DoctorEntity doctorEntity = doctorConverter.convert(doctorDTO);
+        final DoctorEntity createdDoctorEntity = doctorDAO.createDoctor(doctorEntity);
+        final DoctorDTO responseDoctorDTO = doctorConverter.convert(createdDoctorEntity);
+        return Response.created(uriInfo.getAbsolutePathBuilder().path(String.valueOf(responseDoctorDTO.getId())).build())
+                .entity(responseDoctorDTO).build();
     }
 
     @PUT
-    public Response updateDoctor(final Doctor doctor) {
-        doctorDAO.updateDoctor(doctor);
-        return Response.ok(doctor).build();
+    public Response updateDoctor(final DoctorDTO requestDoctorDTO) {
+        final DoctorEntity doctorEntity = doctorConverter.convert(requestDoctorDTO);
+        final boolean isDoctorUpdated = doctorDAO.updateDoctor(doctorEntity);
+        LOGGER.info("Doctor updated [{}]", isDoctorUpdated);
+        final DoctorDTO responseDoctorDTO = doctorConverter.convert(doctorEntity);
+        return Response.ok(responseDoctorDTO).build();
     }
 
     @DELETE
     @Path("/{doctorId}")
     public Response deleteDoctor(@PathParam("doctorId") final int doctorId) {
-        doctorDAO.deleteDoctor(doctorId);
+        final boolean isDoctorDeleted = doctorDAO.deleteDoctor(doctorId);
+        LOGGER.info("Doctor deleted [{}]", isDoctorDeleted);
         return Response.noContent().build();
     }
 }
-

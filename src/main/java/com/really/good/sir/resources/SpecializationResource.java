@@ -1,7 +1,9 @@
 package com.really.good.sir.resources;
 
+import com.really.good.sir.converter.SpecializationConverter;
 import com.really.good.sir.dao.SpecializationDAO;
-import com.really.good.sir.models.Specialization;
+import com.really.good.sir.dto.SpecializationDTO;
+import com.really.good.sir.entity.SpecializationEntity;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
@@ -12,19 +14,21 @@ import java.util.List;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class SpecializationResource {
-
+    private final SpecializationConverter specializationConverter = new SpecializationConverter();
     private final SpecializationDAO specializationDAO = new SpecializationDAO();
 
     @GET
     public Response getAllSpecializations() {
-        final List<Specialization> specializations = specializationDAO.getAllSpecializations();
-        return Response.ok(specializations).build();
+        final List<SpecializationEntity> specializationEntities = specializationDAO.getAllSpecializations();
+        final List<SpecializationDTO> specializationDTOs = specializationConverter.convert(specializationEntities);
+        return Response.ok(specializationDTOs).build();
     }
 
     @GET
-    @Path("/{id}")
-    public Response getSpecializationById(@PathParam("id") final int id) {
-        final Specialization spec = specializationDAO.getSpecializationById(id);
-        return Response.ok(spec).build();
+    @Path("/{specializationId}")
+    public Response getSpecializationById(@PathParam("id") final int specializationId) {
+        final SpecializationEntity specializationEntity = specializationDAO.getSpecializationById(specializationId);
+        final SpecializationDTO specializationDTO = specializationConverter.convert(specializationEntity);
+        return Response.ok(specializationDTO).build();
     }
 }

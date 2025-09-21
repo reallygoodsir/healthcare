@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <title>Healthcare — Doctor Schedule</title>
+    <style>
+        :root{
+          --bg:#f4f7fb;
+          --card:#fff;
+          --accent:#2563eb;
+          --accent-hover:#1d4ed8;
+          --danger:#dc2626;
+          --text:#111827;
+          --muted:#6b7280;
+        }
+        body{margin:0;font-family:system-ui,Arial,sans-serif;background:var(--bg);color:var(--text);}
+        header{background:var(--accent);color:#fff;padding:1rem 2rem;display:flex;justify-content:space-between;align-items:center;}
+        header h1{margin:0;font-size:1.5rem;}
+        header button{background:#fff;color:var(--accent);border:none;padding:0.5rem 1rem;border-radius:0.5rem;cursor:pointer;font-weight:600;}
+        main{padding:2rem;max-width:800px;margin:auto;}
+        table{width:100%;border-collapse:collapse;background:var(--card);box-shadow:0 1px 3px rgba(0,0,0,0.1);}
+        th,td{padding:0.75rem 1rem;text-align:left;border-bottom:1px solid #e5e7eb;}
+        th{background:#f9fafb;font-weight:600;}
+        tr:hover td{background:#f3f4f6;}
+        .actions button{margin-right:0.5rem;padding:0.25rem 0.75rem;border-radius:0.375rem;border:none;cursor:pointer;font-size:0.9rem;}
+        .actions .edit{background:var(--accent);color:#fff;}
+        .actions .edit:hover{background:var(--accent-hover);}
+        .actions .delete{background:var(--danger);color:#fff;}
+        .actions .delete:hover{background:#b91c1c;}
+        .actions .schedule{background:#10b981;color:#fff;}
+        .actions .schedule:hover{background:#059669;}
+        /* Modal */
+        #modalBackdrop{position:fixed;inset:0;background:rgba(0,0,0,0.5);display:none;align-items:center;justify-content:center;z-index:1000;}
+        #scheduleModal{background:#fff;border-radius:0.75rem;max-width:400px;width:100%;padding:1.5rem;box-shadow:0 10px 25px rgba(0,0,0,0.2);}
+        #scheduleModal h2{margin-top:0;font-size:1.25rem;}
+        .form-group{margin-bottom:1rem;}
+        label{display:block;font-weight:600;margin-bottom:0.25rem;}
+        input{width:100%;padding:0.5rem;border:1px solid #d1d5db;border-radius:0.375rem;font-size:1rem;}
+        .modal-actions{display:flex;justify-content:flex-end;gap:0.5rem;margin-top:1rem;}
+        .btn{padding:0.5rem 1rem;border-radius:0.5rem;font-weight:600;border:none;cursor:pointer;}
+        .btn.save{background:var(--accent);color:#fff;}
+        .btn.save:hover{background:var(--accent-hover);}
+        .btn.cancel{background:#e5e7eb;}
+        .btn.cancel:hover{background:#d1d5db;}
+        .error{color:var(--danger);font-size:0.9rem;margin-top:0.25rem;}
+        .small{font-size:0.8rem;color:var(--muted);}
+    </style>
+</head>
+<body>
+<header>
+    <h1>Doctor Schedule</h1>
+    <button id="backBtn">Back to Doctors</button>
+</header>
+<main>
+    <table id="scheduleTable">
+        <thead>
+        <tr>
+            <th>Date</th>
+            <th>Start Time</th>
+            <th>End Time</th>
+            <th>Actions</th>
+        </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+    <button id="createScheduleBtn" style="margin-top:1rem;">Create Schedule</button>
+</main>
+
+<!-- Modal -->
+<div id="modalBackdrop" aria-hidden="true">
+    <div id="scheduleModal">
+        <h2 id="modalTitle">Create Schedule</h2>
+        <input type="hidden" id="scheduleId"/>
+        <div class="form-group">
+            <label for="scheduleDate">Date</label>
+            <input type="date" id="scheduleDate"/>
+        </div>
+        <div class="form-group">
+            <label for="startTime">Start Time</label>
+            <input type="time" id="startTime"/>
+        </div>
+        <div class="form-group">
+            <label for="endTime">End Time</label>
+            <input type="time" id="endTime"/>
+        </div>
+        <div class="error" id="formError" style="display:none"></div>
+        <div class="modal-actions">
+            <button class="btn cancel" id="cancelBtn">Cancel</button>
+            <button class="btn save" id="saveBtn">Create</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const API_BASE = 'http://localhost:8080/healthcare/api/doctor-schedules';
+    const urlParams = new URLSearchParams(window.location.search);
+    const doctorId = urlParams.get('doctorId');
+    const tableBody = document.querySelector('#scheduleTable tbody');
+    const modalBackdrop = document.getElementById('modalBackdrop');
+    const modalTitle = document.getElementById('modalTitle');
+    const cancelBtn = document.getElementById('cancelBtn');
+    const saveBtn = document.getElementById('saveBtn');
+    const formError = document.getElementById('formError');
+
+    const form = {
+        scheduleId: document.getElementById('scheduleId'),
+        scheduleDate: document.getElementById('scheduleDate'),
+        startTime: document.getElementById('startTime'),
+        endTime: document.getElementById('endTime')
+    };
+
+    async function loadSchedules() {
+        try {
+            const resp = await fetch(`${API_BASE}/${doctorId}`);
+            if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+            const schedules = await resp.json();
+            tableBody.innerHTML = '';
+            for (const s of schedules) {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td>${s.scheduleDate}</td>
+                                <td>${s.startTime}</td>
+                                <td>${s.endTime}</td>
+                                <td class="actions">
+                                    <button class="edit">Edit</button>
+                                    <button class="delete">Delete</button>
+                                </td>`;
+                tableBody.appendChild(tr);
+                tr.querySelector('.edit').onclick = () => openModal('edit', s);
+                tr.querySelector('.delete').onclick = () => deleteSchedule(s.id);
+            }
+        } catch(err) {
+            console.error('Failed to load schedules', err);
+        }
+    }
+
+    async function deleteSchedule(id) {
+        if (!confirm('Delete this schedule?')) return;
+        try {
+            const resp = await fetch(`${API_BASE}/${doctorId}/${id}`, { method: 'DELETE' });
+            if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+            await loadSchedules();
+        } catch(err) { alert('Failed to delete schedule'); }
+    }
+
+    async function submitSchedule(payload) {
+        try {
+            const method = payload.id ? 'PUT' : 'POST';
+            const url = API_BASE;
+            const resp = await fetch(url, {
+                method,
+                headers: { 'Content-Type':'application/json' },
+                body: JSON.stringify(payload)
+            });
+            if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+            await loadSchedules();
+            closeModal();
+        } catch(err) {
+            formError.textContent = 'Failed to save schedule';
+            formError.style.display = 'block';
+        }
+    }
+
+    function openModal(mode='create', schedule=null) {
+        formError.style.display = 'none';
+        if (mode==='create') {
+            modalTitle.textContent = 'Create Schedule';
+            saveBtn.textContent = 'Create';
+            form.scheduleId.value = '';
+            form.scheduleDate.value = '';
+            form.startTime.value = '';
+            form.endTime.value = '';
+        } else {
+            modalTitle.textContent = 'Edit Schedule';
+            saveBtn.textContent = 'Update';
+            form.scheduleId.value = schedule.id;
+            form.scheduleDate.value = schedule.scheduleDate;
+            form.startTime.value = schedule.startTime;
+            form.endTime.value = schedule.endTime;
+        }
+        modalBackdrop.style.display = 'flex';
+        modalBackdrop.setAttribute('aria-hidden', 'false');
+    }
+
+    function closeModal() {
+        modalBackdrop.style.display = 'none';
+        modalBackdrop.setAttribute('aria-hidden', 'true');
+    }
+
+    saveBtn.addEventListener('click', async () => {
+        formError.style.display = 'none';
+        const scheduleDate = form.scheduleDate.value;
+        const startTime = form.startTime.value;
+        const endTime = form.endTime.value;
+        if (!scheduleDate || !startTime || !endTime) {
+            formError.textContent = 'All fields are required.';
+            formError.style.display = 'block';
+            return;
+        }
+        const payload = {
+            id: form.scheduleId.value ? Number(form.scheduleId.value) : undefined,
+            doctorId: Number(doctorId),
+            scheduleDate,
+            startTime,
+            endTime
+        };
+        await submitSchedule(payload);
+    });
+
+    cancelBtn.addEventListener('click', closeModal);
+    document.getElementById('createScheduleBtn').addEventListener('click', () => openModal('create'));
+    document.getElementById('backBtn').addEventListener('click', () => window.location.href = 'doctors.html');
+
+    loadSchedules();
+</script>
+</body>
+</html>
