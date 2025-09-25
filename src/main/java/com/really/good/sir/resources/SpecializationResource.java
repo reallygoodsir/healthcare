@@ -26,7 +26,7 @@ public class SpecializationResource {
 
     @GET
     @Path("/{specializationId}")
-    public Response getSpecializationById(@PathParam("id") final int specializationId) {
+    public Response getSpecializationById(@PathParam("specializationId") final int specializationId) {
         final SpecializationEntity specializationEntity = specializationDAO.getSpecializationById(specializationId);
         final SpecializationDTO specializationDTO = specializationConverter.convert(specializationEntity);
         return Response.ok(specializationDTO).build();

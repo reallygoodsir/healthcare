@@ -17,6 +17,9 @@ public class PatientDAO extends BaseDao {
     private static final String GET_PATIENT_BY_ID =
             "SELECT * FROM patients WHERE patient_id = ?";
 
+    private static final String GET_PATIENT_BY_PHONE =
+            "SELECT * FROM patients WHERE phone = ?";
+
     private static final String CREATE_PATIENT =
             "INSERT INTO patients (first_name, last_name, email, phone, date_of_birth, address) " +
                     "VALUES (?, ?, ?, ?, ?, ?)";
@@ -46,16 +49,29 @@ public class PatientDAO extends BaseDao {
     public PatientEntity getPatientById(final int id) {
         try (final Connection connection = getConnection();
              final PreparedStatement ps = connection.prepareStatement(GET_PATIENT_BY_ID)) {
-            LOGGER.info("ID: {}", id);
             ps.setInt(1, id);
             try (final ResultSet rs = ps.executeQuery()) {
-                LOGGER.info("RS: {}", rs);
                 if (rs.next()) {
                     return mapResultSetToPatient(rs);
                 }
             }
         } catch (SQLException exception) {
             LOGGER.error("Error getting patient by id {}", id, exception);
+        }
+        return null;
+    }
+
+    public PatientEntity getPatientByPhone(final String phoneNumber) {
+        try (final Connection connection = getConnection();
+             final PreparedStatement ps = connection.prepareStatement(GET_PATIENT_BY_PHONE)) {
+            ps.setString(1, phoneNumber);
+            try (final ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return mapResultSetToPatient(rs);
+                }
+            }
+        } catch (SQLException exception) {
+            LOGGER.error("Error getting patient by id {}", phoneNumber, exception);
         }
         return null;
     }

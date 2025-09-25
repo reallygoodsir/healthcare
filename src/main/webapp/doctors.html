@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <title>Healthcare — Doctors</title>
+    <style>
+        :root{
+          --bg:#f4f7fb;
+          --card:#fff;
+          --accent:#2563eb;
+          --accent-hover:#1d4ed8;
+          --danger:#dc2626;
+          --text:#111827;
+          --muted:#6b7280;
+        }
+        body{margin:0;font-family:system-ui,Arial,sans-serif;background:var(--bg);color:var(--text);}
+        header{background:var(--accent);color:#fff;padding:1rem 2rem;display:flex;justify-content:space-between;align-items:center;}
+        header h1{margin:0;font-size:1.5rem;}
+        main{padding:2rem;max-width:1200px;margin:auto;}
+        table{width:100%;border-collapse:collapse;background:var(--card);box-shadow:0 1px 3px rgba(0,0,0,0.1);}
+        th,td{padding:0.75rem 1rem;text-align:left;border-bottom:1px solid #e5e7eb;}
+        th{background:#f9fafb;font-weight:600;}
+        tr:hover td{background:#f3f4f6;}
+        td img{width:40px;height:40px;border-radius:50%;object-fit:cover;border:1px solid #ddd;}
+        .actions button{margin-right:0.5rem;padding:0.25rem 0.75rem;border-radius:0.375rem;border:none;cursor:pointer;font-size:0.9rem;}
+        .actions .schedules{background:#10b981;color:#fff;}
+        .actions .schedules:hover{background:#059669;}
+    </style>
+</head>
+<body>
+<header>
+    <h1>Doctors</h1>
+</header>
+<main>
+    <table id="doctorsTable">
+        <thead>
+        <tr>
+            <th>Photo</th>
+            <th>First Name</th>
+            <th>Last Name</th>
+            <th>Email</th>
+            <th>Phone</th>
+            <th>Specialization</th>
+            <th>Actions</th>
+        </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+</main>
+
+<script>
+    const API_BASE='http://localhost:8080/healthcare/api/doctors';
+    const SPEC_BASE='http://localhost:8080/healthcare/api/specializations';
+
+    const tableBody=document.querySelector('#doctorsTable tbody');
+
+    async function loadDoctors(){
+      try{
+        const resp=await fetch(API_BASE);
+        if(!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const doctors=await resp.json();
+        tableBody.innerHTML='';
+        for(const d of doctors){
+          const tr=document.createElement('tr');
+          const photoTd=document.createElement('td');
+          if(d.photo){
+            const img=document.createElement('img');
+            img.src=`data:image/png;base64,${d.photo}`;
+            photoTd.appendChild(img);
+          } else { photoTd.textContent='—'; }
+          tr.appendChild(photoTd);
+          tr.innerHTML+=`<td>${d.firstName||''}</td>
+                         <td>${d.lastName||''}</td>
+                         <td>${d.email||''}</td>
+                         <td>${d.phone||''}</td>
+                         <td data-spec-id="${d.specializationId||''}">Loading...</td>
+                         <td class="actions">
+                            <button class="schedules">Schedules</button>
+                         </td>`;
+          tableBody.appendChild(tr);
+
+          // redirect with ?doctorId= just like the first HTML
+          tr.querySelector('.schedules').onclick = () =>
+              window.location.href = `doctor-visits.html?doctorId=${d.id}`;
+
+          if(d.specializationId){
+            fetch(`${SPEC_BASE}/${d.specializationId}`).then(r=>r.json())
+            .then(spec=>{tr.querySelector('td[data-spec-id]').textContent=spec.name;})
+            .catch(()=>{tr.querySelector('td[data-spec-id]').textContent='Unknown';});
+          } else {
+            tr.querySelector('td[data-spec-id]').textContent='—';
+          }
+        }
+      }catch(err){console.error('Failed to load doctors',err);}
+    }
+
+    loadDoctors();
+</script>
+</body>
+</html>

@@ -30,8 +30,16 @@ public class PatientResource {
     @GET
     @Path("/{patientId}")
     public Response getPatientById(@PathParam("patientId") final int patientId) {
-        LOGGER.info("0");
         final PatientEntity patientEntity = patientDAO.getPatientById(patientId);
+        final PatientDTO patientDTO = patientConverter.convert(patientEntity);
+        return Response.ok(patientDTO).build();
+    }
+
+    @GET
+    @Path("/visits/{phoneNumber}")
+    public Response getPatientByPhone(@PathParam("phoneNumber") final String phoneNumber) {
+        LOGGER.info("0");
+        final PatientEntity patientEntity = patientDAO.getPatientByPhone(phoneNumber);
         LOGGER.info("1 {}", patientEntity);
         final PatientDTO patientDTO = patientConverter.convert(patientEntity);
         LOGGER.info("2");
