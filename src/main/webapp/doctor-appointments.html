@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Healthcare — Doctor Schedule</title>
+  <style>
+    :root{
+      --bg:#f4f7fb;
+      --card:#fff;
+      --accent:#2563eb;
+      --accent-hover:#1d4ed8;
+      --danger:#dc2626;
+      --text:#111827;
+      --muted:#6b7280;
+    }
+    body{margin:0;font-family:system-ui,Arial,sans-serif;background:var(--bg);color:var(--text);}
+    header{background:var(--accent);color:#fff;padding:1rem 2rem;display:flex;justify-content:space-between;align-items:center;}
+    header h1{margin:0;font-size:1.5rem;}
+    header button{background:#fff;color:var(--accent);border:none;padding:0.5rem 1rem;border-radius:0.5rem;cursor:pointer;font-weight:600;}
+    main{padding:2rem;max-width:800px;margin:auto;}
+    table{width:100%;border-collapse:collapse;background:var(--card);box-shadow:0 1px 3px rgba(0,0,0,0.1);}
+    th,td{padding:0.75rem 1rem;text-align:left;border-bottom:1px solid #e5e7eb;}
+    th{background:#f9fafb;font-weight:600;}
+    tr:hover td{background:#f3f4f6;}
+    .actions button{margin-right:0.5rem;padding:0.25rem 0.75rem;border-radius:0.375rem;border:none;cursor:pointer;font-size:0.9rem;}
+    .actions .create{background:#10b981;color:#fff;}
+    .actions .create:hover{background:#059669;}
+    .actions .view{background:#2563eb;color:#fff;}
+    .actions .view:hover{background:#1d4ed8;}
+    .actions .start{background:#f59e0b;color:#fff;}
+    .actions .start:hover{background:#d97706;}
+    .actions .completed{background:#6b7280;color:#fff;}
+    .actions .completed:hover{background:#4b5563;}
+    /* Modal */
+    #modalBackdrop{position:fixed;inset:0;background:rgba(0,0,0,0.5);display:none;align-items:center;justify-content:center;z-index:1000;}
+    #scheduleModal{background:#fff;border-radius:0.75rem;max-width:400px;width:100%;padding:1.5rem;box-shadow:0 10px 25px rgba(0,0,0,0.2);}
+    #scheduleModal h2{margin-top:0;font-size:1.25rem;}
+    .form-group{margin-bottom:1rem;}
+    label{display:block;font-weight:600;margin-bottom:0.25rem;}
+    input{width:100%;padding:0.5rem;border:1px solid #d1d5db;border-radius:0.375rem;font-size:1rem;}
+    .modal-actions{display:flex;justify-content:flex-end;gap:0.5rem;margin-top:1rem;}
+    .btn{padding:0.5rem 1rem;border-radius:0.5rem;font-weight:600;border:none;cursor:pointer;}
+    .btn.save{background:var(--accent);color:#fff;}
+    .btn.save:hover{background:var(--accent-hover);}
+    .btn.cancel{background:#e5e7eb;}
+    .btn.cancel:hover{background:#d1d5db;}
+    .error{color:var(--danger);font-size:0.9rem;margin-top:0.25rem;}
+    .small{font-size:0.8rem;color:var(--muted);}
+  </style>
+</head>
+<body>
+<header>
+  <h1>Doctor Schedule</h1>
+  <button id="backBtn">Back to Doctors</button>
+</header>
+<main>
+  <table id="scheduleTable">
+    <thead>
+    <tr>
+      <th>Start Time</th>
+      <th>End Time</th>
+      <th>Actions</th>
+    </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</main>
+
+<!-- Modal -->
+<div id="modalBackdrop" aria-hidden="true">
+  <div id="scheduleModal">
+    <h2 id="modalTitle">Appointment</h2>
+    <input type="hidden" id="scheduleId"/>
+    <input type="hidden" id="patientId"/>
+    <input type="hidden" id="appointmentId"/>
+    <div class="form-group" id="phoneGroup">
+      <label for="patientPhone">Patient Phone</label>
+      <div style="display:flex;gap:0.5rem;">
+        <input type="text" id="patientPhone" placeholder="Enter phone number"/>
+        <button class="btn save" id="findBtn" type="button">Find</button>
+      </div>
+    </div>
+    <div id="patientInfo" style="display:none;">
+      <p><b>First Name:</b> <span id="firstName"></span></p>
+      <p><b>Last Name:</b> <span id="lastName"></span></p>
+      <p><b>Date of Birth:</b> <span id="dob"></span></p>
+      <p><b>Email:</b> <span id="email"></span></p>
+      <p><b>Phone:</b> <span id="phone"></span></p>
+    </div>
+    <div class="error" id="formError" style="display:none"></div>
+    <div class="modal-actions" id="modalActions">
+      <button class="btn cancel" id="cancelBtn">Cancel</button>
+      <button class="btn save" id="saveBtn">Create</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const API_BASE = 'http://localhost:8080/healthcare/api/doctor-schedules';
+  const APPOINTMENTS_API = 'http://localhost:8080/healthcare/api/appointments';
+  const PATIENT_API = 'http://localhost:8080/healthcare/api/patients';
+  const urlParams = new URLSearchParams(window.location.search);
+  const doctorId = urlParams.get('doctorId');
+  const tableBody = document.querySelector('#scheduleTable tbody');
+  const modalBackdrop = document.getElementById('modalBackdrop');
+  const cancelBtn = document.getElementById('cancelBtn');
+  const saveBtn = document.getElementById('saveBtn');
+  const findBtn = document.getElementById('findBtn');
+  const formError = document.getElementById('formError');
+  const patientInfoDiv = document.getElementById('patientInfo');
+  const phoneGroup = document.getElementById('phoneGroup');
+
+  const form = {
+      scheduleId: document.getElementById('scheduleId'),
+      patientId: document.getElementById('patientId'),
+      appointmentId: document.getElementById('appointmentId'),
+      patientPhone: document.getElementById('patientPhone'),
+      firstName: document.getElementById('firstName'),
+      lastName: document.getElementById('lastName'),
+      dob: document.getElementById('dob'),
+      email: document.getElementById('email'),
+      phone: document.getElementById('phone')
+  };
+
+  async function loadSchedules() {
+      try {
+          const resp = await fetch(`${API_BASE}/today/${doctorId}`);
+          if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+          const schedules = await resp.json();
+          tableBody.innerHTML = '';
+
+          // Fetch all appointments once
+          const allAppointmentsResp = await fetch(APPOINTMENTS_API);
+          const allAppointments = allAppointmentsResp.ok ? await allAppointmentsResp.json() : [];
+
+          for (const s of schedules) {
+              // Filter appointments for this schedule
+              const appointments = allAppointments.filter(a => a.scheduleId === s.id && a.doctorId === Number(doctorId));
+              const tr = document.createElement('tr');
+
+              let btnHTML;
+              if (appointments.length > 0) {
+                  const app = appointments[0];
+                  tr.dataset.appointmentId = app.appointmentId;
+                  tr.dataset.patientId = app.patientId;
+
+                  btnHTML = `<button class="view">View</button>`;
+                  if (app.status === 'COMPLETED') {
+                      btnHTML += `<button class="completed">Completed</button>`;
+                  } else {
+                      btnHTML += `<button class="start">Start</button>`;
+                  }
+              } else {
+                  btnHTML = `<button class="create">Create</button>`;
+              }
+
+              tr.innerHTML = `<td>${s.startTime}</td>
+                              <td>${s.endTime}</td>
+                              <td class="actions">${btnHTML}</td>`;
+
+              tableBody.appendChild(tr);
+
+              if (appointments.length > 0) {
+                  const app = appointments[0];
+                  tr.querySelector('.view').onclick = () => openModal(s.id, true, app);
+
+                  if (app.status === 'COMPLETED') {
+                      tr.querySelector('.completed').onclick = () => {
+                          const appId = app.appointmentId;
+                          window.location.href = `patient-appointment.html?appointmentId=${appId}&patientId=${app.patientId}`;
+                      };
+                  } else {
+                      tr.querySelector('.start').onclick = async () => {
+                          try {
+                              const appId = app.appointmentId;
+                              await fetch(`${APPOINTMENTS_API}/${appId}/status?status=ONGOING`, { method:'PATCH' });
+                              window.location.href = `patient-appointment.html?appointmentId=${appId}&patientId=${app.patientId}`;
+                          } catch(err) {
+                              alert('Failed to start appointment');
+                          }
+                      };
+                  }
+              } else {
+                  tr.querySelector('.create').onclick = () => openModal(s.id, false);
+              }
+          }
+      } catch(err) {
+          console.error('Failed to load schedules', err);
+      }
+  }
+
+  function openModal(scheduleId, isView=false, appointment=null) {
+      formError.style.display = 'none';
+      patientInfoDiv.style.display = 'none';
+      phoneGroup.style.display = isView ? 'none' : 'block';
+      saveBtn.style.display = isView ? 'none' : 'inline-block';
+
+      form.scheduleId.value = scheduleId;
+      form.patientId.value = isView ? appointment.patientId : '';
+      form.appointmentId.value = isView ? appointment.appointmentId : '';
+      form.patientPhone.value = '';
+
+      form.firstName.textContent = '';
+      form.lastName.textContent = '';
+      form.dob.textContent = '';
+      form.email.textContent = '';
+      form.phone.textContent = '';
+
+      if (isView) {
+          fetch(`${APPOINTMENTS_API}/${appointment.appointmentId}`)
+              .then(r => r.json())
+              .then(app => {
+                  fetch(`${PATIENT_API}/${app.patientId}`)
+                      .then(r => r.json())
+                      .then(patient => {
+                          form.firstName.textContent = patient.firstName;
+                          form.lastName.textContent = patient.lastName;
+                          form.dob.textContent = patient.dateOfBirth;
+                          form.email.textContent = patient.email;
+                          form.phone.textContent = patient.phone;
+                          patientInfoDiv.style.display = 'block';
+                      });
+              })
+              .catch(() => {
+                  formError.textContent = 'Failed to load patient info';
+                  formError.style.display = 'block';
+              });
+      }
+
+      modalBackdrop.style.display = 'flex';
+      modalBackdrop.setAttribute('aria-hidden','false');
+  }
+
+  function closeModal() {
+      modalBackdrop.style.display = 'none';
+      modalBackdrop.setAttribute('aria-hidden','true');
+  }
+
+  cancelBtn.addEventListener('click', closeModal);
+
+  findBtn.addEventListener('click', async () => {
+      formError.style.display = 'none';
+      const phone = form.patientPhone.value.trim();
+      if (!phone) {
+          formError.textContent = 'Please enter a phone number';
+          formError.style.display = 'block';
+          return;
+      }
+      try {
+          const resp = await fetch(`${PATIENT_API}/visits/${encodeURIComponent(phone)}`);
+          if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+          const patient = await resp.json();
+          form.patientId.value = patient.id;
+          form.firstName.textContent = patient.firstName;
+          form.lastName.textContent = patient.lastName;
+          form.dob.textContent = patient.dateOfBirth;
+          form.email.textContent = patient.email;
+          form.phone.textContent = patient.phone;
+          patientInfoDiv.style.display = 'block';
+      } catch(err) {
+          formError.textContent = 'Patient not found';
+          formError.style.display = 'block';
+      }
+  });
+
+  saveBtn.addEventListener('click', async () => {
+      formError.style.display = 'none';
+      const patientId = form.patientId.value;
+      const scheduleId = form.scheduleId.value;
+      if (!patientId) {
+          formError.textContent = 'Please find a patient first';
+          formError.style.display = 'block';
+          return;
+      }
+      const payload = {
+          doctorId: Number(doctorId),
+          scheduleId: Number(scheduleId),
+          patientId: Number(patientId),
+          status: 'SCHEDULED'
+      };
+      try {
+          const resp = await fetch(APPOINTMENTS_API, {
+              method: 'POST',
+              headers: { 'Content-Type':'application/json' },
+              body: JSON.stringify(payload)
+          });
+          if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+          const created = await resp.json();
+          window.location.href = `patient-appointment.html?appointmentId=${created.appointmentId}&patientId=${patientId}`;
+      } catch(err) {
+          formError.textContent = 'Failed to create appointment';
+          formError.style.display = 'block';
+      }
+  });
+
+  document.getElementById('backBtn').addEventListener('click', () => window.location.href='doctors.html');
+
+  loadSchedules();
+</script>
+</body>
+</html>

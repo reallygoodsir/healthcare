@@ -37,6 +37,14 @@ public class DoctorResource {
         return Response.ok(doctorDTO).build();
     }
 
+    @GET
+    @Path("/service/{serviceId}")
+    public Response getDoctorsByService(@PathParam("serviceId") final int serviceId) {
+        final List<DoctorEntity> doctorEntities = doctorDAO.getDoctorsByServiceId(serviceId);
+        final List<DoctorDTO> doctorDTOs = doctorConverter.convert(doctorEntities);
+        return Response.ok(doctorDTOs).build();
+    }
+
     @POST
     public Response createDoctor(final DoctorDTO doctorDTO, @Context final UriInfo uriInfo) {
         final DoctorEntity doctorEntity = doctorConverter.convert(doctorDTO);

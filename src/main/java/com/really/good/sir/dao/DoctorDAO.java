@@ -39,6 +39,13 @@ public class DoctorDAO extends BaseDao {
             "DELETE FROM doctors " +
                     "WHERE doctor_id = ?";
 
+    private static final String GET_DOCTORS_BY_SERVICE =
+            "SELECT d.doctor_id, d.first_name, d.last_name, d.email, d.phone, d.specialization_id, d.photo " +
+                    "FROM doctors d " +
+                    "WHERE d.specialization_id IN ( " +
+                    "    SELECT ss.specialization_id FROM `service-specializations` ss WHERE ss.service_id = ? " +
+                    ")";
+
     public List<DoctorEntity> getAllDoctors() {
         final List<DoctorEntity> doctorEntities = new ArrayList<>();
         try (final Connection connection = getConnection();
@@ -67,6 +74,23 @@ public class DoctorDAO extends BaseDao {
             LOGGER.error("Error get doctor by id {}", id, exception);
         }
         return null;
+    }
+
+    public List<DoctorEntity> getDoctorsByServiceId(final int serviceId) {
+        final List<DoctorEntity> doctorEntities = new ArrayList<>();
+        try (final Connection connection = getConnection();
+             final PreparedStatement preparedStatement = connection.prepareStatement(GET_DOCTORS_BY_SERVICE)) {
+
+            preparedStatement.setInt(1, serviceId);
+            try (final ResultSet resultSet = preparedStatement.executeQuery()) {
+                while (resultSet.next()) {
+                    doctorEntities.add(mapResultSetToDoctor(resultSet));
+                }
+            }
+        } catch (final SQLException exception) {
+            LOGGER.error("Error getting doctors for serviceId {}", serviceId, exception);
+        }
+        return doctorEntities;
     }
 
     public DoctorEntity createDoctor(final DoctorEntity doctorEntity) {

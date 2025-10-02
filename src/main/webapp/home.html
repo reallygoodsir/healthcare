@@ -161,65 +161,77 @@
       document.getElementById('content').innerHTML = `
         <h2>Welcome to Our Healthcare Portal</h2>
         <p>We provide comprehensive healthcare services with a team of experienced professionals.
-        Use the navigation menu to explore our doctorEntities, services, and contact information.</p>
+        Use the navigation menu to explore our doctors, services, and contact information.</p>
       `;
     }
 
-    function loadDoctors(){
+    async function loadDoctors(){
         document.getElementById('content').innerHTML = `
             <h2>Our Doctors</h2>
-            <div class="loading">Loading doctorEntities...</div>
+            <div class="loading">Loading doctors...</div>
         `;
 
-        fetch('http://localhost:8080/healthcare/api/doctorEntities')
-            .then(response => response.json())
-            .then(doctorEntities => {
-                let doctorsHTML = `
-                    <h2>Our Doctors</h2>
-                    <div class="doctorEntities-grid">
-                `;
+        try {
+            const response = await fetch('http://localhost:8080/healthcare/api/doctors');
+            const doctors = await response.json();
 
-                doctorEntities.forEach(doctorEntity => {
-                    let imageSrc = 'https://via.placeholder.com/100?text=No+Image';
+            let doctorsHTML = `
+                <h2>Our Doctors</h2>
+                <div class="doctorEntities-grid">
+            `;
 
-                    // Use real photo if available
-                    if (doctorEntity.photo && doctorEntity.photo.length > 0) {
-                        // Detect MIME type (PNG vs JPEG)
-                        const mimeType = doctorEntity.photo.startsWith('iVBOR') ? 'image/png' : 'image/jpeg';
-                        imageSrc = `data:${mimeType};base64,${doctorEntity.photo}`;
+            for (const doctor of doctors) {
+                // Get specialization name
+                let specializationName = 'General Practitioner';
+                if (doctor.specializationId) {
+                    try {
+                        const specResp = await fetch(`http://localhost:8080/healthcare/api/specializations/${doctor.specializationId}`);
+                        if (specResp.ok) {
+                            const specData = await specResp.json();
+                            specializationName = specData.name || specializationName;
+                        }
+                    } catch(e) {
+                        console.warn('Failed to load specialization for doctor', doctor.id, e);
                     }
+                }
 
-                    doctorsHTML += `
-                        <div class="doctorEntity-card">
-                            <img src="${imageSrc}" alt="${doctorEntity.firstName} ${doctorEntity.lastName}" class="doctorEntity-image">
-                            <h3 class="doctorEntity-name">${doctorEntity.firstName} ${doctorEntity.lastName}</h3>
-                            <p class="doctorEntity-specialty">${doctorEntity.specializationEntity || 'General Practitioner'}</p>
+                let imageSrc = 'https://via.placeholder.com/100?text=No+Image';
+                if (doctor.photo && doctor.photo.length > 0) {
+                    const mimeType = doctor.photo.startsWith('iVBOR') ? 'image/png' : 'image/jpeg';
+                    imageSrc = `data:${mimeType};base64,${doctor.photo}`;
+                }
 
-                            <div class="doctorEntity-details">
-                                <div class="doctorEntity-detail">
-                                    <strong>Email:</strong> ${doctorEntity.email || 'N/A'}
-                                </div>
-                                <div class="doctorEntity-detail">
-                                    <strong>Phone:</strong> ${doctorEntity.phone || 'N/A'}
-                                </div>
-                                <div class="doctorEntity-detail">
-                                    <strong>Specialty:</strong> ${doctorEntity.specializationEntity || 'N/A'}
-                                </div>
+                doctorsHTML += `
+                    <div class="doctorEntity-card">
+                        <img src="${imageSrc}" alt="${doctor.firstName} ${doctor.lastName}" class="doctorEntity-image">
+                        <h3 class="doctorEntity-name">${doctor.firstName} ${doctor.lastName}</h3>
+                        <p class="doctorEntity-specialty">${specializationName}</p>
+
+                        <div class="doctorEntity-details">
+                            <div class="doctorEntity-detail">
+                                <strong>Email:</strong> ${doctor.email || 'N/A'}
+                            </div>
+                            <div class="doctorEntity-detail">
+                                <strong>Phone:</strong> ${doctor.phone || 'N/A'}
+                            </div>
+                            <div class="doctorEntity-detail">
+                                <strong>Specialty:</strong> ${specializationName}
                             </div>
                         </div>
-                    `;
-                });
-
-                doctorsHTML += `</div>`;
-                document.getElementById('content').innerHTML = doctorsHTML;
-            })
-            .catch(error => {
-                console.error('Error loading doctorEntities:', error);
-                document.getElementById('content').innerHTML = `
-                    <h2>Our Doctors</h2>
-                    <div class="error">Error loading doctorEntities. Please try again later.</div>
+                    </div>
                 `;
-            });
+            }
+
+            doctorsHTML += `</div>`;
+            document.getElementById('content').innerHTML = doctorsHTML;
+
+        } catch(error) {
+            console.error('Error loading doctors:', error);
+            document.getElementById('content').innerHTML = `
+                <h2>Our Doctors</h2>
+                <div class="error">Error loading doctors. Please try again later.</div>
+            `;
+        }
     }
 
     function loadServices(){

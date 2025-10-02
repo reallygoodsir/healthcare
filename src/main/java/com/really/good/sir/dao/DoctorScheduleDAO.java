@@ -23,6 +23,15 @@ public class DoctorScheduleDAO extends BaseDao {
     private static final String DELETE_SCHEDULE =
             "DELETE FROM doctor_schedules WHERE id = ?";
 
+    private static final String GET_TODAY_SCHEDULES_WITH_APPOINTMENTS =
+            "SELECT ds.id, ds.doctor_id, ds.schedule_date, ds.start_time, ds.end_time " +
+                    "FROM doctor_schedules ds " +
+                    "INNER JOIN appointments a ON ds.id = a.schedule_id " +
+                    "WHERE ds.doctor_id = ? " +
+                    "AND a.status <> 'CANCELLED' " +
+                    "AND ds.schedule_date = CURRENT_DATE " +
+                    "ORDER BY ds.start_time";
+
     public List<DoctorScheduleEntity> getSchedulesByDoctor(final int doctorId) {
         final List<DoctorScheduleEntity> schedules = new ArrayList<>();
         try (final Connection connection = getConnection();
@@ -79,6 +88,22 @@ public class DoctorScheduleDAO extends BaseDao {
             LOGGER.error("Error deleting schedule {}", id, exception);
         }
         return false;
+    }
+
+    public List<DoctorScheduleEntity> getSchedulesForTodayWithAppointments(final int doctorId) {
+        final List<DoctorScheduleEntity> schedules = new ArrayList<>();
+        try (final Connection connection = getConnection();
+             final PreparedStatement ps = connection.prepareStatement(GET_TODAY_SCHEDULES_WITH_APPOINTMENTS)) {
+            ps.setInt(1, doctorId);
+            try (final ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    schedules.add(mapResultSetToSchedule(rs));
+                }
+            }
+        } catch (final SQLException exception) {
+            LOGGER.error("Error getting today's schedules with appointments for doctor {}", doctorId, exception);
+        }
+        return schedules;
     }
 
     private DoctorScheduleEntity mapResultSetToSchedule(final ResultSet rs) throws SQLException {

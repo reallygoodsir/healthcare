@@ -5,7 +5,7 @@ public class AppointmentEntity {
     private int patientId;
     private int doctorId;
     private int scheduleId;
-    private String status; // SCHEDULED, COMPLETED, CANCELLED
+    private String status;
 
     public int getAppointmentId() {
         return appointmentId;

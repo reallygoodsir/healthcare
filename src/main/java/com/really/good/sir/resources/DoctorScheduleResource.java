@@ -28,6 +28,14 @@ public class DoctorScheduleResource {
         return Response.ok(scheduleDTOs).build();
     }
 
+    @GET
+    @Path("/today/{doctorId}")
+    public Response getSchedulesForTodayWithAppointments(@PathParam("doctorId") final int doctorId) {
+        final List<DoctorScheduleEntity> schedules = scheduleDAO.getSchedulesForTodayWithAppointments(doctorId);
+        final List<DoctorScheduleDTO> scheduleDTOs = scheduleConverter.convert(schedules);
+        return Response.ok(scheduleDTOs).build();
+    }
+
     @POST
     public Response createSchedule(final DoctorScheduleDTO requestScheduleDTO) {
         final DoctorScheduleEntity scheduleEntity = scheduleConverter.convert(requestScheduleDTO);
@@ -54,4 +62,3 @@ public class DoctorScheduleResource {
         return Response.noContent().build();
     }
 }
-

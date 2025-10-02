@@ -104,7 +104,6 @@
     const doctorId = urlParams.get('doctorId');
     const tableBody = document.querySelector('#scheduleTable tbody');
     const modalBackdrop = document.getElementById('modalBackdrop');
-    const modalTitle = document.getElementById('modalTitle');
     const cancelBtn = document.getElementById('cancelBtn');
     const saveBtn = document.getElementById('saveBtn');
     const deleteBtn = document.getElementById('deleteBtn');
@@ -132,17 +131,21 @@
             const schedules = await resp.json();
             tableBody.innerHTML = '';
 
+            // Load all appointments once
+            const apptResp = await fetch(APPOINTMENTS_API);
+            const allAppointments = apptResp.ok ? await apptResp.json() : [];
+
             for (const s of schedules) {
-                const appointmentsResp = await fetch(`${APPOINTMENTS_API}/${doctorId}/${s.id}`);
-                const appointments = await appointmentsResp.json();
                 const tr = document.createElement('tr');
 
+                // Find appointment matching this schedule id
+                const appointment = allAppointments.find(a => a.scheduleId === s.id);
+
                 let btnHTML;
-                if (appointments.length > 0) {
-                    const app = appointments[0];
+                if (appointment) {
                     btnHTML = `<button class="view">View</button>`;
-                    tr.dataset.appointmentId = app.appointmentId;
-                    tr.dataset.patientId = app.patientId;
+                    tr.dataset.appointmentId = appointment.appointmentId; // FIXED: use appointmentId
+                    tr.dataset.patientId = appointment.patientId;
                 } else {
                     btnHTML = `<button class="create">Create</button>`;
                 }
@@ -154,8 +157,8 @@
 
                 tableBody.appendChild(tr);
 
-                if (appointments.length > 0) {
-                    tr.querySelector('.view').onclick = () => openModal(s.id, true, appointments[0]);
+                if (appointment) {
+                    tr.querySelector('.view').onclick = () => openModal(s.id, true, appointment);
                 } else {
                     tr.querySelector('.create').onclick = () => openModal(s.id, false);
                 }
@@ -174,7 +177,7 @@
 
         form.scheduleId.value = scheduleId;
         form.patientId.value = isView ? appointment.patientId : '';
-        form.appointmentId.value = isView ? appointment.appointmentId : '';
+        form.appointmentId.value = isView ? appointment.appointmentId : ''; // FIXED
         form.patientPhone.value = '';
 
         form.firstName.textContent = '';

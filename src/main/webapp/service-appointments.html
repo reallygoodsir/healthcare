@@ -1,0 +1,352 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Healthcare — Create & View Appointments</title>
+  <style>
+    :root{
+      --bg:#f4f7fb;
+      --card:#fff;
+      --accent:#2563eb;
+      --accent-hover:#1d4ed8;
+      --danger:#dc2626;
+      --danger-hover:#b91c1c;
+      --text:#111827;
+      --muted:#6b7280;
+    }
+    body{margin:0;font-family:system-ui,Arial,sans-serif;background:var(--bg);color:var(--text);}
+    header{background:var(--accent);color:#fff;padding:1rem 2rem;display:flex;justify-content:space-between;align-items:center;}
+    header h1{margin:0;font-size:1.5rem;}
+    header button{background:#fff;color:var(--accent);border:none;padding:0.5rem 1rem;border-radius:0.5rem;cursor:pointer;font-weight:600;}
+    main{padding:2rem;max-width:800px;margin:auto;background:var(--card);border-radius:0.75rem;box-shadow:0 1px 3px rgba(0,0,0,0.1);}
+    .form-group{margin-bottom:1rem;}
+    label{display:block;font-weight:600;margin-bottom:0.25rem;}
+    input, select{width:100%;padding:0.5rem;border:1px solid #d1d5db;border-radius:0.375rem;font-size:1rem;}
+    .btn{padding:0.5rem 1rem;border-radius:0.5rem;font-weight:600;border:none;cursor:pointer;}
+    .btn.save{background:var(--accent);color:#fff;}
+    .btn.save:hover{background:var(--accent-hover);}
+    .btn.cancel{background:#e5e7eb;}
+    .btn.cancel:hover{background:#d1d5db;}
+    .btn.delete{background:var(--danger);color:#fff;}
+    .btn.delete:hover{background:var(--danger-hover);}
+    .error{color:var(--danger);font-size:0.9rem;margin-top:0.25rem;}
+    .patient-info{margin-top:1rem;padding:1rem;background:#f9fafb;border-radius:0.5rem;}
+    .patient-info p{margin:0.25rem 0;}
+    table{width:100%;border-collapse:collapse;margin-top:2rem;}
+    th, td{padding:0.75rem 1rem;text-align:left;border-bottom:1px solid #e5e7eb;}
+    th{background:#f9fafb;font-weight:600;}
+    tr:hover td{background:#f3f4f6;}
+  </style>
+</head>
+<body>
+<header>
+  <h1>Patient Appointments</h1>
+  <div>
+    <button id="backBtn">Back to Doctors</button>
+  </div>
+</header>
+<main>
+  <!-- CREATE FORM -->
+  <div class="form-group">
+    <label for="patientPhone">Patient Phone</label>
+    <div style="display:flex;gap:0.5rem;">
+      <input type="text" id="patientPhone" placeholder="Enter phone number"/>
+      <button class="btn save" id="findBtn" type="button">Find</button>
+    </div>
+    <div class="error" id="formError" style="display:none"></div>
+  </div>
+
+  <div id="patientInfo" class="patient-info" style="display:none;">
+    <p><b>First Name:</b> <span id="firstName"></span></p>
+    <p><b>Last Name:</b> <span id="lastName"></span></p>
+    <p><b>Date of Birth:</b> <span id="dob"></span></p>
+    <p><b>Email:</b> <span id="email"></span></p>
+    <p><b>Phone:</b> <span id="phone"></span></p>
+  </div>
+
+  <div id="appointmentForm" style="display:none;">
+    <div class="form-group">
+      <label for="serviceSelect">Service</label>
+      <select id="serviceSelect"></select>
+    </div>
+    <div class="form-group" id="doctorGroup" style="display:none;">
+      <label for="doctorSelect">Doctor</label>
+      <select id="doctorSelect"></select>
+    </div>
+    <div class="form-group">
+      <label for="appointmentDate">Date</label>
+      <input type="date" id="appointmentDate"/>
+    </div>
+    <div class="form-group">
+      <label for="startTime">Start Time</label>
+      <input type="time" id="startTime"/>
+    </div>
+    <div class="form-group">
+      <label for="endTime">End Time</label>
+      <input type="time" id="endTime"/>
+    </div>
+    <div style="display:flex;justify-content:flex-end;gap:0.5rem;">
+      <button class="btn cancel" id="cancelBtn">Cancel</button>
+      <button class="btn save" id="createBtn">Create</button>
+    </div>
+  </div>
+
+  <!-- LIST OF APPOINTMENTS -->
+  <h2 style="margin-top:2rem;">All Patient Appointments</h2>
+  <table id="appointmentsTable">
+    <thead>
+    <tr>
+      <th>Patient</th>
+      <th>Service</th>
+      <th>Doctor</th>
+      <th>Date</th>
+      <th>Start Time</th>
+      <th>End Time</th>
+      <th>Status</th>
+      <th>Actions</th>
+    </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</main>
+
+<script>
+  const PATIENT_API = 'http://localhost:8080/healthcare/api/patients';
+  const SERVICES_API = 'http://localhost:8080/healthcare/api/services';
+  const DOCTORS_BY_SERVICE_API = 'http://localhost:8080/healthcare/api/doctors/service';
+  const DOCTOR_API = 'http://localhost:8080/healthcare/api/doctors';
+  const APPOINTMENTS_API = 'http://localhost:8080/healthcare/api/patient-appointments';
+
+  const backBtn = document.getElementById('backBtn');
+  const findBtn = document.getElementById('findBtn');
+  const createBtn = document.getElementById('createBtn');
+  const cancelBtn = document.getElementById('cancelBtn');
+
+  const formError = document.getElementById('formError');
+  const patientInfoDiv = document.getElementById('patientInfo');
+  const appointmentFormDiv = document.getElementById('appointmentForm');
+  const appointmentsTableBody = document.querySelector('#appointmentsTable tbody');
+
+  const serviceSelect = document.getElementById('serviceSelect');
+  const doctorGroup = document.getElementById('doctorGroup');
+  const doctorSelect = document.getElementById('doctorSelect');
+
+  const form = {
+      patientPhone: document.getElementById('patientPhone'),
+      firstName: document.getElementById('firstName'),
+      lastName: document.getElementById('lastName'),
+      dob: document.getElementById('dob'),
+      email: document.getElementById('email'),
+      phone: document.getElementById('phone'),
+      appointmentDate: document.getElementById('appointmentDate'),
+      startTime: document.getElementById('startTime'),
+      endTime: document.getElementById('endTime')
+  };
+
+  let currentPatientId = null;
+  let selectedDoctorId = null;
+
+  // Back to doctors
+  backBtn.addEventListener('click', () => window.location.href='doctors.html');
+
+  // Find patient by phone
+  findBtn.addEventListener('click', async () => {
+      formError.style.display = 'none';
+      const phone = form.patientPhone.value.trim();
+      if (!phone) {
+          formError.textContent = 'Please enter a phone number';
+          formError.style.display = 'block';
+          return;
+      }
+      try {
+          const resp = await fetch(`${PATIENT_API}/visits/${encodeURIComponent(phone)}`);
+          if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+          const patient = await resp.json();
+
+          currentPatientId = patient.id;
+
+          form.firstName.textContent = patient.firstName;
+          form.lastName.textContent = patient.lastName;
+          form.dob.textContent = patient.dateOfBirth;
+          form.email.textContent = patient.email;
+          form.phone.textContent = patient.phone;
+          patientInfoDiv.style.display = 'block';
+          appointmentFormDiv.style.display = 'block';
+
+          // Load services
+          const servicesResp = await fetch(SERVICES_API);
+          if (!servicesResp.ok) throw new Error(`HTTP ${servicesResp.status}`);
+          const services = await servicesResp.json();
+          serviceSelect.innerHTML = '<option value="">Select service</option>';
+          services.forEach(s => {
+              const opt = document.createElement('option');
+              opt.value = s.id;
+              opt.textContent = s.name;
+              serviceSelect.appendChild(opt);
+          });
+
+          doctorGroup.style.display = 'none';
+          doctorSelect.innerHTML = '';
+          selectedDoctorId = null;
+
+      } catch(err) {
+          formError.textContent = 'Patient not found';
+          formError.style.display = 'block';
+          patientInfoDiv.style.display = 'none';
+          appointmentFormDiv.style.display = 'none';
+          currentPatientId = null;
+      }
+  });
+
+  // When service changes, fetch doctors for that service
+  serviceSelect.addEventListener('change', async () => {
+      const serviceId = serviceSelect.value;
+      if (!serviceId) {
+          doctorGroup.style.display = 'none';
+          doctorSelect.innerHTML = '';
+          selectedDoctorId = null;
+          return;
+      }
+      try {
+          const resp = await fetch(`${DOCTORS_BY_SERVICE_API}/${serviceId}`);
+          if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+          const doctors = await resp.json();
+          doctorSelect.innerHTML = '<option value="">Select doctor</option>';
+          doctors.forEach(d => {
+              const opt = document.createElement('option');
+              opt.value = d.id;
+              opt.textContent = `${d.firstName} ${d.lastName}`;
+              doctorSelect.appendChild(opt);
+          });
+          doctorGroup.style.display = 'block';
+      } catch(err) {
+          console.error('Failed to load doctors for service', err);
+          doctorGroup.style.display = 'none';
+          doctorSelect.innerHTML = '';
+          selectedDoctorId = null;
+      }
+  });
+
+  doctorSelect.addEventListener('change', () => {
+      selectedDoctorId = doctorSelect.value ? Number(doctorSelect.value) : null;
+  });
+
+  // Cancel
+  cancelBtn.addEventListener('click', () => {
+      formError.style.display = 'none';
+      patientInfoDiv.style.display = 'none';
+      appointmentFormDiv.style.display = 'none';
+      currentPatientId = null;
+      selectedDoctorId = null;
+      form.patientPhone.value = '';
+  });
+
+  // Create appointment
+  createBtn.addEventListener('click', async () => {
+      formError.style.display = 'none';
+      if (!currentPatientId) {
+          formError.textContent = 'Please find a patient first';
+          formError.style.display = 'block';
+          return;
+      }
+
+      const date = form.appointmentDate.value;
+      const startTime = form.startTime.value;
+      const endTime = form.endTime.value;
+
+      if (!date || !startTime || !endTime || !serviceSelect.value || !selectedDoctorId) {
+          formError.textContent = 'Please select service, doctor, date, start time and end time';
+          formError.style.display = 'block';
+          return;
+      }
+
+      const payload = {
+          patientId: currentPatientId,
+          serviceId: Number(serviceSelect.value),
+          doctorId: selectedDoctorId,
+          date: date,
+          startTime: startTime,
+          endTime: endTime,
+          status: 'SCHEDULED'
+      };
+
+      try {
+          const resp = await fetch(APPOINTMENTS_API, {
+              method: 'POST',
+              headers: {'Content-Type': 'application/json'},
+              body: JSON.stringify(payload)
+          });
+          if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+          alert('Appointment created successfully!');
+          form.patientPhone.value = '';
+          patientInfoDiv.style.display = 'none';
+          appointmentFormDiv.style.display = 'none';
+          currentPatientId = null;
+          selectedDoctorId = null;
+          loadAppointments();
+      } catch(err) {
+          formError.textContent = 'Failed to create appointment';
+          formError.style.display = 'block';
+          console.error(err);
+      }
+  });
+
+  // Delete appointment
+  async function deleteAppointment(appointmentId) {
+      if (!confirm('Are you sure you want to delete this appointment?')) return;
+      try {
+          const resp = await fetch(`${APPOINTMENTS_API}/${appointmentId}`, { method: 'DELETE' });
+          if (!resp.ok && resp.status !== 204) throw new Error(`HTTP ${resp.status}`);
+          loadAppointments();
+      } catch(err) {
+          console.error('Failed to delete appointment', err);
+          alert('Failed to delete appointment');
+      }
+  }
+
+  // Load all appointments
+  async function loadAppointments() {
+      try {
+          const resp = await fetch(APPOINTMENTS_API);
+          if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+          const appointments = await resp.json();
+          appointmentsTableBody.innerHTML = '';
+
+          for (const app of appointments) {
+              let doctorName = '';
+              if (app.doctorId) {
+                  try {
+                      const doctorResp = await fetch(`${DOCTOR_API}/${app.doctorId}`);
+                      if (doctorResp.ok) {
+                          const doctor = await doctorResp.json();
+                          doctorName = `${doctor.firstName} ${doctor.lastName}`;
+                      }
+                  } catch(err) {
+                      console.error(`Failed to fetch doctor ${app.doctorId}`, err);
+                  }
+              }
+
+              const tr = document.createElement('tr');
+              tr.innerHTML = `
+                  <td>${(app.patientFirstName || '') + ' ' + (app.patientLastName || '')}</td>
+                  <td>${app.serviceName || ''}</td>
+                  <td>${doctorName}</td>
+                  <td>${app.date || ''}</td>
+                  <td>${app.startTime || ''}</td>
+                  <td>${app.endTime || ''}</td>
+                  <td>${app.status}</td>
+                  <td><button class="btn delete" onclick="deleteAppointment(${app.appointmentId})">DELETE</button></td>
+              `;
+              appointmentsTableBody.appendChild(tr);
+          }
+      } catch(err) {
+          console.error('Failed to load appointments', err);
+      }
+  }
+
+  // Initial load
+  loadAppointments();
+</script>
+</body>
+</html>

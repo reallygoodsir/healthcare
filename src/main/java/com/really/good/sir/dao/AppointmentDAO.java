@@ -13,15 +13,14 @@ public class AppointmentDAO extends BaseDao {
 
     private static final String CREATE_APPOINTMENT =
             "INSERT INTO appointments (patient_id, doctor_id, schedule_id, status) VALUES (?, ?, ?, ?)";
-
-    private static final String GET_APPOINTMENTS_BY_DOCTOR =
-            "SELECT * FROM appointments WHERE doctor_id = ?";
-
-    private static final String GET_APPOINTMENT_BY_IDS =
-            "SELECT * FROM appointments WHERE doctor_id = ? AND schedule_id = ?";
-
+    private static final String GET_ALL_APPOINTMENTS =
+            "SELECT * FROM appointments";
+    private static final String GET_APPOINTMENT_BY_ID =
+            "SELECT * FROM appointments WHERE appointment_id = ?";
     private static final String DELETE_APPOINTMENT =
             "DELETE FROM appointments WHERE appointment_id = ?";
+    private static final String UPDATE_STATUS =
+            "UPDATE appointments SET status = ? WHERE appointment_id = ?";
 
     public AppointmentEntity createAppointment(AppointmentEntity entity) {
         try (Connection connection = getConnection();
@@ -31,13 +30,10 @@ public class AppointmentDAO extends BaseDao {
             ps.setInt(2, entity.getDoctorId());
             ps.setInt(3, entity.getScheduleId());
             ps.setString(4, entity.getStatus());
-
             ps.executeUpdate();
 
             try (ResultSet rs = ps.getGeneratedKeys()) {
-                if (rs.next()) {
-                    entity.setAppointmentId(rs.getInt(1));
-                }
+                if (rs.next()) entity.setAppointmentId(rs.getInt(1));
             }
 
         } catch (SQLException e) {
@@ -46,68 +42,65 @@ public class AppointmentDAO extends BaseDao {
         return entity;
     }
 
-    public List<AppointmentEntity> getAppointmentsByDoctor(int doctorId) {
-        List<AppointmentEntity> appointments = new ArrayList<>();
+    public AppointmentEntity getAppointmentById(int appointmentId) {
         try (Connection connection = getConnection();
-             PreparedStatement ps = connection.prepareStatement(GET_APPOINTMENTS_BY_DOCTOR)) {
-
-            ps.setInt(1, doctorId);
-
+             PreparedStatement ps = connection.prepareStatement(GET_APPOINTMENT_BY_ID)) {
+            ps.setInt(1, appointmentId);
             try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    AppointmentEntity entity = new AppointmentEntity();
-                    entity.setAppointmentId(rs.getInt("appointment_id"));
-                    entity.setPatientId(rs.getInt("patient_id"));
-                    entity.setDoctorId(rs.getInt("doctor_id"));
-                    entity.setScheduleId(rs.getInt("schedule_id"));
-                    entity.setStatus(rs.getString("status"));
-                    appointments.add(entity);
+                if (rs.next()) {
+                    return mapRow(rs);
                 }
             }
-
         } catch (SQLException e) {
-            LOGGER.error("Error fetching appointments for doctor " + doctorId, e);
+            LOGGER.error("Error fetching appointment with id " + appointmentId, e);
+        }
+        return null;
+    }
+
+    public List<AppointmentEntity> getAllAppointments() {
+        List<AppointmentEntity> appointments = new ArrayList<>();
+        try (Connection connection = getConnection();
+             PreparedStatement ps = connection.prepareStatement(GET_ALL_APPOINTMENTS);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                appointments.add(mapRow(rs));
+            }
+        } catch (SQLException e) {
+            LOGGER.error("Error fetching appointments", e);
         }
         return appointments;
     }
 
-    public List<AppointmentEntity> getAppointmentByIds(int doctorId, int scheduleId) {
-        List<AppointmentEntity> appointments = new ArrayList<>();
+    public boolean updateAppointmentStatus(int appointmentId, String status) {
         try (Connection connection = getConnection();
-             PreparedStatement ps = connection.prepareStatement(GET_APPOINTMENT_BY_IDS)) {
-
-            ps.setInt(1, doctorId);
-            ps.setInt(2, scheduleId);
-
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    AppointmentEntity entity = new AppointmentEntity();
-                    entity.setAppointmentId(rs.getInt("appointment_id"));
-                    entity.setPatientId(rs.getInt("patient_id"));
-                    entity.setDoctorId(rs.getInt("doctor_id"));
-                    entity.setScheduleId(rs.getInt("schedule_id"));
-                    entity.setStatus(rs.getString("status"));
-                    appointments.add(entity);
-                }
-            }
-
+             PreparedStatement ps = connection.prepareStatement(UPDATE_STATUS)) {
+            ps.setString(1, status);
+            ps.setInt(2, appointmentId);
+            return ps.executeUpdate() > 0;
         } catch (SQLException e) {
-            LOGGER.error("Error fetching appointment by doctorId " + doctorId + " and scheduleId " + scheduleId, e);
+            LOGGER.error("Error updating appointment status for id " + appointmentId, e);
         }
-        return appointments;
+        return false;
     }
 
     public boolean deleteAppointment(int appointmentId) {
         try (Connection connection = getConnection();
              PreparedStatement ps = connection.prepareStatement(DELETE_APPOINTMENT)) {
-
             ps.setInt(1, appointmentId);
-            int affectedRows = ps.executeUpdate();
-            return affectedRows > 0;
-
+            return ps.executeUpdate() > 0;
         } catch (SQLException e) {
             LOGGER.error("Error deleting appointment with id " + appointmentId, e);
         }
         return false;
+    }
+
+    private AppointmentEntity mapRow(ResultSet rs) throws SQLException {
+        AppointmentEntity entity = new AppointmentEntity();
+        entity.setAppointmentId(rs.getInt("appointment_id"));
+        entity.setPatientId(rs.getInt("patient_id"));
+        entity.setDoctorId(rs.getInt("doctor_id"));
+        entity.setScheduleId(rs.getInt("schedule_id"));
+        entity.setStatus(rs.getString("status"));
+        return entity;
     }
 }
