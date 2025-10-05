@@ -24,13 +24,61 @@ public class PatientAppointmentDAO extends BaseDao {
                     "JOIN patients p ON pa.patient_id = p.patient_id " +
                     "JOIN service s ON pa.service_id = s.id";
 
+    private static final String GET_APPOINTMENTS_BY_DOCTOR =
+            "SELECT pa.*, p.first_name AS patient_first_name, p.last_name AS patient_last_name, s.name AS service_name " +
+                    "FROM patient_appointments pa " +
+                    "JOIN patients p ON pa.patient_id = p.patient_id " +
+                    "JOIN service s ON pa.service_id = s.id " +
+                    "WHERE pa.doctor_id = ?";
+
+    private static final String GET_TODAYS_APPOINTMENTS_BY_DOCTOR =
+            "SELECT pa.*, p.first_name AS patient_first_name, p.last_name AS patient_last_name, s.name AS service_name " +
+                    "FROM patient_appointments pa " +
+                    "JOIN patients p ON pa.patient_id = p.patient_id " +
+                    "JOIN service s ON pa.service_id = s.id " +
+                    "WHERE pa.doctor_id = ? AND pa.date = CURRENT_DATE";
+
+    private static final String UPDATE_STATUS =
+            "UPDATE patient_appointments SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE appointment_id = ?";
+
+    private static final String GET_STATUS_BY_APPOINTMENT_ID =
+            "SELECT status FROM patient_appointments WHERE appointment_id = ?";
+
+    public List<PatientAppointmentEntity> getTodaysAppointmentsByDoctor(int doctorId) {
+        List<PatientAppointmentEntity> list = new ArrayList<>();
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(GET_TODAYS_APPOINTMENTS_BY_DOCTOR)) {
+            ps.setInt(1, doctorId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(mapEntity(rs));
+                }
+            }
+        } catch (SQLException e) {
+            LOGGER.error("Error fetching today's appointments by doctor", e);
+        }
+        return list;
+    }
+
+    public boolean updateStatus(int appointmentId, String status) {
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(UPDATE_STATUS)) {
+            ps.setString(1, status);
+            ps.setInt(2, appointmentId);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            LOGGER.error("Failed to update appointment status", e);
+            return false;
+        }
+    }
+
     public PatientAppointmentEntity createAppointment(PatientAppointmentEntity entity) {
         try (Connection conn = getConnection();
              PreparedStatement ps = conn.prepareStatement(CREATE_APPOINTMENT, Statement.RETURN_GENERATED_KEYS)) {
 
             ps.setInt(1, entity.getPatientId());
             ps.setInt(2, entity.getServiceId());
-            ps.setInt(3, entity.getDoctorId()); // <-- Added doctor_id
+            ps.setInt(3, entity.getDoctorId());
             ps.setDate(4, entity.getDate());
             ps.setTime(5, entity.getStartTime());
             ps.setTime(6, entity.getEndTime());
@@ -64,27 +112,59 @@ public class PatientAppointmentDAO extends BaseDao {
         try (Connection conn = getConnection();
              PreparedStatement ps = conn.prepareStatement(GET_ALL_APPOINTMENTS);
              ResultSet rs = ps.executeQuery()) {
-
             while (rs.next()) {
-                PatientAppointmentEntity entity = new PatientAppointmentEntity();
-                entity.setAppointmentId(rs.getInt("appointment_id"));
-                entity.setPatientId(rs.getInt("patient_id"));
-                entity.setServiceId(rs.getInt("service_id"));
-                entity.setDoctorId(rs.getInt("doctor_id")); // <-- Retrieve doctor_id
-                entity.setDate(rs.getDate("date"));
-                entity.setStartTime(rs.getTime("start_time"));
-                entity.setEndTime(rs.getTime("end_time"));
-                entity.setStatus(rs.getString("status"));
-
-                entity.setPatientFirstName(rs.getString("patient_first_name"));
-                entity.setPatientLastName(rs.getString("patient_last_name"));
-                entity.setServiceName(rs.getString("service_name"));
-
-                list.add(entity);
+                list.add(mapEntity(rs));
             }
         } catch (SQLException e) {
             LOGGER.error("Error fetching appointments", e);
         }
         return list;
+    }
+
+    public List<PatientAppointmentEntity> getAppointmentsByDoctorId(int doctorId) {
+        List<PatientAppointmentEntity> list = new ArrayList<>();
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(GET_APPOINTMENTS_BY_DOCTOR)) {
+            ps.setInt(1, doctorId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(mapEntity(rs));
+                }
+            }
+        } catch (SQLException e) {
+            LOGGER.error("Error fetching appointments by doctor", e);
+        }
+        return list;
+    }
+
+    public String getAppointmentStatusById(int appointmentId) {
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(GET_STATUS_BY_APPOINTMENT_ID)) {
+            ps.setInt(1, appointmentId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getString("status");
+                }
+            }
+        } catch (SQLException e) {
+            LOGGER.error("Error fetching appointment status", e);
+        }
+        return null;
+    }
+
+    private PatientAppointmentEntity mapEntity(ResultSet rs) throws SQLException {
+        PatientAppointmentEntity entity = new PatientAppointmentEntity();
+        entity.setAppointmentId(rs.getInt("appointment_id"));
+        entity.setPatientId(rs.getInt("patient_id"));
+        entity.setServiceId(rs.getInt("service_id"));
+        entity.setDoctorId(rs.getInt("doctor_id"));
+        entity.setDate(rs.getDate("date"));
+        entity.setStartTime(rs.getTime("start_time"));
+        entity.setEndTime(rs.getTime("end_time"));
+        entity.setStatus(rs.getString("status"));
+        entity.setPatientFirstName(rs.getString("patient_first_name"));
+        entity.setPatientLastName(rs.getString("patient_last_name"));
+        entity.setServiceName(rs.getString("service_name"));
+        return entity;
     }
 }

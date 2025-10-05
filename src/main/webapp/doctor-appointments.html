@@ -18,8 +18,8 @@
     header{background:var(--accent);color:#fff;padding:1rem 2rem;display:flex;justify-content:space-between;align-items:center;}
     header h1{margin:0;font-size:1.5rem;}
     header button{background:#fff;color:var(--accent);border:none;padding:0.5rem 1rem;border-radius:0.5rem;cursor:pointer;font-weight:600;}
-    main{padding:2rem;max-width:800px;margin:auto;}
-    table{width:100%;border-collapse:collapse;background:var(--card);box-shadow:0 1px 3px rgba(0,0,0,0.1);}
+    main{padding:2rem;max-width:900px;margin:auto;}
+    table{width:100%;border-collapse:collapse;background:var(--card);box-shadow:0 1px 3px rgba(0,0,0,0.1);margin-bottom:2rem;}
     th,td{padding:0.75rem 1rem;text-align:left;border-bottom:1px solid #e5e7eb;}
     th{background:#f9fafb;font-weight:600;}
     tr:hover td{background:#f3f4f6;}
@@ -55,11 +55,28 @@
   <button id="backBtn">Back to Doctors</button>
 </header>
 <main>
+  <h2>Schedule Appointments</h2>
   <table id="scheduleTable">
     <thead>
     <tr>
       <th>Start Time</th>
       <th>End Time</th>
+      <th>Actions</th>
+    </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <h2>Patient Service Appointments</h2>
+  <table id="patientAppointmentsTable">
+    <thead>
+    <tr>
+      <th>Patient</th>
+      <th>Service</th>
+      <th>Date</th>
+      <th>Start</th>
+      <th>End</th>
+      <th>Status</th>
       <th>Actions</th>
     </tr>
     </thead>
@@ -99,10 +116,12 @@
 <script>
   const API_BASE = 'http://localhost:8080/healthcare/api/doctor-schedules';
   const APPOINTMENTS_API = 'http://localhost:8080/healthcare/api/appointments';
+  const PATIENT_APPOINTMENTS_API = 'http://localhost:8080/healthcare/api/patient-appointments';
   const PATIENT_API = 'http://localhost:8080/healthcare/api/patients';
   const urlParams = new URLSearchParams(window.location.search);
-  const doctorId = urlParams.get('doctorId');
-  const tableBody = document.querySelector('#scheduleTable tbody');
+  const doctorId = Number(urlParams.get('doctorId'));
+  const scheduleTableBody = document.querySelector('#scheduleTable tbody');
+  const patientAppointmentsTableBody = document.querySelector('#patientAppointmentsTable tbody');
   const modalBackdrop = document.getElementById('modalBackdrop');
   const cancelBtn = document.getElementById('cancelBtn');
   const saveBtn = document.getElementById('saveBtn');
@@ -112,191 +131,247 @@
   const phoneGroup = document.getElementById('phoneGroup');
 
   const form = {
-      scheduleId: document.getElementById('scheduleId'),
-      patientId: document.getElementById('patientId'),
-      appointmentId: document.getElementById('appointmentId'),
-      patientPhone: document.getElementById('patientPhone'),
-      firstName: document.getElementById('firstName'),
-      lastName: document.getElementById('lastName'),
-      dob: document.getElementById('dob'),
-      email: document.getElementById('email'),
-      phone: document.getElementById('phone')
+    scheduleId: document.getElementById('scheduleId'),
+    patientId: document.getElementById('patientId'),
+    appointmentId: document.getElementById('appointmentId'),
+    patientPhone: document.getElementById('patientPhone'),
+    firstName: document.getElementById('firstName'),
+    lastName: document.getElementById('lastName'),
+    dob: document.getElementById('dob'),
+    email: document.getElementById('email'),
+    phone: document.getElementById('phone')
   };
 
+  const todayStr = new Date().toISOString().split('T')[0];
+
   async function loadSchedules() {
-      try {
-          const resp = await fetch(`${API_BASE}/today/${doctorId}`);
-          if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-          const schedules = await resp.json();
-          tableBody.innerHTML = '';
+    try {
+      const resp = await fetch(`${API_BASE}/today/${doctorId}`);
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const schedules = await resp.json();
+      scheduleTableBody.innerHTML = '';
 
-          // Fetch all appointments once
-          const allAppointmentsResp = await fetch(APPOINTMENTS_API);
-          const allAppointments = allAppointmentsResp.ok ? await allAppointmentsResp.json() : [];
+      const allAppointmentsResp = await fetch(APPOINTMENTS_API);
+      const allAppointments = allAppointmentsResp.ok ? await allAppointmentsResp.json() : [];
 
-          for (const s of schedules) {
-              // Filter appointments for this schedule
-              const appointments = allAppointments.filter(a => a.scheduleId === s.id && a.doctorId === Number(doctorId));
-              const tr = document.createElement('tr');
+      for (const s of schedules) {
+        const appointments = allAppointments.filter(a => a.scheduleId === s.id && Number(a.doctorId) === doctorId);
+        const tr = document.createElement('tr');
 
-              let btnHTML;
-              if (appointments.length > 0) {
-                  const app = appointments[0];
-                  tr.dataset.appointmentId = app.appointmentId;
-                  tr.dataset.patientId = app.patientId;
+        let btnHTML;
+        if (appointments.length > 0) {
+          const app = appointments[0];
+          tr.dataset.appointmentId = app.appointmentId;
+          tr.dataset.patientId = app.patientId;
 
-                  btnHTML = `<button class="view">View</button>`;
-                  if (app.status === 'COMPLETED') {
-                      btnHTML += `<button class="completed">Completed</button>`;
-                  } else {
-                      btnHTML += `<button class="start">Start</button>`;
-                  }
-              } else {
-                  btnHTML = `<button class="create">Create</button>`;
-              }
-
-              tr.innerHTML = `<td>${s.startTime}</td>
-                              <td>${s.endTime}</td>
-                              <td class="actions">${btnHTML}</td>`;
-
-              tableBody.appendChild(tr);
-
-              if (appointments.length > 0) {
-                  const app = appointments[0];
-                  tr.querySelector('.view').onclick = () => openModal(s.id, true, app);
-
-                  if (app.status === 'COMPLETED') {
-                      tr.querySelector('.completed').onclick = () => {
-                          const appId = app.appointmentId;
-                          window.location.href = `patient-appointment.html?appointmentId=${appId}&patientId=${app.patientId}`;
-                      };
-                  } else {
-                      tr.querySelector('.start').onclick = async () => {
-                          try {
-                              const appId = app.appointmentId;
-                              await fetch(`${APPOINTMENTS_API}/${appId}/status?status=ONGOING`, { method:'PATCH' });
-                              window.location.href = `patient-appointment.html?appointmentId=${appId}&patientId=${app.patientId}`;
-                          } catch(err) {
-                              alert('Failed to start appointment');
-                          }
-                      };
-                  }
-              } else {
-                  tr.querySelector('.create').onclick = () => openModal(s.id, false);
-              }
+          btnHTML = `<button class="view">View</button>`;
+          if (app.status === 'COMPLETED') {
+            btnHTML += `<button class="completed">Completed</button>`;
+          } else {
+            btnHTML += `<button class="start">Start</button>`;
           }
-      } catch(err) {
-          console.error('Failed to load schedules', err);
+        } else {
+          btnHTML = `<button class="create">Create</button>`;
+        }
+
+        tr.innerHTML = `<td>${s.startTime}</td>
+                        <td>${s.endTime}</td>
+                        <td class="actions">${btnHTML}</td>`;
+
+        scheduleTableBody.appendChild(tr);
+
+        if (appointments.length > 0) {
+          const app = appointments[0];
+          tr.querySelector('.view').onclick = () => openModal(s.id, true, app);
+
+          if (app.status === 'COMPLETED') {
+            tr.querySelector('.completed').onclick = () => {
+              const appId = app.appointmentId;
+              window.location.href = `patient-appointment.html?appointmentId=${appId}&patientId=${app.patientId}`;
+            };
+          } else {
+            tr.querySelector('.start').onclick = async () => {
+              try {
+                const appId = app.appointmentId;
+                await fetch(`${APPOINTMENTS_API}/${appId}/status?status=ONGOING`, { method:'PATCH' });
+                window.location.href = `patient-appointment.html?appointmentId=${appId}&patientId=${app.patientId}`;
+              } catch(err) {
+                alert('Failed to start appointment');
+              }
+            };
+          }
+        } else {
+          tr.querySelector('.create').onclick = () => openModal(s.id, false);
+        }
       }
+    } catch(err) {
+      console.error('Failed to load schedules', err);
+    }
+  }
+
+  async function loadPatientAppointments() {
+    try {
+      const resp = await fetch(`${PATIENT_APPOINTMENTS_API}/${doctorId}`);
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const apps = await resp.json();
+
+      patientAppointmentsTableBody.innerHTML = '';
+
+      const todayAppointments = apps.filter(app => {
+        const appDateStr = app.date.split('T')[0];
+        return appDateStr === todayStr && Number(app.doctorId) === doctorId;
+      });
+
+      for (const app of todayAppointments) {
+        const tr = document.createElement('tr');
+        tr.dataset.appointmentId = app.appointmentId;
+        tr.dataset.patientId = app.patientId;
+
+        let btnHTML = `<button class="view">View</button>`;
+        if (app.status === 'COMPLETED') {
+          btnHTML += `<button class="completed">Completed</button>`;
+        } else {
+          btnHTML += `<button class="start">Start</button>`;
+        }
+
+        tr.innerHTML = `
+          <td>${app.patientFirstName} ${app.patientLastName}</td>
+          <td>${app.serviceName}</td>
+          <td>${app.date}</td>
+          <td>${app.startTime}</td>
+          <td>${app.endTime}</td>
+          <td>${app.status}</td>
+          <td class="actions">${btnHTML}</td>
+        `;
+
+        patientAppointmentsTableBody.appendChild(tr);
+
+        tr.querySelector('.view').onclick = () => openModal(null, true, app);
+
+        const targetUrl = `service-appointment.html?appointmentId=${app.appointmentId}&patientId=${app.patientId}&serviceId=${app.serviceId}`;
+        if (app.status === 'COMPLETED') {
+          tr.querySelector('.completed').onclick = () => { window.location.href = targetUrl; };
+        } else {
+          tr.querySelector('.start').onclick = () => { window.location.href = targetUrl; };
+        }
+      }
+    } catch(err) {
+      console.error('Failed to load patient appointments', err);
+    }
   }
 
   function openModal(scheduleId, isView=false, appointment=null) {
-      formError.style.display = 'none';
-      patientInfoDiv.style.display = 'none';
-      phoneGroup.style.display = isView ? 'none' : 'block';
-      saveBtn.style.display = isView ? 'none' : 'inline-block';
+    formError.style.display = 'none';
+    patientInfoDiv.style.display = 'none';
+    phoneGroup.style.display = isView ? 'none' : 'block';
+    saveBtn.style.display = isView ? 'none' : 'inline-block';
 
-      form.scheduleId.value = scheduleId;
-      form.patientId.value = isView ? appointment.patientId : '';
-      form.appointmentId.value = isView ? appointment.appointmentId : '';
-      form.patientPhone.value = '';
+    form.scheduleId.value = scheduleId || '';
+    form.patientId.value = isView ? appointment.patientId : '';
+    form.appointmentId.value = isView ? appointment.appointmentId : '';
+    form.patientPhone.value = '';
 
-      form.firstName.textContent = '';
-      form.lastName.textContent = '';
-      form.dob.textContent = '';
-      form.email.textContent = '';
-      form.phone.textContent = '';
+    form.firstName.textContent = '';
+    form.lastName.textContent = '';
+    form.dob.textContent = '';
+    form.email.textContent = '';
+    form.phone.textContent = '';
 
-      if (isView) {
-          fetch(`${APPOINTMENTS_API}/${appointment.appointmentId}`)
-              .then(r => r.json())
-              .then(app => {
-                  fetch(`${PATIENT_API}/${app.patientId}`)
-                      .then(r => r.json())
-                      .then(patient => {
-                          form.firstName.textContent = patient.firstName;
-                          form.lastName.textContent = patient.lastName;
-                          form.dob.textContent = patient.dateOfBirth;
-                          form.email.textContent = patient.email;
-                          form.phone.textContent = patient.phone;
-                          patientInfoDiv.style.display = 'block';
-                      });
-              })
-              .catch(() => {
-                  formError.textContent = 'Failed to load patient info';
-                  formError.style.display = 'block';
-              });
-      }
+    if (isView && appointment) {
+      fetch(`${APPOINTMENTS_API}/${appointment.appointmentId}`)
+        .then(r => r.json())
+        .then(app => {
+          fetch(`${PATIENT_API}/${app.patientId}`)
+            .then(r => r.json())
+            .then(patient => {
+              form.firstName.textContent = patient.firstName;
+              form.lastName.textContent = patient.lastName;
+              form.dob.textContent = patient.dateOfBirth;
+              form.email.textContent = patient.email;
+              form.phone.textContent = patient.phone;
+              patientInfoDiv.style.display = 'block';
+            });
+        })
+        .catch(() => {
+          formError.textContent = 'Failed to load patient info';
+          formError.style.display = 'block';
+        });
+    }
 
-      modalBackdrop.style.display = 'flex';
-      modalBackdrop.setAttribute('aria-hidden','false');
+    modalBackdrop.style.display = 'flex';
+    modalBackdrop.setAttribute('aria-hidden','false');
   }
 
   function closeModal() {
-      modalBackdrop.style.display = 'none';
-      modalBackdrop.setAttribute('aria-hidden','true');
+    modalBackdrop.style.display = 'none';
+    modalBackdrop.setAttribute('aria-hidden','true');
   }
 
   cancelBtn.addEventListener('click', closeModal);
 
   findBtn.addEventListener('click', async () => {
-      formError.style.display = 'none';
-      const phone = form.patientPhone.value.trim();
-      if (!phone) {
-          formError.textContent = 'Please enter a phone number';
-          formError.style.display = 'block';
-          return;
-      }
-      try {
-          const resp = await fetch(`${PATIENT_API}/visits/${encodeURIComponent(phone)}`);
-          if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-          const patient = await resp.json();
-          form.patientId.value = patient.id;
-          form.firstName.textContent = patient.firstName;
-          form.lastName.textContent = patient.lastName;
-          form.dob.textContent = patient.dateOfBirth;
-          form.email.textContent = patient.email;
-          form.phone.textContent = patient.phone;
-          patientInfoDiv.style.display = 'block';
-      } catch(err) {
-          formError.textContent = 'Patient not found';
-          formError.style.display = 'block';
-      }
+    formError.style.display = 'none';
+    const phone = form.patientPhone.value.trim();
+    if (!phone) {
+      formError.textContent = 'Please enter a phone number';
+      formError.style.display = 'block';
+      return;
+    }
+    try {
+      const resp = await fetch(`${PATIENT_API}/visits/${encodeURIComponent(phone)}`);
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const patient = await resp.json();
+
+      form.patientId.value = patient.id ?? patient.patientId ?? '';
+      if (!form.patientId.value) throw new Error('Patient ID not found');
+
+      form.firstName.textContent = patient.firstName ?? '';
+      form.lastName.textContent = patient.lastName ?? '';
+      form.dob.textContent = patient.dateOfBirth ?? '';
+      form.email.textContent = patient.email ?? '';
+      form.phone.textContent = patient.phone ?? '';
+      patientInfoDiv.style.display = 'block';
+    } catch(err) {
+      console.error("Patient fetch error:", err);
+      formError.textContent = 'Patient not found';
+      formError.style.display = 'block';
+    }
   });
 
   saveBtn.addEventListener('click', async () => {
-      formError.style.display = 'none';
-      const patientId = form.patientId.value;
-      const scheduleId = form.scheduleId.value;
-      if (!patientId) {
-          formError.textContent = 'Please find a patient first';
-          formError.style.display = 'block';
-          return;
-      }
-      const payload = {
-          doctorId: Number(doctorId),
-          scheduleId: Number(scheduleId),
-          patientId: Number(patientId),
-          status: 'SCHEDULED'
-      };
-      try {
-          const resp = await fetch(APPOINTMENTS_API, {
-              method: 'POST',
-              headers: { 'Content-Type':'application/json' },
-              body: JSON.stringify(payload)
-          });
-          if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-          const created = await resp.json();
-          window.location.href = `patient-appointment.html?appointmentId=${created.appointmentId}&patientId=${patientId}`;
-      } catch(err) {
-          formError.textContent = 'Failed to create appointment';
-          formError.style.display = 'block';
-      }
+    formError.style.display = 'none';
+    const patientId = form.patientId.value;
+    const scheduleId = form.scheduleId.value;
+    if (!patientId) {
+      formError.textContent = 'Please find a patient first';
+      formError.style.display = 'block';
+      return;
+    }
+    const payload = {
+      doctorId: Number(doctorId),
+      scheduleId: Number(scheduleId),
+      patientId: Number(patientId),
+      status: 'SCHEDULED'
+    };
+    try {
+      const resp = await fetch(APPOINTMENTS_API, {
+        method: 'POST',
+        headers: { 'Content-Type':'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const created = await resp.json();
+      window.location.href = `patient-appointment.html?appointmentId=${created.appointmentId}&patientId=${patientId}`;
+    } catch(err) {
+      formError.textContent = 'Failed to create appointment';
+      formError.style.display = 'block';
+    }
   });
 
   document.getElementById('backBtn').addEventListener('click', () => window.location.href='doctors.html');
 
   loadSchedules();
+  loadPatientAppointments();
 </script>
 </body>
 </html>
