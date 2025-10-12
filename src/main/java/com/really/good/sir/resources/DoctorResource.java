@@ -45,6 +45,19 @@ public class DoctorResource {
         return Response.ok(doctorDTOs).build();
     }
 
+    // 🔹 NEW ENDPOINT: Get doctor ID by credential ID
+    @GET
+    @Path("/by-credential/{credentialId}")
+    public Response getDoctorIdByCredential(@PathParam("credentialId") final int credentialId) {
+        final int doctorId = doctorDAO.getDoctorIdByCredentialId(credentialId);
+        if (doctorId == -1) {
+            return Response.status(Response.Status.NOT_FOUND)
+                    .entity("Doctor not found for credential ID: " + credentialId)
+                    .build();
+        }
+        return Response.ok(doctorId).build();
+    }
+
     @POST
     public Response createDoctor(final DoctorDTO doctorDTO, @Context final UriInfo uriInfo) {
         final DoctorEntity doctorEntity = doctorConverter.convert(doctorDTO);

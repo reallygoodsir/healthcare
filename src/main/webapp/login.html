@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Healthcare — Login</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #1E3A8A;
+      --primary-dark: #1E40AF;
+      --text-light: #ffffff;
+      --card-bg: #ffffff;
+      --card-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+
+    header {
+      background: var(--primary);
+      color: var(--text-light);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px 30px;
+    }
+
+    .logo { font-weight: 700; font-size: 1.5rem; }
+    nav ul { display: flex; list-style: none; gap: 20px; }
+    nav a {
+      color: var(--text-light);
+      text-decoration: none;
+      font-weight: 600;
+    }
+    nav a:hover { opacity: 0.8; }
+
+    main {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: calc(100vh - 70px);
+      background: linear-gradient(135deg, #1E3A8A 0%, #3B82F6 100%);
+      color: var(--text-light);
+      padding: 20px;
+    }
+
+    .login-card {
+      background: var(--card-bg);
+      color: #1e3a8a;
+      border-radius: 12px;
+      box-shadow: var(--card-shadow);
+      padding: 40px 30px;
+      width: 100%;
+      max-width: 400px;
+    }
+
+    .login-card h2 {
+      text-align: center;
+      color: var(--primary-dark);
+      margin-bottom: 20px;
+    }
+
+    .form-group { margin-bottom: 15px; }
+
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: 600;
+      color: #1E3A8A;
+    }
+
+    input[type="email"], input[type="password"] {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      font-size: 1rem;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      background: var(--primary);
+      color: var(--text-light);
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    button:hover { background: var(--primary-dark); }
+
+    .message {
+      margin-top: 15px;
+      text-align: center;
+      font-size: 0.9rem;
+    }
+
+    .message.error { color: #dc2626; }
+    .message.success { color: #16a34a; }
+
+    footer {
+      background: #e0e7ff;
+      color: #1e3a8a;
+      text-align: center;
+      padding: 15px;
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Healthcare</div>
+  <nav>
+    <ul>
+      <li><a href="http://localhost:8080/healthcare/">Home</a></li>
+      <li><a href="login.html">Login</a></li>
+    </ul>
+  </nav>
+</header>
+
+<main>
+  <div class="login-card">
+    <h2>Login</h2>
+    <form id="loginForm">
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email" required placeholder="Enter your email">
+      </div>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" required placeholder="Enter your password">
+      </div>
+      <button type="submit">Login</button>
+      <div id="message" class="message"></div>
+    </form>
+  </div>
+</main>
+
+<footer>
+  &copy; <span id="year"></span> Healthcare. All rights reserved.
+</footer>
+
+<script>
+  document.getElementById('year').textContent = new Date().getFullYear();
+
+  document.getElementById('loginForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const messageEl = document.getElementById('message');
+    messageEl.textContent = 'Logging in...';
+    messageEl.className = 'message';
+
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value.trim();
+
+    try {
+      const response = await fetch('http://localhost:8080/healthcare/api/authorization/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+        credentials: 'include' // important to allow cookies
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        messageEl.textContent = 'Login successful!';
+        messageEl.className = 'message success';
+        console.log('User authorized:', data);
+
+        // Redirect based on role
+        switch(data.role) {
+          case 'ADMIN':
+            window.location.href = "http://localhost:8080/healthcare/admin/admin.html";
+            break;
+          case 'CALL_CENTER_AGENT':
+            window.location.href = "http://localhost:8080/healthcare/home-agent.html";
+            break;
+          case 'DOCTOR':
+            window.location.href = "http://localhost:8080/healthcare/home-doctor.html";
+            break;
+          case 'PATIENT':
+            window.location.href = "http://localhost:8080/healthcare/patient-home.html";
+            break;
+          default:
+            messageEl.textContent = 'Unknown role. Cannot redirect.';
+            messageEl.className = 'message error';
+        }
+      } else {
+        const errorText = await response.text();
+        messageEl.textContent = 'Invalid email or password.';
+        messageEl.className = 'message error';
+        console.error('Authorization failed:', errorText);
+      }
+    } catch (error) {
+      messageEl.textContent = 'Server error. Please try again later.';
+      messageEl.className = 'message error';
+      console.error('Network error:', error);
+    }
+  });
+</script>
+
+</body>
+</html>

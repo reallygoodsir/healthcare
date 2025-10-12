@@ -45,7 +45,6 @@
         main{padding:20px;}
         #content h2{margin-bottom:15px;color:var(--primary-dark)}
 
-        /* Doctors grid layout */
         .doctorEntities-grid {
           display: grid;
           grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -61,9 +60,7 @@
           transition: transform 0.3s ease;
         }
 
-        .doctorEntity-card:hover {
-          transform: translateY(-5px);
-        }
+        .doctorEntity-card:hover { transform: translateY(-5px); }
 
         .doctorEntity-image {
           width: 100px;
@@ -75,52 +72,15 @@
           border: 3px solid #e0e7ff;
         }
 
-        .doctorEntity-name {
-          font-size: 1.2rem;
-          font-weight: 600;
-          color: var(--primary);
-          text-align: center;
-          margin-bottom: 5px;
-        }
-
-        .doctorEntity-specialty {
-          color: #64748B;
-          text-align: center;
-          margin-bottom: 15px;
-          font-style: italic;
-        }
-
-        .doctorEntity-details {
-          margin-top: 15px;
-          border-top: 1px solid #e2e8f0;
-          padding-top: 15px;
-        }
-
-        .doctorEntity-detail {
-          display: flex;
-          margin-bottom: 12px;
-          font-size: 0.9rem;
-          line-height: 1.4;
-        }
-
-        .doctorEntity-detail strong {
-          min-width: 90px;
-          color: #475569;
-        }
+        .doctorEntity-name { font-size: 1.2rem; font-weight: 600; color: var(--primary); text-align: center; margin-bottom: 5px; }
+        .doctorEntity-specialty { color: #64748B; text-align: center; margin-bottom: 15px; font-style: italic; }
+        .doctorEntity-details { margin-top: 15px; border-top: 1px solid #e2e8f0; padding-top: 15px; }
+        .doctorEntity-detail { display: flex; margin-bottom: 12px; font-size: 0.9rem; line-height: 1.4; }
+        .doctorEntity-detail strong { min-width: 90px; color: #475569; }
 
         footer{background:#e0e7ff;color:#1e3a8a;text-align:center;padding:15px;margin-top:20px;}
-
-        .loading {
-          text-align: center;
-          padding: 20px;
-          color: #64748B;
-        }
-
-        .error {
-          color: #EF4444;
-          padding: 20px;
-          text-align: center;
-        }
+        .loading { text-align: center; padding: 20px; color: #64748B; }
+        .error { color: #EF4444; padding: 20px; text-align: center; }
     </style>
 </head>
 <body>
@@ -130,6 +90,7 @@
     <nav>
         <ul>
             <li><a href="#" onclick="showHome()">Home</a></li>
+            <li><a href="#" id="loginLink">Login</a></li>
             <li><a href="#" onclick="loadDoctors()">Doctors</a></li>
             <li><a href="#" onclick="loadServices()">Services</a></li>
             <li><a href="#" onclick="loadContact()">Contact</a></li>
@@ -145,9 +106,7 @@
 </div>
 
 <main>
-    <div id="content">
-        <!-- Dynamic content will be loaded here -->
-    </div>
+    <div id="content"></div>
 </main>
 
 <footer>
@@ -166,22 +125,13 @@
     }
 
     async function loadDoctors(){
-        document.getElementById('content').innerHTML = `
-            <h2>Our Doctors</h2>
-            <div class="loading">Loading doctors...</div>
-        `;
-
+        document.getElementById('content').innerHTML = `<h2>Our Doctors</h2><div class="loading">Loading doctors...</div>`;
         try {
             const response = await fetch('http://localhost:8080/healthcare/api/doctors');
             const doctors = await response.json();
 
-            let doctorsHTML = `
-                <h2>Our Doctors</h2>
-                <div class="doctorEntities-grid">
-            `;
-
+            let doctorsHTML = `<h2>Our Doctors</h2><div class="doctorEntities-grid">`;
             for (const doctor of doctors) {
-                // Get specialization name
                 let specializationName = 'General Practitioner';
                 if (doctor.specializationId) {
                     try {
@@ -190,9 +140,7 @@
                             const specData = await specResp.json();
                             specializationName = specData.name || specializationName;
                         }
-                    } catch(e) {
-                        console.warn('Failed to load specialization for doctor', doctor.id, e);
-                    }
+                    } catch(e) { console.warn('Failed to load specialization for doctor', doctor.id, e); }
                 }
 
                 let imageSrc = 'https://via.placeholder.com/100?text=No+Image';
@@ -206,41 +154,74 @@
                         <img src="${imageSrc}" alt="${doctor.firstName} ${doctor.lastName}" class="doctorEntity-image">
                         <h3 class="doctorEntity-name">${doctor.firstName} ${doctor.lastName}</h3>
                         <p class="doctorEntity-specialty">${specializationName}</p>
-
                         <div class="doctorEntity-details">
-                            <div class="doctorEntity-detail">
-                                <strong>Email:</strong> ${doctor.email || 'N/A'}
-                            </div>
-                            <div class="doctorEntity-detail">
-                                <strong>Phone:</strong> ${doctor.phone || 'N/A'}
-                            </div>
-                            <div class="doctorEntity-detail">
-                                <strong>Specialty:</strong> ${specializationName}
-                            </div>
+                            <div class="doctorEntity-detail"><strong>Email:</strong> ${doctor.email || 'N/A'}</div>
+                            <div class="doctorEntity-detail"><strong>Phone:</strong> ${doctor.phone || 'N/A'}</div>
+                            <div class="doctorEntity-detail"><strong>Specialty:</strong> ${specializationName}</div>
                         </div>
                     </div>
                 `;
             }
-
             doctorsHTML += `</div>`;
             document.getElementById('content').innerHTML = doctorsHTML;
-
         } catch(error) {
             console.error('Error loading doctors:', error);
-            document.getElementById('content').innerHTML = `
-                <h2>Our Doctors</h2>
-                <div class="error">Error loading doctors. Please try again later.</div>
-            `;
+            document.getElementById('content').innerHTML = `<h2>Our Doctors</h2><div class="error">Error loading doctors. Please try again later.</div>`;
         }
     }
 
-    function loadServices(){
-      document.getElementById('content').innerHTML = '<h2>Services</h2><p>Services information will be displayed here.</p>';
+    function loadServices(){ document.getElementById('content').innerHTML = '<h2>Services</h2><p>Services information will be displayed here.</p>'; }
+    function loadContact(){ document.getElementById('content').innerHTML = '<h2>Contact</h2><p>Contact information will be displayed here.</p>'; }
+
+    function getCookie(name){
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+        return null;
     }
 
-    function loadContact(){
-      document.getElementById('content').innerHTML = '<h2>Contact</h2><p>Contact information will be displayed here.</p>';
+    async function checkSessionAndRedirect(){
+        const sessionId = getCookie('session_id');
+        if (!sessionId){
+            window.location.href = 'http://localhost:8080/healthcare/login.html';
+            return;
+        }
+
+        try {
+            const resp = await fetch('http://localhost:8080/healthcare/api/authorization/check-session',{
+                method:'POST',
+                headers:{'Content-Type':'application/json'},
+                body:JSON.stringify({sessionId:parseInt(sessionId)})
+            });
+
+            if (!resp.ok){
+                window.location.href = 'http://localhost:8080/healthcare/login.html';
+                return;
+            }
+
+            const data = await resp.json();
+
+            if (data && data.role){
+                switch(data.role){
+                    case 'ADMIN': window.location.href='http://localhost:8080/healthcare/admin/admin.html'; break;
+                    case 'CALL_CENTER_AGENT': window.location.href='http://localhost:8080/healthcare/home-agent.html'; break;
+                    case 'DOCTOR': window.location.href='http://localhost:8080/healthcare/home-doctor.html'; break;
+                    case 'PATIENT': window.location.href='http://localhost:8080/healthcare/patient-home.html'; break;
+                    default: window.location.href='http://localhost:8080/healthcare/login.html';
+                }
+            } else {
+                window.location.href='http://localhost:8080/healthcare/login.html';
+            }
+        } catch(e){
+            console.error('Error checking session:', e);
+            window.location.href='http://localhost:8080/healthcare/login.html';
+        }
     }
+
+    document.getElementById('loginLink').addEventListener('click', e=>{
+        e.preventDefault();
+        checkSessionAndRedirect();
+    });
 
     // Default view
     showHome();

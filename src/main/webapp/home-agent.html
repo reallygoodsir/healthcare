@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>Healthcare — Call Center Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+          --primary: #1E3A8A;
+          --primary-dark: #1E40AF;
+          --text-light: #ffffff;
+          --bg-light: #f4f7fb;
+          --shadow: 0 4px 12px rgba(0,0,0,0.1);
+          font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+          background: var(--bg-light);
+          min-height: 100vh;
+          display: flex;
+          flex-direction: column;
+        }
+
+        header {
+          background: var(--primary);
+          color: var(--text-light);
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 15px 30px;
+          box-shadow: var(--shadow);
+        }
+
+        .logo {
+          font-weight: 700;
+          font-size: 1.5rem;
+        }
+
+        .nav-buttons {
+          display: flex;
+          gap: 15px;
+          align-items: center;
+        }
+
+        .nav-button {
+          background: var(--text-light);
+          color: var(--primary);
+          border: none;
+          padding: 10px 20px;
+          border-radius: 8px;
+          font-size: 0.95rem;
+          font-weight: 600;
+          cursor: pointer;
+          text-decoration: none;
+          transition: background 0.3s ease, transform 0.2s ease;
+        }
+
+        .nav-button:hover {
+          background: #dbeafe;
+          transform: translateY(-2px);
+        }
+
+        main {
+          flex: 1;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          flex-direction: column;
+          text-align: center;
+          padding: 40px;
+        }
+
+        h1 {
+          color: var(--primary-dark);
+          margin-bottom: 10px;
+          font-size: 1.8rem;
+        }
+
+        p {
+          color: #475569;
+          font-size: 1rem;
+          margin-bottom: 20px;
+        }
+
+        footer {
+          background: #e0e7ff;
+          color: #1e3a8a;
+          text-align: center;
+          padding: 15px;
+          font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="logo">Healthcare</div>
+    <div class="nav-buttons" id="navButtons">
+        <button class="nav-button" id="logoutBtn">Log Out</button>
+        <a href="http://localhost:8080/healthcare/doctors.html" class="nav-button">Doctors</a>
+        <a href="http://localhost:8080/healthcare/service-appointments.html" class="nav-button">Service Appointments</a>
+    </div>
+</header>
+
+<main>
+    <h1>Welcome, Call Center Agent</h1>
+    <p>Use the buttons above to manage doctor data or service appointments.</p>
+</main>
+
+<footer>
+    &copy; <span id="year"></span> Healthcare. All rights reserved.
+</footer>
+
+<script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    // Get cookie by name
+    function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+        return null;
+    }
+
+    // Delete cookie
+    function deleteCookie(name) {
+        document.cookie = name + '=; Max-Age=0; path=/;';
+    }
+
+    // Check session
+    async function checkSession() {
+        const sessionId = getCookie('session_id');
+        if (!sessionId) {
+            window.location.href = 'http://localhost:8080/healthcare/';
+            return false;
+        }
+
+        try {
+            const response = await fetch('http://localhost:8080/healthcare/api/authorization/check-session', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ sessionId: parseInt(sessionId) })
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                if (data && data.role) {
+                    console.log('Session valid for role:', data.role);
+                    return true;
+                }
+            }
+
+            deleteCookie('session_id');
+            window.location.href = 'http://localhost:8080/healthcare/';
+        } catch (e) {
+            console.error('Session check failed:', e);
+            deleteCookie('session_id');
+            window.location.href = 'http://localhost:8080/healthcare/';
+        }
+
+        return false;
+    }
+
+    // Logout
+    async function logout() {
+        const sessionId = getCookie('session_id');
+        if (!sessionId) {
+            window.location.href = 'http://localhost:8080/healthcare/';
+            return;
+        }
+
+        try {
+            const response = await fetch(`http://localhost:8080/healthcare/api/authorization/${sessionId}`, {
+                method: 'DELETE'
+            });
+
+            if (response.ok) {
+                deleteCookie('session_id');
+                window.location.href = 'http://localhost:8080/healthcare/';
+            } else {
+                console.warn('Logout failed: session could not be deleted');
+            }
+        } catch (e) {
+            console.error('Logout error:', e);
+        }
+    }
+
+    // Attach logout button functionality
+    document.getElementById('logoutBtn').addEventListener('click', logout);
+
+    // Run session check on page load
+    document.addEventListener('DOMContentLoaded', async () => {
+        await checkSession();
+    });
+</script>
+
+</body>
+</html>
