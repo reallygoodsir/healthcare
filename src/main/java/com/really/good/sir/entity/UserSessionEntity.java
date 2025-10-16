@@ -39,4 +39,14 @@ public class UserSessionEntity {
     public void setRole(String role) {
         this.role = role;
     }
+
+    @Override
+    public String toString() {
+        return "UserSessionEntity{" +
+                "id=" + id +
+                ", credentialId=" + credentialId +
+                ", loginDateTime=" + loginDateTime +
+                ", role='" + role + '\'' +
+                '}';
+    }
 }

@@ -4,6 +4,7 @@ import com.really.good.sir.converter.DoctorConverter;
 import com.really.good.sir.dao.DoctorDAO;
 import com.really.good.sir.dto.DoctorDTO;
 import com.really.good.sir.entity.DoctorEntity;
+import jakarta.annotation.security.RolesAllowed;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -23,6 +24,7 @@ public class DoctorResource {
     private final DoctorDAO doctorDAO = new DoctorDAO();
 
     @GET
+    @RolesAllowed("DOCTOR")
     public Response getAllDoctors() {
         final List<DoctorEntity> doctorEntities = doctorDAO.getAllDoctors();
         final List<DoctorDTO> doctorDTOs = doctorConverter.convert(doctorEntities);
@@ -45,7 +47,6 @@ public class DoctorResource {
         return Response.ok(doctorDTOs).build();
     }
 
-    // 🔹 NEW ENDPOINT: Get doctor ID by credential ID
     @GET
     @Path("/by-credential/{credentialId}")
     public Response getDoctorIdByCredential(@PathParam("credentialId") final int credentialId) {
