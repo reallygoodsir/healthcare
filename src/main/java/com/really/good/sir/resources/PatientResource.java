@@ -2,14 +2,20 @@ package com.really.good.sir.resources;
 
 import com.really.good.sir.converter.PatientConverter;
 import com.really.good.sir.dao.PatientDAO;
+import com.really.good.sir.dao.UserSessionDAO;
+import com.really.good.sir.dto.ErrorDTO;
 import com.really.good.sir.dto.PatientDTO;
 import com.really.good.sir.entity.PatientEntity;
+import com.really.good.sir.entity.Role;
+import com.really.good.sir.entity.UserSessionEntity;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import javax.ws.rs.*;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.net.URI;
 import java.util.List;
 
 @Path("/patients")
@@ -19,9 +25,27 @@ public class PatientResource {
     private static final Logger LOGGER = LogManager.getLogger(PatientResource.class);
     private final PatientConverter patientConverter = new PatientConverter();
     private final PatientDAO patientDAO = new PatientDAO();
+    private final UserSessionDAO userSessionDAO = new UserSessionDAO();
 
+
+    // CUD = admin; R - {phone=cca, id=cca+doctor, all=admin}
     @GET
-    public Response getAllPatients() {
+    public Response getAllPatients(@CookieParam("session_id") final String sessionId) {
+        if (sessionId == null || sessionId.isEmpty()) {
+            final ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setMessage("Not authorized");
+            return Response.status(Response.Status.UNAUTHORIZED)
+                    .entity(errorDTO)
+                    .build();
+        }
+        UserSessionEntity session = userSessionDAO.getSessionById(Integer.parseInt(sessionId));
+        if (!Role.ADMIN.toString().equalsIgnoreCase(session.getRole())) {
+            final ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setMessage("Forbidden to access resource");
+            return Response.status(Response.Status.FORBIDDEN)
+                    .entity(errorDTO)
+                    .build();
+        }
         final List<PatientEntity> patientEntities = patientDAO.getAllPatients();
         final List<PatientDTO> patientDTOs = patientConverter.convert(patientEntities);
         return Response.ok(patientDTOs).build();
@@ -29,7 +53,22 @@ public class PatientResource {
 
     @GET
     @Path("/{patientId}")
-    public Response getPatientById(@PathParam("patientId") final int patientId) {
+    public Response getPatientById(@PathParam("patientId") final int patientId, @CookieParam("session_id") final String sessionId) {
+        if (sessionId == null || sessionId.isEmpty()) {
+            final ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setMessage("Not authorized");
+            return Response.status(Response.Status.UNAUTHORIZED)
+                    .entity(errorDTO)
+                    .build();
+        }
+        UserSessionEntity session = userSessionDAO.getSessionById(Integer.parseInt(sessionId));
+        if (!Role.CALL_CENTER_AGENT.toString().equalsIgnoreCase(session.getRole()) && !Role.DOCTOR.toString().equalsIgnoreCase(session.getRole())) {
+            final ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setMessage("Forbidden to access resource");
+            return Response.status(Response.Status.FORBIDDEN)
+                    .entity(errorDTO)
+                    .build();
+        }
         final PatientEntity patientEntity = patientDAO.getPatientById(patientId);
         final PatientDTO patientDTO = patientConverter.convert(patientEntity);
         return Response.ok(patientDTO).build();
@@ -37,35 +76,94 @@ public class PatientResource {
 
     @GET
     @Path("/visits/{phoneNumber}")
-    public Response getPatientByPhone(@PathParam("phoneNumber") final String phoneNumber) {
-        LOGGER.info("0");
+    public Response getPatientByPhone(@PathParam("phoneNumber") final String phoneNumber, @CookieParam("session_id") final String sessionId) {
+        if (sessionId == null || sessionId.isEmpty()) {
+            final ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setMessage("Not authorized");
+            return Response.status(Response.Status.UNAUTHORIZED)
+                    .entity(errorDTO)
+                    .build();
+        }
+        UserSessionEntity session = userSessionDAO.getSessionById(Integer.parseInt(sessionId));
+        if (!Role.CALL_CENTER_AGENT.toString().equalsIgnoreCase(session.getRole())) {
+            final ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setMessage("Forbidden to access resource");
+            return Response.status(Response.Status.FORBIDDEN)
+                    .entity(errorDTO)
+                    .build();
+        }
         final PatientEntity patientEntity = patientDAO.getPatientByPhone(phoneNumber);
-        LOGGER.info("1 {}", patientEntity);
         final PatientDTO patientDTO = patientConverter.convert(patientEntity);
-        LOGGER.info("2");
         return Response.ok(patientDTO).build();
     }
 
     @POST
-    public Response createPatient(final PatientDTO requestPatientDTO) {
+    public Response createPatient(final PatientDTO requestPatientDTO, @CookieParam("session_id") final String sessionId) {
+        if (sessionId == null || sessionId.isEmpty()) {
+            final ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setMessage("Not authorized");
+            return Response.status(Response.Status.UNAUTHORIZED)
+                    .entity(errorDTO)
+                    .build();
+        }
+        UserSessionEntity session = userSessionDAO.getSessionById(Integer.parseInt(sessionId));
+        if (!Role.ADMIN.toString().equalsIgnoreCase(session.getRole())) {
+            final ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setMessage("Forbidden to access resource");
+            return Response.status(Response.Status.FORBIDDEN)
+                    .entity(errorDTO)
+                    .build();
+        }
         final PatientEntity patientEntity = patientConverter.convert(requestPatientDTO);
         final PatientEntity createdEntity = patientDAO.createPatient(patientEntity);
         final PatientDTO responsePatientDTO = patientConverter.convert(createdEntity);
-        return Response.ok(responsePatientDTO).build();
+        final URI location = URI.create("/healthcare/api/patients/" + createdEntity.getId());
+        return Response.created(location)
+                .entity(responsePatientDTO)
+                .build();
     }
 
     @PUT
-    public Response updatePatient(final PatientDTO requestPatientDTO) {
+    public Response updatePatient(final PatientDTO requestPatientDTO, @CookieParam("session_id") final String sessionId) {
+        if (sessionId == null || sessionId.isEmpty()) {
+            final ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setMessage("Not authorized");
+            return Response.status(Response.Status.UNAUTHORIZED)
+                    .entity(errorDTO)
+                    .build();
+        }
+        UserSessionEntity session = userSessionDAO.getSessionById(Integer.parseInt(sessionId));
+        if (!Role.ADMIN.toString().equalsIgnoreCase(session.getRole())) {
+            final ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setMessage("Forbidden to access resource");
+            return Response.status(Response.Status.FORBIDDEN)
+                    .entity(errorDTO)
+                    .build();
+        }
         final PatientEntity patientEntity = patientConverter.convert(requestPatientDTO);
         final boolean isPatientUpdated = patientDAO.updatePatient(patientEntity);
-        LOGGER.info("Is patient updated [{}]", isPatientUpdated);
         final PatientDTO responsePatientDTO = patientConverter.convert(patientEntity);
         return Response.ok(responsePatientDTO).build();
     }
 
     @DELETE
     @Path("/{patientId}")
-    public Response deletePatient(@PathParam("patientId") final int patientId) {
+    public Response deletePatient(@PathParam("patientId") final int patientId, @CookieParam("session_id") final String sessionId) {
+        if (sessionId == null || sessionId.isEmpty()) {
+            final ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setMessage("Not authorized");
+            return Response.status(Response.Status.UNAUTHORIZED)
+                    .entity(errorDTO)
+                    .build();
+        }
+        UserSessionEntity session = userSessionDAO.getSessionById(Integer.parseInt(sessionId));
+        if (!Role.ADMIN.toString().equalsIgnoreCase(session.getRole())) {
+            final ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setMessage("Forbidden to access resource");
+            return Response.status(Response.Status.FORBIDDEN)
+                    .entity(errorDTO)
+                    .build();
+        }
         final boolean isPatientDeleted = patientDAO.deletePatient(patientId);
         LOGGER.info("Is patient deleted [{}]", isPatientDeleted);
         return Response.noContent().build();

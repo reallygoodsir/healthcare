@@ -32,7 +32,6 @@
     .actions .start:hover{background:#d97706;}
     .actions .completed{background:#6b7280;color:#fff;}
     .actions .completed:hover{background:#4b5563;}
-    /* Modal */
     #modalBackdrop{position:fixed;inset:0;background:rgba(0,0,0,0.5);display:none;align-items:center;justify-content:center;z-index:1000;}
     #scheduleModal{background:#fff;border-radius:0.75rem;max-width:400px;width:100%;padding:1.5rem;box-shadow:0 10px 25px rgba(0,0,0,0.2);}
     #scheduleModal h2{margin-top:0;font-size:1.25rem;}
@@ -84,7 +83,6 @@
   </table>
 </main>
 
-<!-- Modal -->
 <div id="modalBackdrop" aria-hidden="true">
   <div id="scheduleModal">
     <h2 id="modalTitle">Appointment</h2>
@@ -164,6 +162,7 @@
           tr.dataset.appointmentId = app.appointmentId;
           tr.dataset.patientId = app.patientId;
 
+          // VIEW button fetches from /api/appointments now
           btnHTML = `<button class="view">View</button>`;
           if (app.status === 'COMPLETED') {
             btnHTML += `<button class="completed">Completed</button>`;
@@ -182,7 +181,17 @@
 
         if (appointments.length > 0) {
           const app = appointments[0];
-          tr.querySelector('.view').onclick = () => openModal(s.id, true, app);
+          tr.querySelector('.view').onclick = async () => {
+            try {
+              const appointmentResp = await fetch(`${APPOINTMENTS_API}/${app.appointmentId}`);
+              if (!appointmentResp.ok) throw new Error('Failed to fetch appointment');
+              const appointment = await appointmentResp.json();
+              openModal(s.id, true, appointment);
+            } catch (err) {
+              console.error('Failed to load appointment:', err);
+              alert('Failed to load appointment details.');
+            }
+          };
 
           if (app.status === 'COMPLETED') {
             tr.querySelector('.completed').onclick = () => {
@@ -227,11 +236,12 @@
         tr.dataset.appointmentId = app.appointmentId;
         tr.dataset.patientId = app.patientId;
 
-        let btnHTML = `<button class="view">View</button>`;
+        // Removed View button
+        let btnHTML = '';
         if (app.status === 'COMPLETED') {
-          btnHTML += `<button class="completed">Completed</button>`;
+          btnHTML = `<button class="completed">Completed</button>`;
         } else {
-          btnHTML += `<button class="start">Start</button>`;
+          btnHTML = `<button class="start">Start</button>`;
         }
 
         tr.innerHTML = `
@@ -245,8 +255,6 @@
         `;
 
         patientAppointmentsTableBody.appendChild(tr);
-
-        tr.querySelector('.view').onclick = () => openModal(null, true, app);
 
         const targetUrl = `service-appointment.html?appointmentId=${app.appointmentId}&patientId=${app.patientId}&serviceId=${app.serviceId}`;
         if (app.status === 'COMPLETED') {
@@ -278,24 +286,22 @@
     form.phone.textContent = '';
 
     if (isView && appointment) {
-      fetch(`${APPOINTMENTS_API}/${appointment.appointmentId}`)
-        .then(r => r.json())
-        .then(app => {
-          fetch(`${PATIENT_API}/${app.patientId}`)
-            .then(r => r.json())
-            .then(patient => {
-              form.firstName.textContent = patient.firstName;
-              form.lastName.textContent = patient.lastName;
-              form.dob.textContent = patient.dateOfBirth;
-              form.email.textContent = patient.email;
-              form.phone.textContent = patient.phone;
-              patientInfoDiv.style.display = 'block';
-            });
-        })
-        .catch(() => {
-          formError.textContent = 'Failed to load patient info';
-          formError.style.display = 'block';
-        });
+      if (appointment.patientId) {
+        fetch(`${PATIENT_API}/${appointment.patientId}`)
+          .then(r => r.json())
+          .then(patient => {
+            form.firstName.textContent = patient.firstName;
+            form.lastName.textContent = patient.lastName;
+            form.dob.textContent = patient.dateOfBirth;
+            form.email.textContent = patient.email;
+            form.phone.textContent = patient.phone;
+            patientInfoDiv.style.display = 'block';
+          })
+          .catch(() => {
+            formError.textContent = 'Failed to load patient info';
+            formError.style.display = 'block';
+          });
+      }
     }
 
     modalBackdrop.style.display = 'flex';

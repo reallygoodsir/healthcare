@@ -2,8 +2,12 @@ package com.really.good.sir.resources;
 
 import com.really.good.sir.converter.DoctorScheduleConverter;
 import com.really.good.sir.dao.DoctorScheduleDAO;
+import com.really.good.sir.dao.UserSessionDAO;
 import com.really.good.sir.dto.DoctorScheduleDTO;
+import com.really.good.sir.dto.ErrorDTO;
 import com.really.good.sir.entity.DoctorScheduleEntity;
+import com.really.good.sir.entity.Role;
+import com.really.good.sir.entity.UserSessionEntity;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -19,10 +23,26 @@ public class DoctorScheduleResource {
     private static final Logger LOGGER = LogManager.getLogger(DoctorScheduleResource.class);
     private final DoctorScheduleConverter scheduleConverter = new DoctorScheduleConverter();
     private final DoctorScheduleDAO scheduleDAO = new DoctorScheduleDAO();
+    private final UserSessionDAO userSessionDAO = new UserSessionDAO();
 
     @GET
     @Path("/{doctorId}")
-    public Response getSchedulesByDoctor(@PathParam("doctorId") final int doctorId) {
+    public Response getSchedulesByDoctor(@PathParam("doctorId") final int doctorId, @CookieParam("session_id") final String sessionId) {
+        if (sessionId == null || sessionId.isEmpty()) {
+            final ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setMessage("Not authorized");
+            return Response.status(Response.Status.UNAUTHORIZED)
+                    .entity(errorDTO)
+                    .build();
+        }
+        UserSessionEntity session = userSessionDAO.getSessionById(Integer.parseInt(sessionId));
+        if (!Role.ADMIN.toString().equalsIgnoreCase(session.getRole()) && !Role.CALL_CENTER_AGENT.toString().equalsIgnoreCase(session.getRole())) {
+            final ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setMessage("Forbidden to access resource");
+            return Response.status(Response.Status.FORBIDDEN)
+                    .entity(errorDTO)
+                    .build();
+        }
         final List<DoctorScheduleEntity> schedules = scheduleDAO.getSchedulesByDoctor(doctorId);
         final List<DoctorScheduleDTO> scheduleDTOs = scheduleConverter.convert(schedules);
         return Response.ok(scheduleDTOs).build();
@@ -30,14 +50,44 @@ public class DoctorScheduleResource {
 
     @GET
     @Path("/today/{doctorId}")
-    public Response getSchedulesForTodayWithAppointments(@PathParam("doctorId") final int doctorId) {
+    public Response getSchedulesForTodayWithAppointments(@PathParam("doctorId") final int doctorId, @CookieParam("session_id") final String sessionId) {
+        if (sessionId == null || sessionId.isEmpty()) {
+            final ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setMessage("Not authorized");
+            return Response.status(Response.Status.UNAUTHORIZED)
+                    .entity(errorDTO)
+                    .build();
+        }
+        UserSessionEntity session = userSessionDAO.getSessionById(Integer.parseInt(sessionId));
+        if (!Role.DOCTOR.toString().equalsIgnoreCase(session.getRole())) {
+            final ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setMessage("Forbidden to access resource");
+            return Response.status(Response.Status.FORBIDDEN)
+                    .entity(errorDTO)
+                    .build();
+        }
         final List<DoctorScheduleEntity> schedules = scheduleDAO.getSchedulesForTodayWithAppointments(doctorId);
         final List<DoctorScheduleDTO> scheduleDTOs = scheduleConverter.convert(schedules);
         return Response.ok(scheduleDTOs).build();
     }
 
     @POST
-    public Response createSchedule(final DoctorScheduleDTO requestScheduleDTO) {
+    public Response createSchedule(final DoctorScheduleDTO requestScheduleDTO, @CookieParam("session_id") final String sessionId) {
+        if (sessionId == null || sessionId.isEmpty()) {
+            final ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setMessage("Not authorized");
+            return Response.status(Response.Status.UNAUTHORIZED)
+                    .entity(errorDTO)
+                    .build();
+        }
+        UserSessionEntity session = userSessionDAO.getSessionById(Integer.parseInt(sessionId));
+        if (!Role.ADMIN.toString().equalsIgnoreCase(session.getRole())) {
+            final ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setMessage("Forbidden to access resource");
+            return Response.status(Response.Status.FORBIDDEN)
+                    .entity(errorDTO)
+                    .build();
+        }
         final DoctorScheduleEntity scheduleEntity = scheduleConverter.convert(requestScheduleDTO);
         final DoctorScheduleEntity createdEntity = scheduleDAO.createSchedule(scheduleEntity);
         final DoctorScheduleDTO responseScheduleDTO = scheduleConverter.convert(createdEntity);
@@ -45,7 +95,22 @@ public class DoctorScheduleResource {
     }
 
     @PUT
-    public Response updateSchedule(final DoctorScheduleDTO requestScheduleDTO) {
+    public Response updateSchedule(final DoctorScheduleDTO requestScheduleDTO, @CookieParam("session_id") final String sessionId) {
+        if (sessionId == null || sessionId.isEmpty()) {
+            final ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setMessage("Not authorized");
+            return Response.status(Response.Status.UNAUTHORIZED)
+                    .entity(errorDTO)
+                    .build();
+        }
+        UserSessionEntity session = userSessionDAO.getSessionById(Integer.parseInt(sessionId));
+        if (!Role.ADMIN.toString().equalsIgnoreCase(session.getRole())) {
+            final ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setMessage("Forbidden to access resource");
+            return Response.status(Response.Status.FORBIDDEN)
+                    .entity(errorDTO)
+                    .build();
+        }
         final DoctorScheduleEntity scheduleEntity = scheduleConverter.convert(requestScheduleDTO);
         final boolean isScheduleEntityUpdated = scheduleDAO.updateSchedule(scheduleEntity);
         LOGGER.info("Schedule updated [{}]", isScheduleEntityUpdated);
@@ -56,7 +121,23 @@ public class DoctorScheduleResource {
     @DELETE
     @Path("/{doctorId}/{scheduleId}")
     public Response deleteSchedule(@PathParam("doctorId") final int doctorId,
-                                   @PathParam("scheduleId") final int scheduleId) {
+                                   @PathParam("scheduleId") final int scheduleId,
+                                   @CookieParam("session_id") final String sessionId) {
+        if (sessionId == null || sessionId.isEmpty()) {
+            final ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setMessage("Not authorized");
+            return Response.status(Response.Status.UNAUTHORIZED)
+                    .entity(errorDTO)
+                    .build();
+        }
+        UserSessionEntity session = userSessionDAO.getSessionById(Integer.parseInt(sessionId));
+        if (!Role.ADMIN.toString().equalsIgnoreCase(session.getRole())) {
+            final ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setMessage("Forbidden to access resource");
+            return Response.status(Response.Status.FORBIDDEN)
+                    .entity(errorDTO)
+                    .build();
+        }
         final boolean isScheduleEntityDeleted = scheduleDAO.deleteSchedule(scheduleId);
         LOGGER.info("Schedule deleted [{}]", isScheduleEntityDeleted);
         return Response.noContent().build();

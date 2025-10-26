@@ -2,8 +2,12 @@ package com.really.good.sir.resources;
 
 import com.really.good.sir.converter.PatientAppointmentConverter;
 import com.really.good.sir.dao.PatientAppointmentDAO;
+import com.really.good.sir.dao.UserSessionDAO;
+import com.really.good.sir.dto.ErrorDTO;
 import com.really.good.sir.dto.PatientAppointmentDTO;
 import com.really.good.sir.entity.PatientAppointmentEntity;
+import com.really.good.sir.entity.Role;
+import com.really.good.sir.entity.UserSessionEntity;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
@@ -18,9 +22,25 @@ public class PatientAppointmentResource {
 
     private final PatientAppointmentDAO dao = new PatientAppointmentDAO();
     private final PatientAppointmentConverter converter = new PatientAppointmentConverter();
+    private final UserSessionDAO userSessionDAO = new UserSessionDAO();
 
     @GET
-    public Response getAllAppointments() {
+    public Response getAllAppointments(@CookieParam("session_id") final String sessionId) {
+        if (sessionId == null || sessionId.isEmpty()) {
+            final ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setMessage("Not authorized");
+            return Response.status(Response.Status.UNAUTHORIZED)
+                    .entity(errorDTO)
+                    .build();
+        }
+        UserSessionEntity session = userSessionDAO.getSessionById(Integer.parseInt(sessionId));
+        if (!Role.CALL_CENTER_AGENT.toString().equalsIgnoreCase(session.getRole())) {
+            final ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setMessage("Forbidden to access resource");
+            return Response.status(Response.Status.FORBIDDEN)
+                    .entity(errorDTO)
+                    .build();
+        }
         List<PatientAppointmentEntity> list = dao.getAllAppointments();
         List<PatientAppointmentDTO> dtos = list.stream().map(converter::convert).toList();
         return Response.ok(dtos).build();
@@ -28,7 +48,22 @@ public class PatientAppointmentResource {
 
     @GET
     @Path("/{doctorId}")
-    public Response getAppointmentsByDoctor(@PathParam("doctorId") int doctorId) {
+    public Response getAppointmentsByDoctor(@PathParam("doctorId") int doctorId, @CookieParam("session_id") final String sessionId) {
+        if (sessionId == null || sessionId.isEmpty()) {
+            final ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setMessage("Not authorized");
+            return Response.status(Response.Status.UNAUTHORIZED)
+                    .entity(errorDTO)
+                    .build();
+        }
+        UserSessionEntity session = userSessionDAO.getSessionById(Integer.parseInt(sessionId));
+        if (!Role.DOCTOR.toString().equalsIgnoreCase(session.getRole())) {
+            final ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setMessage("Forbidden to access resource");
+            return Response.status(Response.Status.FORBIDDEN)
+                    .entity(errorDTO)
+                    .build();
+        }
         List<PatientAppointmentEntity> list = dao.getAppointmentsByDoctorId(doctorId);
         List<PatientAppointmentDTO> dtos = list.stream().map(converter::convert).toList();
         return Response.ok(dtos).build();
@@ -36,14 +71,29 @@ public class PatientAppointmentResource {
 
     @GET
     @Path("/today/{doctorId}")
-    public Response getTodaysAppointmentsByDoctor(@PathParam("doctorId") int doctorId) {
+    public Response getTodaysAppointmentsByDoctor(@PathParam("doctorId") int doctorId, @CookieParam("session_id") final String sessionId) {
         List<PatientAppointmentEntity> list = dao.getTodaysAppointmentsByDoctor(doctorId);
         List<PatientAppointmentDTO> dtos = list.stream().map(converter::convert).toList();
         return Response.ok(dtos).build();
     }
 
     @POST
-    public Response createAppointment(PatientAppointmentDTO dto) {
+    public Response createAppointment(PatientAppointmentDTO dto, @CookieParam("session_id") final String sessionId) {
+        if (sessionId == null || sessionId.isEmpty()) {
+            final ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setMessage("Not authorized");
+            return Response.status(Response.Status.UNAUTHORIZED)
+                    .entity(errorDTO)
+                    .build();
+        }
+        UserSessionEntity session = userSessionDAO.getSessionById(Integer.parseInt(sessionId));
+        if (!Role.CALL_CENTER_AGENT.toString().equalsIgnoreCase(session.getRole())) {
+            final ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setMessage("Forbidden to access resource");
+            return Response.status(Response.Status.FORBIDDEN)
+                    .entity(errorDTO)
+                    .build();
+        }
         PatientAppointmentEntity entity = converter.convert(dto);
         PatientAppointmentEntity created = dao.createAppointment(entity);
         return Response.ok(converter.convert(created)).build();
@@ -51,7 +101,22 @@ public class PatientAppointmentResource {
 
     @DELETE
     @Path("/{appointmentId}")
-    public Response deleteAppointment(@PathParam("appointmentId") int appointmentId) {
+    public Response deleteAppointment(@PathParam("appointmentId") int appointmentId, @CookieParam("session_id") final String sessionId) {
+        if (sessionId == null || sessionId.isEmpty()) {
+            final ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setMessage("Not authorized");
+            return Response.status(Response.Status.UNAUTHORIZED)
+                    .entity(errorDTO)
+                    .build();
+        }
+        UserSessionEntity session = userSessionDAO.getSessionById(Integer.parseInt(sessionId));
+        if (!Role.CALL_CENTER_AGENT.toString().equalsIgnoreCase(session.getRole())) {
+            final ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setMessage("Forbidden to access resource");
+            return Response.status(Response.Status.FORBIDDEN)
+                    .entity(errorDTO)
+                    .build();
+        }
         boolean deleted = dao.deleteAppointment(appointmentId);
         return deleted ? Response.noContent().build() : Response.status(500).build();
     }
@@ -59,7 +124,22 @@ public class PatientAppointmentResource {
     @PATCH
     @Path("/{appointmentId}/status")
     public Response updateStatus(@PathParam("appointmentId") int appointmentId,
-                                 @QueryParam("status") String status) {
+                                 @QueryParam("status") String status, @CookieParam("session_id") final String sessionId) {
+        if (sessionId == null || sessionId.isEmpty()) {
+            final ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setMessage("Not authorized");
+            return Response.status(Response.Status.UNAUTHORIZED)
+                    .entity(errorDTO)
+                    .build();
+        }
+        UserSessionEntity session = userSessionDAO.getSessionById(Integer.parseInt(sessionId));
+        if (!Role.DOCTOR.toString().equalsIgnoreCase(session.getRole())) {
+            final ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setMessage("Forbidden to access resource");
+            return Response.status(Response.Status.FORBIDDEN)
+                    .entity(errorDTO)
+                    .build();
+        }
         if (status == null || status.isBlank()) {
             return Response.status(Response.Status.BAD_REQUEST)
                     .entity("Status query parameter is required").build();
@@ -72,7 +152,22 @@ public class PatientAppointmentResource {
 
     @GET
     @Path("/status/{appointmentId}")
-    public Response getAppointmentStatus(@PathParam("appointmentId") int appointmentId) {
+    public Response getAppointmentStatus(@PathParam("appointmentId") int appointmentId, @CookieParam("session_id") final String sessionId) {
+        if (sessionId == null || sessionId.isEmpty()) {
+            final ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setMessage("Not authorized");
+            return Response.status(Response.Status.UNAUTHORIZED)
+                    .entity(errorDTO)
+                    .build();
+        }
+        UserSessionEntity session = userSessionDAO.getSessionById(Integer.parseInt(sessionId));
+        if (!Role.DOCTOR.toString().equalsIgnoreCase(session.getRole())) {
+            final ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setMessage("Forbidden to access resource");
+            return Response.status(Response.Status.FORBIDDEN)
+                    .entity(errorDTO)
+                    .build();
+        }
         String status = dao.getAppointmentStatusById(appointmentId);
         if (status == null) {
             return Response.status(Response.Status.NOT_FOUND)
