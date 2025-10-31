@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <title>Healthcare — Patient Appointments</title>
+    <style>
+        :root{
+          --bg:#f4f7fb;
+          --card:#fff;
+          --accent:#2563eb;
+          --accent-hover:#1d4ed8;
+          --danger:#dc2626;
+          --text:#111827;
+          --muted:#6b7280;
+        }
+        body{margin:0;font-family:system-ui,Arial,sans-serif;background:var(--bg);color:var(--text);}
+        header{background:var(--accent);color:#fff;padding:1rem 2rem;display:flex;justify-content:space-between;align-items:center;}
+        header h1{margin:0;font-size:1.5rem;}
+        header button{background:#fff;color:var(--accent);border:none;padding:0.5rem 1rem;border-radius:0.5rem;cursor:pointer;font-weight:600;}
+        main{padding:2rem;max-width:1000px;margin:auto;}
+        table{width:100%;border-collapse:collapse;background:var(--card);box-shadow:0 1px 3px rgba(0,0,0,0.1);}
+        th,td{padding:0.75rem 1rem;text-align:left;border-bottom:1px solid #e5e7eb;}
+        th{background:#f9fafb;font-weight:600;}
+        tr:hover td{background:#f3f4f6;}
+        .small{font-size:0.8rem;color:var(--muted);}
+    </style>
+</head>
+<body>
+<header>
+    <h1>Patient Appointments</h1>
+    <button id="backBtn">Back to Patients</button>
+</header>
+<main>
+    <table id="appointmentsTable">
+        <thead>
+        <tr>
+            <th>Date</th>
+            <th>Start Time</th>
+            <th>End Time</th>
+            <th>Status</th>
+            <th>Doctor</th>
+            <th>Service</th>
+        </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+</main>
+
+<script>
+    const API_BASE = 'http://localhost:8080/healthcare/api/patient-appointments';
+    const urlParams = new URLSearchParams(window.location.search);
+    const patientId = urlParams.get('patientId');
+    const tableBody = document.querySelector('#appointmentsTable tbody');
+
+    async function loadAppointments() {
+        try {
+            const resp = await fetch(`${API_BASE}/patient/${patientId}/details`);
+            if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+            const appointments = await resp.json();
+            tableBody.innerHTML = '';
+            for (const a of appointments) {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${a.date}</td>
+                    <td>${a.startTime}</td>
+                    <td>${a.endTime}</td>
+                    <td>${a.status}</td>
+                    <td>${a.doctorFirstName} ${a.doctorLastName} <span class="small">(ID: ${a.doctorId})</span></td>
+                    <td>${a.serviceName} <span class="small">(ID: ${a.serviceId})</span></td>
+                `;
+                tableBody.appendChild(tr);
+            }
+        } catch(err) {
+            console.error('Failed to load appointments', err);
+            tableBody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--danger);">Failed to load appointments</td></tr>`;
+        }
+    }
+
+    document.getElementById('backBtn').addEventListener('click', () => window.location.href = 'patient-home.html');
+
+    loadAppointments();
+</script>
+</body>
+</html>

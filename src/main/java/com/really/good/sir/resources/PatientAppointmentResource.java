@@ -5,9 +5,11 @@ import com.really.good.sir.dao.PatientAppointmentDAO;
 import com.really.good.sir.dao.UserSessionDAO;
 import com.really.good.sir.dto.ErrorDTO;
 import com.really.good.sir.dto.PatientAppointmentDTO;
+import com.really.good.sir.dto.PatientAppointmentDetailsDTO;
 import com.really.good.sir.entity.PatientAppointmentEntity;
 import com.really.good.sir.entity.Role;
 import com.really.good.sir.entity.UserSessionEntity;
+import com.really.good.sir.validator.PatientAppointmentValidator;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
@@ -23,6 +25,7 @@ public class PatientAppointmentResource {
     private final PatientAppointmentDAO dao = new PatientAppointmentDAO();
     private final PatientAppointmentConverter converter = new PatientAppointmentConverter();
     private final UserSessionDAO userSessionDAO = new UserSessionDAO();
+    private final PatientAppointmentValidator patientAppointmentValidator = new PatientAppointmentValidator();
 
     @GET
     public Response getAllAppointments(@CookieParam("session_id") final String sessionId) {
@@ -94,6 +97,31 @@ public class PatientAppointmentResource {
                     .entity(errorDTO)
                     .build();
         }
+
+        if (!patientAppointmentValidator.isDateValid(dto)) {
+            ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setMessage("Date must be not be in the past");
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(errorDTO)
+                    .build();
+        }
+
+        if (!patientAppointmentValidator.isTimeRangeValid(dto)) {
+            ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setMessage("Invalid start/end time");
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(errorDTO)
+                    .build();
+        }
+
+        if (patientAppointmentValidator.isOverlapping(dto)) {
+            ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setMessage("Time overlaps with an existing schedule");
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(errorDTO)
+                    .build();
+        }
+
         PatientAppointmentEntity entity = converter.convert(dto);
         PatientAppointmentEntity created = dao.createAppointment(entity);
         return Response.ok(converter.convert(created)).build();
@@ -175,4 +203,28 @@ public class PatientAppointmentResource {
         }
         return Response.ok(Map.of("status", status)).build();
     }
+
+    @GET
+    @Path("/patient/{patientId}/details")
+    public Response getAppointmentDetailsByPatient(@PathParam("patientId") int patientId,
+                                                   @CookieParam("session_id") final String sessionId) {
+        if (sessionId == null || sessionId.isEmpty()) {
+            ErrorDTO error = new ErrorDTO();
+            error.setMessage("Not authorized");
+            return Response.status(Response.Status.UNAUTHORIZED).entity(error).build();
+        }
+
+        UserSessionEntity session = userSessionDAO.getSessionById(Integer.parseInt(sessionId));
+        String role = session.getRole();
+
+        if (!Role.PATIENT.toString().equalsIgnoreCase(role)) {
+            ErrorDTO error = new ErrorDTO();
+            error.setMessage("Forbidden to access resource");
+            return Response.status(Response.Status.FORBIDDEN).entity(error).build();
+        }
+
+        List<PatientAppointmentDetailsDTO> list = dao.getAppointmentDetailsByPatientId(patientId);
+        return Response.ok(list).build();
+    }
+
 }

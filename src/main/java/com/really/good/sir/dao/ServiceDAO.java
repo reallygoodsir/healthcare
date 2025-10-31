@@ -16,6 +16,7 @@ public class ServiceDAO extends BaseDao {
     private static final String CREATE_SERVICE = "INSERT INTO service (name, price) VALUES (?, ?)";
     private static final String UPDATE_SERVICE = "UPDATE service SET name = ?, price = ? WHERE id = ?";
     private static final String DELETE_SERVICE = "DELETE FROM service WHERE id = ?";
+    private static final String CHECK_SERVICE_NAME_EXISTS_EXCLUDE_ID = "SELECT COUNT(*) FROM service WHERE name = ? AND id <> ?";
 
     public List<ServiceEntity> getAllServices() {
         List<ServiceEntity> services = new ArrayList<>();
@@ -60,6 +61,26 @@ public class ServiceDAO extends BaseDao {
         }
         return service;
     }
+
+    public boolean isServiceNameExists(String name, int excludeId) {
+        String sql = excludeId > 0
+                ? "SELECT COUNT(*) FROM service WHERE name = ? AND id <> ?"
+                : "SELECT COUNT(*) FROM service WHERE name = ?";
+
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, name);
+            if (excludeId > 0) ps.setInt(2, excludeId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getInt(1) > 0;
+            }
+        } catch (SQLException e) {
+            LOGGER.error("Error checking service name existence", e);
+        }
+        return false;
+    }
+
 
     public boolean updateService(ServiceEntity service) {
         try (Connection conn = getConnection();

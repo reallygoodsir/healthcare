@@ -140,7 +140,9 @@
             const resp = await fetch(`${API_BASE}/${doctorId}/${id}`, { method: 'DELETE' });
             if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
             await loadSchedules();
-        } catch(err) { alert('Failed to delete schedule'); }
+        } catch(err) {
+            alert('Failed to delete schedule');
+        }
     }
 
     async function submitSchedule(payload) {
@@ -152,11 +154,25 @@
                 headers: { 'Content-Type':'application/json' },
                 body: JSON.stringify(payload)
             });
-            if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+
+            // Check if not ok
+            if (!resp.ok) {
+                let message = 'Failed to save schedule';
+                try {
+                    const data = await resp.json();
+                    if (data && data.message) {
+                        message = data.message;
+                    }
+                } catch {
+                    // ignore JSON parse errors
+                }
+                throw new Error(message);
+            }
+
             await loadSchedules();
             closeModal();
         } catch(err) {
-            formError.textContent = 'Failed to save schedule';
+            formError.textContent = err.message || 'Failed to save schedule';
             formError.style.display = 'block';
         }
     }

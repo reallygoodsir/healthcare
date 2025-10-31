@@ -32,6 +32,11 @@ public class DoctorScheduleDAO extends BaseDao {
                     "AND ds.schedule_date = CURRENT_DATE " +
                     "ORDER BY ds.start_time";
 
+    private static final String GET_SCHEDULES_BY_DOCTOR_AND_DATE = "SELECT * FROM doctor_schedules " +
+            "WHERE doctor_id = ? " +
+            "AND schedule_date = ? " +
+            "ORDER BY start_time";
+
     public List<DoctorScheduleEntity> getSchedulesByDoctor(final int doctorId) {
         final List<DoctorScheduleEntity> schedules = new ArrayList<>();
         try (final Connection connection = getConnection();
@@ -105,6 +110,25 @@ public class DoctorScheduleDAO extends BaseDao {
         }
         return schedules;
     }
+
+    public List<DoctorScheduleEntity> getSchedulesByDoctorAndDate(final int doctorId, final String scheduleDate) {
+        final List<DoctorScheduleEntity> schedules = new ArrayList<>();
+
+        try (final Connection connection = getConnection();
+             final PreparedStatement ps = connection.prepareStatement(GET_SCHEDULES_BY_DOCTOR_AND_DATE)) {
+            ps.setInt(1, doctorId);
+            ps.setDate(2, Date.valueOf(scheduleDate));
+            try (final ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    schedules.add(mapResultSetToSchedule(rs));
+                }
+            }
+        } catch (final SQLException exception) {
+            LOGGER.error("Error getting schedules for doctor {} on date {}", doctorId, scheduleDate, exception);
+        }
+        return schedules;
+    }
+
 
     private DoctorScheduleEntity mapResultSetToSchedule(final ResultSet rs) throws SQLException {
         final DoctorScheduleEntity entity = new DoctorScheduleEntity();

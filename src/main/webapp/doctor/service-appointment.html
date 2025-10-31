@@ -28,6 +28,7 @@
     button.sign{background:var(--accent);color:#fff;}
     button.sign:hover{background:var(--accent-hover);}
     .actions{display:flex;gap:0.5rem;margin-top:1.5rem;}
+    .message-box{margin-top:1rem;padding:0.75rem 1rem;background:#fef3c7;color:#92400e;border-radius:0.375rem;display:none;}
   </style>
 </head>
 <body>
@@ -56,6 +57,9 @@
     <textarea id="result"></textarea>
     <p id="resultReadonly" class="readonly" style="display:none;"></p>
 
+    <!-- Message box for backend messages -->
+    <div id="messageBox" class="message-box"></div>
+
     <div class="actions">
       <button class="save">Save</button>
       <button class="sign">Sign</button>
@@ -75,6 +79,7 @@
   const currentDateEl = document.getElementById('currentDate');
   const saveBtn = document.querySelector('.save');
   const signBtn = document.querySelector('.sign');
+  const messageBox = document.getElementById('messageBox');
 
   let appointmentId = null;
   let patientId = null;
@@ -155,9 +160,20 @@
                   const outcome = await respOutcome.json();
                   resultEl.value = outcome.result || '';
                   resultROEl.textContent = outcome.result || '';
+
+                  // Show message if backend returned message
+                  if(outcome.message){
+                      messageBox.textContent = outcome.message;
+                      messageBox.style.display = 'block';
+                  } else {
+                      messageBox.textContent = '';
+                      messageBox.style.display = 'none';
+                  }
               } else {
                   resultEl.value = '';
                   resultROEl.textContent = '';
+                  messageBox.textContent = '';
+                  messageBox.style.display = 'none';
               }
           }
 
@@ -179,7 +195,18 @@
               headers: {'Content-Type':'application/json'},
               body: JSON.stringify(payload)
           });
-          if(!resp.ok) throw new Error(`HTTP ${resp.status}`);
+
+          // Show message from backend if exists
+          if(!resp.ok){
+              let msg = '';
+              try {
+                  const data = await resp.json();
+                  if(data && data.message) msg = data.message;
+              } catch{}
+              messageBox.textContent = msg;
+              messageBox.style.display = msg ? 'block' : 'none';
+              throw new Error('Failed to save outcome');
+          }
 
           if(sign){
               const patchResp = await fetch(`${API_BASE}/patient-appointments/${appointmentId}/status?status=COMPLETED`, {method:'PATCH'});
@@ -193,7 +220,10 @@
           updateUIBasedOnStatus();
       } catch(err){
           console.error('Failed to save outcome', err);
-          alert('Failed to save outcome: ' + err.message);
+          if(!messageBox.textContent){
+              messageBox.textContent = 'Failed to save outcome';
+              messageBox.style.display = 'block';
+          }
       }
   }
 

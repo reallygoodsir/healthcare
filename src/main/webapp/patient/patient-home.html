@@ -34,16 +34,9 @@
           box-shadow: var(--shadow);
         }
 
-        .logo {
-          font-weight: 700;
-          font-size: 1.5rem;
-        }
+        .logo { font-weight: 700; font-size: 1.5rem; }
 
-        .nav-buttons {
-          display: flex;
-          gap: 15px;
-          align-items: center;
-        }
+        .nav-buttons { display: flex; gap: 15px; align-items: center; }
 
         .nav-button {
           background: var(--text-light);
@@ -58,10 +51,7 @@
           transition: background 0.3s ease, transform 0.2s ease;
         }
 
-        .nav-button:hover {
-          background: #dbeafe;
-          transform: translateY(-2px);
-        }
+        .nav-button:hover { background: #dbeafe; transform: translateY(-2px); }
 
         main {
           flex: 1;
@@ -73,25 +63,10 @@
           padding: 40px;
         }
 
-        h1 {
-          color: var(--primary-dark);
-          margin-bottom: 10px;
-          font-size: 1.8rem;
-        }
+        h1 { color: var(--primary-dark); margin-bottom: 10px; font-size: 1.8rem; }
+        p { color: #475569; font-size: 1rem; margin-bottom: 20px; }
 
-        p {
-          color: #475569;
-          font-size: 1rem;
-          margin-bottom: 20px;
-        }
-
-        footer {
-          background: #e0e7ff;
-          color: #1e3a8a;
-          text-align: center;
-          padding: 15px;
-          font-size: 0.9rem;
-        }
+        footer { background: #e0e7ff; color: #1e3a8a; text-align: center; padding: 15px; font-size: 0.9rem; }
     </style>
 </head>
 <body>
@@ -99,6 +74,7 @@
 <header>
     <div class="logo">Healthcare</div>
     <div class="nav-buttons" id="navButtons">
+        <button class="nav-button" id="appointmentsBtn">View Appointments</button>
         <button class="nav-button" id="logoutBtn">Log Out</button>
     </div>
 </header>
@@ -115,7 +91,6 @@
 <script>
     document.getElementById('year').textContent = new Date().getFullYear();
 
-    // Get cookie by name
     function getCookie(name) {
         const value = `; ${document.cookie}`;
         const parts = value.split(`; ${name}=`);
@@ -123,43 +98,48 @@
         return null;
     }
 
-    // Delete cookie
     function deleteCookie(name) {
         document.cookie = name + '=; Max-Age=0; path=/;';
     }
 
-    // Check session
-    async function checkSession() {
+    let patientId = null;
+
+    async function initializePatientPage() {
         const sessionId = getCookie('session_id');
         if (!sessionId) {
             window.location.href = 'http://localhost:8080/healthcare/';
-            return false;
+            return;
         }
 
         try {
-            const response = await fetch('http://localhost:8080/healthcare/api/authorization/check-session', {
+            // 1️⃣ Check session → get credentialId
+            const sessionResponse = await fetch('http://localhost:8080/healthcare/api/authorization/check-session', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ sessionId: parseInt(sessionId) })
             });
 
-            if (response.ok) {
-                const data = await response.json();
-                if (data && data.role) {
-                    console.log('Session valid for role:', data.role);
-                    return true;
-                }
-            }
+            if (!sessionResponse.ok) throw new Error('Session invalid');
 
-            deleteCookie('session_id');
-            window.location.href = 'http://localhost:8080/healthcare/';
-        } catch (e) {
-            console.error('Session check failed:', e);
+            const sessionData = await sessionResponse.json();
+            const credentialId = sessionData.credentialId || sessionData.id || sessionData.credential_id;
+            if (!credentialId) throw new Error('Credential ID missing');
+
+            // 2️⃣ Get patientId using credentialId
+            const patientResponse = await fetch(`http://localhost:8080/healthcare/api/patients/by-credential/${credentialId}`, {
+                headers: { 'Content-Type': 'application/json' }
+            });
+
+            if (!patientResponse.ok) throw new Error('Patient not found');
+
+            patientId = await patientResponse.json();
+            console.log('Patient ID:', patientId);
+
+        } catch (error) {
+            console.error('Initialization failed:', error);
             deleteCookie('session_id');
             window.location.href = 'http://localhost:8080/healthcare/';
         }
-
-        return false;
     }
 
     // Logout
@@ -179,20 +159,27 @@
                 deleteCookie('session_id');
                 window.location.href = 'http://localhost:8080/healthcare/';
             } else {
-                console.warn('Logout failed: session could not be deleted');
+                console.warn('Logout failed');
             }
         } catch (e) {
             console.error('Logout error:', e);
         }
     }
 
-    // Attach logout button functionality
+    // Attach logout button
     document.getElementById('logoutBtn').addEventListener('click', logout);
 
-    // Run session check on page load
-    document.addEventListener('DOMContentLoaded', async () => {
-        await checkSession();
+    // Attach appointments button
+    document.getElementById('appointmentsBtn').addEventListener('click', () => {
+        if (!patientId) {
+            alert('Patient ID not found. Please refresh the page.');
+            return;
+        }
+        window.location.href = `all-patient-appointments.html?patientId=${patientId}`;
     });
+
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', initializePatientPage);
 </script>
 
 </body>

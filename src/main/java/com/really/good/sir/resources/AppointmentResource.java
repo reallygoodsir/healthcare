@@ -10,6 +10,8 @@ import com.really.good.sir.entity.AppointmentEntity;
 import com.really.good.sir.converter.AppointmentConverter;
 import com.really.good.sir.entity.Role;
 import com.really.good.sir.entity.UserSessionEntity;
+import com.really.good.sir.validator.AppointmentOutcomeValidator;
+import com.really.good.sir.validator.PatientValidator;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
@@ -25,6 +27,7 @@ public class AppointmentResource {
     private final AppointmentOutcomeDAO outcomeDAO = new AppointmentOutcomeDAO();
     private final AppointmentConverter converter = new AppointmentConverter();
     private final UserSessionDAO userSessionDAO = new UserSessionDAO();
+    private final AppointmentOutcomeValidator patientValidator = new AppointmentOutcomeValidator();
 
     @POST
     public Response createAppointment(AppointmentDTO dto, @CookieParam("session_id") final String sessionId) {
@@ -139,6 +142,22 @@ public class AppointmentResource {
             final ErrorDTO errorDTO = new ErrorDTO();
             errorDTO.setMessage("Forbidden to access resource");
             return Response.status(Response.Status.FORBIDDEN)
+                    .entity(errorDTO)
+                    .build();
+        }
+
+        if (!patientValidator.isDiagnosisValid(dto)) {
+            ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setMessage("No diagnosis provided");
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(errorDTO)
+                    .build();
+        }
+
+        if (!patientValidator.isRecommendationsValid(dto)) {
+            ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setMessage("No recommendation provided");
+            return Response.status(Response.Status.BAD_REQUEST)
                     .entity(errorDTO)
                     .build();
         }

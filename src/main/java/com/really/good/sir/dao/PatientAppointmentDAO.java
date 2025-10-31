@@ -1,5 +1,6 @@
 package com.really.good.sir.dao;
 
+import com.really.good.sir.dto.PatientAppointmentDetailsDTO;
 import com.really.good.sir.entity.PatientAppointmentEntity;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -44,6 +45,23 @@ public class PatientAppointmentDAO extends BaseDao {
     private static final String GET_STATUS_BY_APPOINTMENT_ID =
             "SELECT status FROM patient_appointments WHERE appointment_id = ?";
 
+    private static final String CHECK_OVERLAPPING_APPOINTMENTS = "SELECT COUNT(*) FROM patient_appointments " +
+            "WHERE doctor_id = ? AND date = ? " +
+            "AND ((start_time < ? AND end_time > ?) OR " +
+            "     (start_time >= ? AND start_time < ?))";
+
+    private static final String GET_APPOINTMENT_DETAILS_BY_PATIENT =
+            "SELECT pa.appointment_id, pa.date, pa.start_time, pa.end_time, pa.status, " +
+                    "       d.doctor_id, d.first_name AS doctor_first_name, d.last_name AS doctor_last_name, " +
+                    "       s.id AS service_id, s.name AS service_name " +
+                    "FROM patient_appointments pa " +
+                    "JOIN doctors d ON pa.doctor_id = d.doctor_id " +
+                    "JOIN service s ON pa.service_id = s.id " +
+                    "WHERE pa.patient_id = ? " +
+                    "ORDER BY pa.date DESC, pa.start_time DESC";
+
+
+
     public List<PatientAppointmentEntity> getTodaysAppointmentsByDoctor(int doctorId) {
         List<PatientAppointmentEntity> list = new ArrayList<>();
         try (Connection conn = getConnection();
@@ -59,6 +77,38 @@ public class PatientAppointmentDAO extends BaseDao {
         }
         return list;
     }
+
+    public List<PatientAppointmentDetailsDTO> getAppointmentDetailsByPatientId(int patientId) {
+        List<PatientAppointmentDetailsDTO> list = new ArrayList<>();
+
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(GET_APPOINTMENT_DETAILS_BY_PATIENT)) {
+            ps.setInt(1, patientId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    PatientAppointmentDetailsDTO dto = new PatientAppointmentDetailsDTO();
+                    dto.setAppointmentId(rs.getInt("appointment_id"));
+                    dto.setDate(rs.getString("date"));
+                    dto.setStartTime(rs.getString("start_time"));
+                    dto.setEndTime(rs.getString("end_time"));
+                    dto.setStatus(rs.getString("status"));
+                    dto.setDoctorId(rs.getInt("doctor_id"));
+                    dto.setDoctorFirstName(rs.getString("doctor_first_name"));
+                    dto.setDoctorLastName(rs.getString("doctor_last_name"));
+                    dto.setServiceId(rs.getInt("service_id"));
+                    dto.setServiceName(rs.getString("service_name"));
+                    list.add(dto);
+                }
+            }
+        } catch (SQLException e) {
+            LOGGER.error("Error fetching appointment details by patient id {}", patientId, e);
+        }
+
+        return list;
+    }
+
+
 
     public boolean updateStatus(int appointmentId, String status) {
         try (Connection conn = getConnection();
@@ -152,6 +202,30 @@ public class PatientAppointmentDAO extends BaseDao {
         return null;
     }
 
+    public boolean hasOverlappingAppointment(int doctorId, Date date, Time startTime, Time endTime) {
+
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(CHECK_OVERLAPPING_APPOINTMENTS)) {
+
+            ps.setInt(1, doctorId);
+            ps.setDate(2, date);
+            ps.setTime(3, endTime);
+            ps.setTime(4, startTime);
+            ps.setTime(5, startTime);
+            ps.setTime(6, endTime);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1) > 0;
+                }
+            }
+        } catch (SQLException e) {
+            LOGGER.error("Error checking overlapping appointments for doctorId=" + doctorId, e);
+        }
+        return false;
+    }
+
+    
     private PatientAppointmentEntity mapEntity(ResultSet rs) throws SQLException {
         PatientAppointmentEntity entity = new PatientAppointmentEntity();
         entity.setAppointmentId(rs.getInt("appointment_id"));
@@ -167,4 +241,5 @@ public class PatientAppointmentDAO extends BaseDao {
         entity.setServiceName(rs.getString("service_name"));
         return entity;
     }
+
 }

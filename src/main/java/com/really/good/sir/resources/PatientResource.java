@@ -8,6 +8,7 @@ import com.really.good.sir.dto.PatientDTO;
 import com.really.good.sir.entity.PatientEntity;
 import com.really.good.sir.entity.Role;
 import com.really.good.sir.entity.UserSessionEntity;
+import com.really.good.sir.validator.PatientValidator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -24,6 +25,7 @@ import java.util.List;
 public class PatientResource {
     private static final Logger LOGGER = LogManager.getLogger(PatientResource.class);
     private final PatientConverter patientConverter = new PatientConverter();
+    private final PatientValidator patientValidator = new PatientValidator();
     private final PatientDAO patientDAO = new PatientDAO();
     private final UserSessionDAO userSessionDAO = new UserSessionDAO();
 
@@ -50,6 +52,38 @@ public class PatientResource {
         final List<PatientDTO> patientDTOs = patientConverter.convert(patientEntities);
         return Response.ok(patientDTOs).build();
     }
+
+    @GET
+    @Path("/by-credential/{credentialId}")
+    public Response getPatientIdByCredential(@PathParam("credentialId") final int credentialId,
+                                             @CookieParam("session_id") final String sessionId) {
+        if (sessionId == null || sessionId.isEmpty()) {
+            final ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setMessage("Not authorized");
+            return Response.status(Response.Status.UNAUTHORIZED)
+                    .entity(errorDTO)
+                    .build();
+        }
+
+        UserSessionEntity session = userSessionDAO.getSessionById(Integer.parseInt(sessionId));
+        if (!Role.PATIENT.toString().equalsIgnoreCase(session.getRole())) {
+            final ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setMessage("Forbidden to access resource");
+            return Response.status(Response.Status.FORBIDDEN)
+                    .entity(errorDTO)
+                    .build();
+        }
+
+        final int patientId = patientDAO.getPatientIdByCredentialId(credentialId);
+        if (patientId == -1) {
+            return Response.status(Response.Status.NOT_FOUND)
+                    .entity("Patient not found for credential ID: " + credentialId)
+                    .build();
+        }
+
+        return Response.ok(patientId).build();
+    }
+
 
     @GET
     @Path("/{patientId}")
@@ -114,6 +148,55 @@ public class PatientResource {
                     .entity(errorDTO)
                     .build();
         }
+
+        if (!patientValidator.isFirstNameValid(requestPatientDTO)) {
+            ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setMessage("First name has the wrong format");
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(errorDTO)
+                    .build();
+        }
+
+        if (!patientValidator.isLastNameValid(requestPatientDTO)) {
+            ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setMessage("Last name has the wrong format");
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(errorDTO)
+                    .build();
+        }
+
+        if (!patientValidator.isAddressValid(requestPatientDTO)) {
+            ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setMessage("No Address provided");
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(errorDTO)
+                    .build();
+        }
+
+        if (!patientValidator.isDateOfBirthValid(requestPatientDTO)) {
+            ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setMessage("Unfitting date of birth");
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(errorDTO)
+                    .build();
+        }
+
+        if (!patientValidator.isEmailValid(requestPatientDTO)) {
+            ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setMessage("Email is either of the wrong format or already exists");
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(errorDTO)
+                    .build();
+        }
+
+        if (!patientValidator.isPhoneValid(requestPatientDTO)) {
+            ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setMessage("Phone number is either of the wrong format or already exists");
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(errorDTO)
+                    .build();
+        }
+
         final PatientEntity patientEntity = patientConverter.convert(requestPatientDTO);
         final PatientEntity createdEntity = patientDAO.createPatient(patientEntity);
         final PatientDTO responsePatientDTO = patientConverter.convert(createdEntity);
@@ -140,8 +223,56 @@ public class PatientResource {
                     .entity(errorDTO)
                     .build();
         }
+
+        if (!patientValidator.isFirstNameValid(requestPatientDTO)) {
+            ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setMessage("First name has the wrong format");
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(errorDTO)
+                    .build();
+        }
+
+        if (!patientValidator.isLastNameValid(requestPatientDTO)) {
+            ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setMessage("Last name has the wrong format");
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(errorDTO)
+                    .build();
+        }
+
+        if (!patientValidator.isAddressValid(requestPatientDTO)) {
+            ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setMessage("No Address provided");
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(errorDTO)
+                    .build();
+        }
+
+        if (!patientValidator.isDateOfBirthValid(requestPatientDTO)) {
+            ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setMessage("Unfitting date of birth");
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(errorDTO)
+                    .build();
+        }
+
+        if (!patientValidator.isEmailValid(requestPatientDTO)) {
+            ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setMessage("Email is either of the wrong format or already exists");
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(errorDTO)
+                    .build();
+        }
+
+        if (!patientValidator.isPhoneValid(requestPatientDTO)) {
+            ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setMessage("Phone number is either of the wrong format or already exists");
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(errorDTO)
+                    .build();
+        }
         final PatientEntity patientEntity = patientConverter.convert(requestPatientDTO);
-        final boolean isPatientUpdated = patientDAO.updatePatient(patientEntity);
+        patientDAO.updatePatient(patientEntity);
         final PatientDTO responsePatientDTO = patientConverter.convert(patientEntity);
         return Response.ok(responsePatientDTO).build();
     }

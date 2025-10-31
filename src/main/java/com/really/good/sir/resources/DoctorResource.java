@@ -8,7 +8,7 @@ import com.really.good.sir.dto.ErrorDTO;
 import com.really.good.sir.entity.DoctorEntity;
 import com.really.good.sir.entity.Role;
 import com.really.good.sir.entity.UserSessionEntity;
-import jakarta.annotation.security.RolesAllowed;
+import com.really.good.sir.validator.DoctorValidator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -27,6 +27,7 @@ public class DoctorResource {
     private final DoctorConverter doctorConverter = new DoctorConverter();
     private final DoctorDAO doctorDAO = new DoctorDAO();
     private final UserSessionDAO userSessionDAO = new UserSessionDAO();
+    private final DoctorValidator doctorValidator = new DoctorValidator();
 
     // CUD = ADMIN; R - {all=cca+admin, service=cca, id=cca, credential=doctor}
     @GET
@@ -141,6 +142,46 @@ public class DoctorResource {
                     .entity(errorDTO)
                     .build();
         }
+        if (!doctorValidator.isFirstNameValid(doctorDTO)) {
+            ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setMessage("First name has the wrong format");
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(errorDTO)
+                    .build();
+        }
+
+        if (!doctorValidator.isLastNameValid(doctorDTO)) {
+            ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setMessage("Last name has the wrong format");
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(errorDTO)
+                    .build();
+        }
+
+        if (!doctorValidator.isSpecializationIdValid(doctorDTO)) {
+            ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setMessage("No Specialization provided");
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(errorDTO)
+                    .build();
+        }
+
+        if (!doctorValidator.isEmailValid(doctorDTO)) {
+            ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setMessage("Email is either of the wrong format or already exists");
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(errorDTO)
+                    .build();
+        }
+
+        if (!doctorValidator.isPhoneValid(doctorDTO)) {
+            ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setMessage("Phone number is either of the wrong format or already exists");
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(errorDTO)
+                    .build();
+        }
+
         final DoctorEntity doctorEntity = doctorConverter.convert(doctorDTO);
         final DoctorEntity createdDoctorEntity = doctorDAO.createDoctor(doctorEntity);
         final DoctorDTO responseDoctorDTO = doctorConverter.convert(createdDoctorEntity);
@@ -149,7 +190,7 @@ public class DoctorResource {
     }
 
     @PUT
-    public Response updateDoctor(final DoctorDTO requestDoctorDTO, @CookieParam("session_id") final String sessionId) {
+    public Response updateDoctor(final DoctorDTO doctorDTO, @CookieParam("session_id") final String sessionId) {
         if (sessionId == null || sessionId.isEmpty()) {
             final ErrorDTO errorDTO = new ErrorDTO();
             errorDTO.setMessage("Not authorized");
@@ -165,7 +206,47 @@ public class DoctorResource {
                     .entity(errorDTO)
                     .build();
         }
-        final DoctorEntity doctorEntity = doctorConverter.convert(requestDoctorDTO);
+        if (!doctorValidator.isFirstNameValid(doctorDTO)) {
+            ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setMessage("First name has the wrong format");
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(errorDTO)
+                    .build();
+        }
+
+        if (!doctorValidator.isLastNameValid(doctorDTO)) {
+            ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setMessage("Last name has the wrong format");
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(errorDTO)
+                    .build();
+        }
+
+        if (!doctorValidator.isSpecializationIdValid(doctorDTO)) {
+            ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setMessage("No Specialization provided");
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(errorDTO)
+                    .build();
+        }
+
+        if (!doctorValidator.isEmailValid(doctorDTO)) {
+            ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setMessage("Email is either of the wrong format or already exists");
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(errorDTO)
+                    .build();
+        }
+
+        if (!doctorValidator.isPhoneValid(doctorDTO)) {
+            ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setMessage("Phone number is either of the wrong format or already exists");
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(errorDTO)
+                    .build();
+        }
+
+        final DoctorEntity doctorEntity = doctorConverter.convert(doctorDTO);
         final boolean isDoctorUpdated = doctorDAO.updateDoctor(doctorEntity);
         LOGGER.info("Doctor updated [{}]", isDoctorUpdated);
         final DoctorDTO responseDoctorDTO = doctorConverter.convert(doctorEntity);

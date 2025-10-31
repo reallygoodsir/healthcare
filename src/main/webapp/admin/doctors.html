@@ -194,13 +194,25 @@
     async function submitDoctor(payload){
       try{
         const method=payload.id?'PUT':'POST';
-        const url=API_BASE; // always same endpoint
+        const url=API_BASE;
         const resp=await fetch(url,{
           method,
           headers:{'Content-Type':'application/json'},
           body:JSON.stringify(payload)
         });
-        if(!resp.ok) throw new Error(`HTTP ${resp.status}`);
+
+        if(!resp.ok){
+          let message='Failed to save doctor';
+          try{
+            const data=await resp.json();
+            if(data && data.message) message=data.message;
+          }catch{} // ignore JSON errors
+          modalMessage.textContent=message;
+          modalMessage.style.color='var(--danger)';
+          modalMessage.style.display='block';
+          return;
+        }
+
         await loadDoctors();
         closeModal();
       }catch(err){

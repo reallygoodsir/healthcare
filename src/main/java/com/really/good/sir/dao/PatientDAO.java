@@ -54,6 +54,26 @@ public class PatientDAO extends BaseDao {
     private static final String GET_CREDENTIAL_ID =
             "SELECT credential_id FROM patients WHERE patient_id = ?";
 
+    private static final String GET_PATIENT_ID_BY_CREDENTIAL =
+            "SELECT patient_id FROM patients WHERE credential_id = ?";
+
+
+    public int getPatientIdByCredentialId(final int credentialId) {
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(GET_PATIENT_ID_BY_CREDENTIAL)) {
+
+            ps.setInt(1, credentialId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt("patient_id");
+                }
+            }
+        } catch (SQLException e) {
+            LOGGER.error("Error fetching patient ID by credential ID {}", credentialId, e);
+        }
+        return -1;
+    }
+
     // --- CREATE PATIENT WITH CREDENTIAL ---
     public PatientEntity createPatient(PatientEntity patientEntity) {
         Connection connection = null;

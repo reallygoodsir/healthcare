@@ -6,6 +6,7 @@ import com.really.good.sir.dto.ErrorDTO;
 import com.really.good.sir.dto.PatientAppointmentOutcomeDTO;
 import com.really.good.sir.entity.Role;
 import com.really.good.sir.entity.UserSessionEntity;
+import com.really.good.sir.validator.PatientAppointmentOutcomeValidator;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
@@ -18,6 +19,7 @@ public class PatientAppointmentOutcomeResource {
 
     private final PatientAppointmentOutcomeDAO dao = new PatientAppointmentOutcomeDAO();
     private final UserSessionDAO userSessionDAO = new UserSessionDAO();
+    private final PatientAppointmentOutcomeValidator outcomeValidator = new PatientAppointmentOutcomeValidator();
 
     @GET
     @Path("/{appointmentId}")
@@ -62,6 +64,15 @@ public class PatientAppointmentOutcomeResource {
                     .entity(errorDTO)
                     .build();
         }
+
+        if (!outcomeValidator.isResultValid(dto)) {
+            ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setMessage("Result can't be empty");
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(errorDTO)
+                    .build();
+        }
+
         try {
             dto.setAppointmentId(appointmentId);
             PatientAppointmentOutcomeDTO saved = dao.saveOrUpdateOutcome(dto);

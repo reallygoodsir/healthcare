@@ -8,6 +8,7 @@ import com.really.good.sir.dto.ErrorDTO;
 import com.really.good.sir.entity.DoctorScheduleEntity;
 import com.really.good.sir.entity.Role;
 import com.really.good.sir.entity.UserSessionEntity;
+import com.really.good.sir.validator.DoctorScheduleValidator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -24,6 +25,7 @@ public class DoctorScheduleResource {
     private final DoctorScheduleConverter scheduleConverter = new DoctorScheduleConverter();
     private final DoctorScheduleDAO scheduleDAO = new DoctorScheduleDAO();
     private final UserSessionDAO userSessionDAO = new UserSessionDAO();
+    private final DoctorScheduleValidator doctorScheduleValidator = new DoctorScheduleValidator();
 
     @GET
     @Path("/{doctorId}")
@@ -88,6 +90,31 @@ public class DoctorScheduleResource {
                     .entity(errorDTO)
                     .build();
         }
+
+        if (!doctorScheduleValidator.isScheduleDateValid(requestScheduleDTO)) {
+            ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setMessage("Date must be not be in the past");
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(errorDTO)
+                    .build();
+        }
+
+        if (!doctorScheduleValidator.isTimeRangeValid(requestScheduleDTO)) {
+            ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setMessage("Invalid start/end time");
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(errorDTO)
+                    .build();
+        }
+
+        if (doctorScheduleValidator.isOverlapping(requestScheduleDTO)) {
+            ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setMessage("Time overlaps with an existing schedule");
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(errorDTO)
+                    .build();
+        }
+
         final DoctorScheduleEntity scheduleEntity = scheduleConverter.convert(requestScheduleDTO);
         final DoctorScheduleEntity createdEntity = scheduleDAO.createSchedule(scheduleEntity);
         final DoctorScheduleDTO responseScheduleDTO = scheduleConverter.convert(createdEntity);
@@ -111,6 +138,31 @@ public class DoctorScheduleResource {
                     .entity(errorDTO)
                     .build();
         }
+
+        if (!doctorScheduleValidator.isScheduleDateValid(requestScheduleDTO)) {
+            ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setMessage("Date must be not be in the past");
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(errorDTO)
+                    .build();
+        }
+
+        if (!doctorScheduleValidator.isTimeRangeValid(requestScheduleDTO)) {
+            ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setMessage("Invalid start/end time");
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(errorDTO)
+                    .build();
+        }
+
+        if (doctorScheduleValidator.isOverlapping(requestScheduleDTO)) {
+            ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setMessage("Time overlaps with an existing schedule");
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(errorDTO)
+                    .build();
+        }
+
         final DoctorScheduleEntity scheduleEntity = scheduleConverter.convert(requestScheduleDTO);
         final boolean isScheduleEntityUpdated = scheduleDAO.updateSchedule(scheduleEntity);
         LOGGER.info("Schedule updated [{}]", isScheduleEntityUpdated);

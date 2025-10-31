@@ -1,13 +1,10 @@
 package com.really.good.sir.dto;
 
-import java.sql.Date;
 import java.sql.Timestamp;
 
 public class AppointmentOutcomeDTO {
     private int appointmentId;
     private String diagnosis;
-    private boolean followUpRequired;
-    private Date followUpDate;
     private String recommendations;
     private Timestamp createdAt;
     private Timestamp updatedAt;
@@ -17,12 +14,6 @@ public class AppointmentOutcomeDTO {
 
     public String getDiagnosis() { return diagnosis; }
     public void setDiagnosis(String diagnosis) { this.diagnosis = diagnosis; }
-
-    public boolean isFollowUpRequired() { return followUpRequired; }
-    public void setFollowUpRequired(boolean followUpRequired) { this.followUpRequired = followUpRequired; }
-
-    public Date getFollowUpDate() { return followUpDate; }
-    public void setFollowUpDate(Date followUpDate) { this.followUpDate = followUpDate; }
 
     public String getRecommendations() { return recommendations; }
     public void setRecommendations(String recommendations) { this.recommendations = recommendations; }

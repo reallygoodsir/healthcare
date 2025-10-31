@@ -97,106 +97,118 @@
   const modalMessage=document.getElementById('modalMessage');
 
   const form={
-      serviceId:document.getElementById('serviceId'),
-      name:document.getElementById('name'),
-      price:document.getElementById('price')
+    serviceId:document.getElementById('serviceId'),
+    name:document.getElementById('name'),
+    price:document.getElementById('price')
   };
 
   async function loadServices(){
-      try{
-          const resp=await fetch(API_BASE);
-          if(!resp.ok) throw new Error(`HTTP ${resp.status}`);
-          const services=await resp.json();
-          tableBody.innerHTML='';
-          for(const s of services){
-              const tr=document.createElement('tr');
-              tr.innerHTML=`<td>${s.name||''}</td>
-                              <td>${s.price||0}</td>
-                              <td class="actions">
-                                  <button class="edit">Edit</button>
-                                  <button class="delete">Delete</button>
-                              </td>`;
-              tableBody.appendChild(tr);
-              tr.querySelector('.edit').onclick=()=>openModal('edit',s);
-              tr.querySelector('.delete').onclick=()=>deleteService(s.id);
-          }
-      }catch(err){console.error('Failed to load services',err);}
+    try{
+      const resp=await fetch(API_BASE);
+      if(!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const services=await resp.json();
+      tableBody.innerHTML='';
+      for(const s of services){
+        const tr=document.createElement('tr');
+        tr.innerHTML=`<td>${s.name||''}</td>
+                      <td>${s.price||0}</td>
+                      <td class="actions">
+                        <button class="edit">Edit</button>
+                        <button class="delete">Delete</button>
+                      </td>`;
+        tableBody.appendChild(tr);
+        tr.querySelector('.edit').onclick=()=>openModal('edit',s);
+        tr.querySelector('.delete').onclick=()=>deleteService(s.id);
+      }
+    }catch(err){console.error('Failed to load services',err);}
   }
 
   async function deleteService(id){
-      if(!confirm('Delete this service?')) return;
-      try{
-          const resp=await fetch(`${API_BASE}/${id}`,{method:'DELETE'});
-          if(!resp.ok) throw new Error(`HTTP ${resp.status}`);
-          await loadServices();
-      }catch(err){alert('Failed to delete service');}
+    if(!confirm('Delete this service?')) return;
+    try{
+      const resp=await fetch(`${API_BASE}/${id}`,{method:'DELETE'});
+      if(!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      await loadServices();
+    }catch(err){alert('Failed to delete service');}
   }
 
   async function submitService(payload){
-      try{
-          const method=payload.id?'PUT':'POST';
-          const resp=await fetch(API_BASE,{
-              method,
-              headers:{'Content-Type':'application/json'},
-              body:JSON.stringify(payload)
-          });
-          if(!resp.ok) throw new Error(`HTTP ${resp.status}`);
-          await loadServices();
-          closeModal();
-      }catch(err){
-          modalMessage.textContent='Failed to save service';
-          modalMessage.style.color='var(--danger)';
-          modalMessage.style.display='block';
+    try{
+      const method=payload.id?'PUT':'POST';
+      const resp=await fetch(API_BASE,{
+        method,
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify(payload)
+      });
+
+      if(!resp.ok){
+        let message='Failed to save service';
+        try{
+          const data=await resp.json();
+          if(data && data.message) message=data.message;
+        }catch{} // ignore JSON errors
+        modalMessage.textContent=message;
+        modalMessage.style.color='var(--danger)';
+        modalMessage.style.display='block';
+        return;
       }
+
+      await loadServices();
+      closeModal();
+    }catch(err){
+      modalMessage.textContent='Failed to save service';
+      modalMessage.style.color='var(--danger)';
+      modalMessage.style.display='block';
+    }
   }
 
   function openModal(mode='create',service=null){
-      formError.style.display='none';
-      modalMessage.style.display='none';
+    formError.style.display='none';
+    modalMessage.style.display='none';
 
-      if(mode==='create'){
-          modalTitle.textContent='Create Service';
-          saveBtn.textContent='Create';
-          form.serviceId.value='';
-          form.name.value='';
-          form.price.value='';
-      } else {
-          modalTitle.textContent='Edit Service';
-          saveBtn.textContent='Update';
-          form.serviceId.value=service.id??'';
-          form.name.value=service.name??'';
-          form.price.value=service.price??'';
-      }
-      modalBackdrop.style.display='flex';
-      modalBackdrop.setAttribute('aria-hidden','false');
+    if(mode==='create'){
+      modalTitle.textContent='Create Service';
+      saveBtn.textContent='Create';
+      form.serviceId.value='';
+      form.name.value='';
+      form.price.value='';
+    } else {
+      modalTitle.textContent='Edit Service';
+      saveBtn.textContent='Update';
+      form.serviceId.value=service.id??'';
+      form.name.value=service.name??'';
+      form.price.value=service.price??'';
+    }
+    modalBackdrop.style.display='flex';
+    modalBackdrop.setAttribute('aria-hidden','false');
   }
 
   function closeModal(){
-      modalBackdrop.style.display='none';
-      modalBackdrop.setAttribute('aria-hidden','true');
+    modalBackdrop.style.display='none';
+    modalBackdrop.setAttribute('aria-hidden','true');
   }
 
   saveBtn.addEventListener('click',async()=>{
-      formError.style.display='none';
-      modalMessage.style.display='none';
-      const name=form.name.value.trim();
-      const price=form.price.value.trim();
-      if(!name){
-          formError.textContent='Service name is required.';
-          formError.style.display='block';
-          return;
-      }
-      if(!price || isNaN(price) || Number(price)<0){
-          formError.textContent='Valid price is required.';
-          formError.style.display='block';
-          return;
-      }
-      const payload={
-          id:form.serviceId.value?Number(form.serviceId.value):undefined,
-          name,
-          price:Number(price)
-      };
-      await submitService(payload);
+    formError.style.display='none';
+    modalMessage.style.display='none';
+    const name=form.name.value.trim();
+    const price=form.price.value.trim();
+    if(!name){
+      formError.textContent='Service name is required.';
+      formError.style.display='block';
+      return;
+    }
+    if(!price || isNaN(price) || Number(price)<0){
+      formError.textContent='Valid price is required.';
+      formError.style.display='block';
+      return;
+    }
+    const payload={
+      id:form.serviceId.value?Number(form.serviceId.value):undefined,
+      name,
+      price:Number(price)
+    };
+    await submitService(payload);
   });
 
   cancelBtn.addEventListener('click',closeModal);

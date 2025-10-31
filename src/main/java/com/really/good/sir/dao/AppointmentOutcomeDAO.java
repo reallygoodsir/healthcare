@@ -64,8 +64,6 @@ public class AppointmentOutcomeDAO extends BaseDao {
                     dto.setAppointmentId(rs.getInt("appointment_id"));
                     dto.setDiagnosis(rs.getString("diagnosis"));
                     dto.setRecommendations(rs.getString("recommendations"));
-                    dto.setFollowUpRequired(rs.getBoolean("follow_up_required"));
-                    dto.setFollowUpDate(rs.getDate("follow_up_date"));
                     dto.setCreatedAt(rs.getTimestamp("created_at"));
                     dto.setUpdatedAt(rs.getTimestamp("updated_at"));
                     return dto;
