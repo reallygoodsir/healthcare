@@ -178,13 +178,12 @@ public class ServiceResource {
         }
         boolean deleted = serviceDAO.deleteService(id);
         LOGGER.info("Service deleted: {}", deleted);
-        if (!deleted) {
-            ErrorDTO errorDTO = new ErrorDTO();
-            errorDTO.setMessage("The service couldn't be deleted");
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity(errorDTO)
-                    .build();
-        }
-        return Response.noContent().build();
+        if (deleted) return Response.noContent().build();
+        ErrorDTO errorDTO = new ErrorDTO();
+        errorDTO.setMessage("The service couldn't be deleted");
+        return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                .entity(errorDTO)
+                .build();
+
     }
 }

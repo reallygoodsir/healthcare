@@ -30,7 +30,6 @@ public class DoctorResource {
     private final UserSessionDAO userSessionDAO = new UserSessionDAO();
     private final DoctorValidator doctorValidator = new DoctorValidator();
 
-    // CUD = ADMIN; R - {all=cca+admin, service=cca, id=cca, credential=doctor}
     @GET
     public Response getAllDoctors(@CookieParam("session_id") final String sessionId) {
         if (sessionId == null || sessionId.isEmpty()) {

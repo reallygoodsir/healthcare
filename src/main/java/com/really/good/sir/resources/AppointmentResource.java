@@ -13,7 +13,6 @@ import com.really.good.sir.entity.AppointmentOutcomeEntity;
 import com.really.good.sir.entity.Role;
 import com.really.good.sir.entity.UserSessionEntity;
 import com.really.good.sir.validator.AppointmentOutcomeValidator;
-import com.really.good.sir.validator.PatientValidator;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
@@ -205,8 +204,10 @@ public class AppointmentResource {
         if (success) return Response.noContent().build();
 
         final ErrorDTO errorDTO = new ErrorDTO();
-        errorDTO.setMessage("Forbidden to access resource");
-        return Response.status(Response.Status.NOT_FOUND).build();
+        errorDTO.setMessage("Status couldn't be updated");
+        return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                .entity(errorDTO)
+                .build();
     }
 
     @DELETE
@@ -233,6 +234,8 @@ public class AppointmentResource {
         }
         final ErrorDTO errorDTO = new ErrorDTO();
         errorDTO.setMessage("Bad request");
-        return Response.status(Response.Status.BAD_REQUEST).build();
+        return Response.status(Response.Status.BAD_REQUEST)
+                .entity(errorDTO)
+                .build();
     }
 }

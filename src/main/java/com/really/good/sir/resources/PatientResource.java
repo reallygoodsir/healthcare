@@ -29,8 +29,6 @@ public class PatientResource {
     private final PatientDAO patientDAO = new PatientDAO();
     private final UserSessionDAO userSessionDAO = new UserSessionDAO();
 
-
-    // CUD = admin; R - {phone=cca, id=cca+doctor, all=admin}
     @GET
     public Response getAllPatients(@CookieParam("session_id") final String sessionId) {
         if (sessionId == null || sessionId.isEmpty()) {
@@ -298,6 +296,11 @@ public class PatientResource {
         }
         final boolean isPatientDeleted = patientDAO.deletePatient(patientId);
         LOGGER.info("Is patient deleted [{}]", isPatientDeleted);
-        return Response.noContent().build();
+        if (isPatientDeleted) return Response.noContent().build();
+        final ErrorDTO errorDTO = new ErrorDTO();
+        errorDTO.setMessage("Failed to update appointment status");
+        return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                .entity(errorDTO)
+                .build();
     }
 }

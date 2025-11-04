@@ -38,11 +38,7 @@ public class AuthorizationResource {
                     .entity(errorDTO)
                     .build();
         }
-
-        // Convert entity to DTO
         UserSessionDTO sessionDTO = converter.convert(sessionEntity);
-
-        // Create session cookie
         NewCookie cookie = new NewCookie("session_id",
                 String.valueOf(sessionDTO.getId()),
                 "/", null,
@@ -51,7 +47,6 @@ public class AuthorizationResource {
 
         LOGGER.info("User logged in with credential_id {} and role {}", sessionDTO.getCredentialId(), sessionDTO.getRole());
 
-        // Return the DTO itself, not a Map
         return Response.ok(sessionDTO).cookie(cookie).build();
     }
 
@@ -82,8 +77,6 @@ public class AuthorizationResource {
                     0, false);
             return Response.ok(new UserSessionDTO()).cookie(deleteCookie).build();
         }
-
-        // Valid session — return DTO
         return Response.ok(converter.convert(sessionEntity)).build();
     }
 

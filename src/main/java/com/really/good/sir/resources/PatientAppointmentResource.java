@@ -146,7 +146,14 @@ public class PatientAppointmentResource {
                     .build();
         }
         boolean deleted = dao.deleteAppointment(appointmentId);
-        return deleted ? Response.noContent().build() : Response.status(500).build();
+        if(deleted){
+            return Response.noContent().build();
+        }
+        final ErrorDTO errorDTO = new ErrorDTO();
+        errorDTO.setMessage("Appointment couldn't be deleted");
+        return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                .entity(errorDTO)
+                .build();
     }
 
     @PATCH
@@ -169,13 +176,20 @@ public class PatientAppointmentResource {
                     .build();
         }
         if (status == null || status.isBlank()) {
+            final ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setMessage("Status query parameter is required");
             return Response.status(Response.Status.BAD_REQUEST)
-                    .entity("Status query parameter is required").build();
+                    .entity(errorDTO)
+                    .build();
+
         }
         boolean updated = dao.updateStatus(appointmentId, status);
         if (updated) return Response.noContent().build();
+        final ErrorDTO errorDTO = new ErrorDTO();
+        errorDTO.setMessage("Failed to update appointment status");
         return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                .entity("Failed to update appointment status").build();
+                .entity(errorDTO)
+                .build();
     }
 
     @GET
