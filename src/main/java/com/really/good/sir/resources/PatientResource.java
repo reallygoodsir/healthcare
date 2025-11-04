@@ -76,11 +76,12 @@ public class PatientResource {
 
         final int patientId = patientDAO.getPatientIdByCredentialId(credentialId);
         if (patientId == -1) {
+            final ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setMessage("Patient not found for credential ID: " + credentialId);
             return Response.status(Response.Status.NOT_FOUND)
-                    .entity("Patient not found for credential ID: " + credentialId)
+                    .entity(errorDTO)
                     .build();
         }
-
         return Response.ok(patientId).build();
     }
 

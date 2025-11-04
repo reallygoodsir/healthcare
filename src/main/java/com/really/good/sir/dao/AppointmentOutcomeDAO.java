@@ -1,6 +1,8 @@
 package com.really.good.sir.dao;
 
+import com.really.good.sir.converter.AppointmentOutcomeConverter;
 import com.really.good.sir.dto.AppointmentOutcomeDTO;
+import com.really.good.sir.entity.AppointmentOutcomeEntity;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -8,7 +10,7 @@ import java.sql.*;
 
 public class AppointmentOutcomeDAO extends BaseDao {
     private static final Logger LOGGER = LogManager.getLogger(AppointmentOutcomeDAO.class);
-
+    private final AppointmentOutcomeConverter converter = new AppointmentOutcomeConverter();
     private static final String GET_OUTCOME_BY_APPOINTMENT =
             "SELECT * FROM appointment_outcomes WHERE appointment_id = ?";
 
@@ -18,7 +20,7 @@ public class AppointmentOutcomeDAO extends BaseDao {
     private static final String UPDATE_OUTCOME =
             "UPDATE appointment_outcomes SET diagnosis = ?, recommendations = ?, updated_at = CURRENT_TIMESTAMP WHERE appointment_id = ?";
 
-    public AppointmentOutcomeDTO saveOrUpdateOutcome(AppointmentOutcomeDTO dto) {
+    public AppointmentOutcomeEntity saveOrUpdateOutcome(AppointmentOutcomeDTO dto) {
         try (Connection conn = getConnection()) {
             // check if outcome exists
             boolean exists;
@@ -54,7 +56,7 @@ public class AppointmentOutcomeDAO extends BaseDao {
         }
     }
 
-    public AppointmentOutcomeDTO getOutcomeByAppointmentId(int appointmentId) {
+    public AppointmentOutcomeEntity getOutcomeByAppointmentId(int appointmentId) {
         try (Connection conn = getConnection();
              PreparedStatement ps = conn.prepareStatement(GET_OUTCOME_BY_APPOINTMENT)) {
             ps.setInt(1, appointmentId);
@@ -66,7 +68,7 @@ public class AppointmentOutcomeDAO extends BaseDao {
                     dto.setRecommendations(rs.getString("recommendations"));
                     dto.setCreatedAt(rs.getTimestamp("created_at"));
                     dto.setUpdatedAt(rs.getTimestamp("updated_at"));
-                    return dto;
+                    return converter.convert(dto);
                 }
             }
         } catch (SQLException e) {

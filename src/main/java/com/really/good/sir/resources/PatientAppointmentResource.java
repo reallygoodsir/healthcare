@@ -220,7 +220,9 @@ public class PatientAppointmentResource {
         if (!Role.PATIENT.toString().equalsIgnoreCase(role)) {
             ErrorDTO error = new ErrorDTO();
             error.setMessage("Forbidden to access resource");
-            return Response.status(Response.Status.FORBIDDEN).entity(error).build();
+            return Response.status(Response.Status.FORBIDDEN)
+                    .entity(error)
+                    .build();
         }
 
         List<PatientAppointmentDetailsDTO> list = dao.getAppointmentDetailsByPatientId(patientId);

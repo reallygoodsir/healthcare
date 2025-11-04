@@ -54,7 +54,13 @@ public class ServiceResource {
     @Path("/{id}")
     public Response getServiceById(@PathParam("id") int id, @CookieParam("session_id") final String sessionId) {
         ServiceEntity entity = serviceDAO.getServiceById(id);
-        if (entity == null) return Response.status(Response.Status.NOT_FOUND).build();
+        if (entity == null) {
+            final ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setMessage("Service couldn't be found with the provided id");
+            return Response.status(Response.Status.NOT_FOUND)
+                    .entity(errorDTO)
+                    .build();
+        }
         return Response.ok(serviceConverter.convert(entity)).build();
     }
 
@@ -172,6 +178,13 @@ public class ServiceResource {
         }
         boolean deleted = serviceDAO.deleteService(id);
         LOGGER.info("Service deleted: {}", deleted);
+        if (!deleted) {
+            ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setMessage("The service couldn't be deleted");
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity(errorDTO)
+                    .build();
+        }
         return Response.noContent().build();
     }
 }

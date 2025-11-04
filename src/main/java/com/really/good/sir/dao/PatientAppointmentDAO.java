@@ -105,6 +105,7 @@ public class PatientAppointmentDAO extends BaseDao {
             LOGGER.error("Error fetching appointment details by patient id {}", patientId, e);
         }
 
+
         return list;
     }
 

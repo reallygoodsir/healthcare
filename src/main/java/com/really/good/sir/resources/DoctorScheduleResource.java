@@ -167,7 +167,13 @@ public class DoctorScheduleResource {
         final boolean isScheduleEntityUpdated = scheduleDAO.updateSchedule(scheduleEntity);
         LOGGER.info("Schedule updated [{}]", isScheduleEntityUpdated);
         final DoctorScheduleDTO responseScheduleDTO = scheduleConverter.convert(scheduleEntity);
-        return Response.ok(responseScheduleDTO).build();
+        if(isScheduleEntityUpdated) return Response.ok(responseScheduleDTO).build();
+
+        ErrorDTO errorDTO = new ErrorDTO();
+        errorDTO.setMessage("Failed to update schedule");
+        return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                .entity(errorDTO)
+                .build();
     }
 
     @DELETE
@@ -190,8 +196,15 @@ public class DoctorScheduleResource {
                     .entity(errorDTO)
                     .build();
         }
+
         final boolean isScheduleEntityDeleted = scheduleDAO.deleteSchedule(scheduleId);
         LOGGER.info("Schedule deleted [{}]", isScheduleEntityDeleted);
-        return Response.noContent().build();
+        if(isScheduleEntityDeleted) return Response.noContent().build();
+
+        final ErrorDTO errorDTO = new ErrorDTO();
+        errorDTO.setMessage("Incorrect/absent id");
+        return Response.status(Response.Status.BAD_REQUEST)
+                .entity(errorDTO)
+                .build();
     }
 }

@@ -4,6 +4,7 @@ import com.really.good.sir.converter.DoctorConverter;
 import com.really.good.sir.dao.DoctorDAO;
 import com.really.good.sir.dao.UserSessionDAO;
 import com.really.good.sir.dto.DoctorDTO;
+import com.really.good.sir.dto.DoctorIdDTO;
 import com.really.good.sir.dto.ErrorDTO;
 import com.really.good.sir.entity.DoctorEntity;
 import com.really.good.sir.entity.Role;
@@ -118,11 +119,15 @@ public class DoctorResource {
         }
         final int doctorId = doctorDAO.getDoctorIdByCredentialId(credentialId);
         if (doctorId == -1) {
+            final ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setMessage("Not found");
             return Response.status(Response.Status.NOT_FOUND)
-                    .entity("Doctor not found for credential ID: " + credentialId)
+                    .entity(errorDTO)
                     .build();
         }
-        return Response.ok(doctorId).build();
+        DoctorIdDTO doctorIdDTO = new DoctorIdDTO();
+        doctorIdDTO.setId(doctorId);
+        return Response.ok(doctorIdDTO).build();
     }
 
     @POST
@@ -272,7 +277,14 @@ public class DoctorResource {
                     .build();
         }
         final boolean isDoctorDeleted = doctorDAO.deleteDoctor(doctorId);
-        LOGGER.info("Doctor deleted [{}]", isDoctorDeleted);
-        return Response.noContent().build();
+        if(isDoctorDeleted) {
+            LOGGER.info("Doctor deleted [{}]", isDoctorDeleted);
+            return Response.noContent().build();
+        }
+        final ErrorDTO errorDTO = new ErrorDTO();
+        errorDTO.setMessage("Incorrect/absent id");
+        return Response.status(Response.Status.BAD_REQUEST)
+                .entity(errorDTO)
+                .build();
     }
 }

@@ -24,7 +24,7 @@ public class PatientAppointmentOutcomeDAO extends BaseDao {
     private static final String GET_APPOINTMENT_STATUS =
             "SELECT status FROM patient_appointments WHERE appointment_id = ?";
 
-    public PatientAppointmentOutcomeDTO getOutcomeByAppointmentId(int appointmentId) {
+    public PatientAppointmentOutcomeEntity getOutcomeByAppointmentId(int appointmentId) {
         try (Connection conn = getConnection();
              PreparedStatement ps = conn.prepareStatement(GET_BY_APPOINTMENT)) {
             ps.setInt(1, appointmentId);
@@ -34,7 +34,7 @@ public class PatientAppointmentOutcomeDAO extends BaseDao {
                     entity.setId(rs.getInt("id"));
                     entity.setAppointmentId(rs.getInt("appointment_id"));
                     entity.setResult(rs.getString("result"));
-                    return converter.convert(entity);
+                    return entity;
                 }
             }
         } catch (SQLException e) {
@@ -43,8 +43,9 @@ public class PatientAppointmentOutcomeDAO extends BaseDao {
         return null;
     }
 
-    public PatientAppointmentOutcomeDTO saveOrUpdateOutcome(PatientAppointmentOutcomeDTO dto) throws Exception {
-        PatientAppointmentOutcomeDTO existing = getOutcomeByAppointmentId(dto.getAppointmentId());
+    public PatientAppointmentOutcomeEntity saveOrUpdateOutcome(PatientAppointmentOutcomeDTO dto) throws Exception {
+        PatientAppointmentOutcomeEntity existing = getOutcomeByAppointmentId(dto.getAppointmentId());
+        PatientAppointmentOutcomeEntity entity = new PatientAppointmentOutcomeEntity();
 
         try (Connection conn = getConnection()) {
             if (existing == null) {
@@ -71,8 +72,14 @@ public class PatientAppointmentOutcomeDAO extends BaseDao {
             throw new Exception("Failed to save/update outcome", e);
         }
 
-        return dto;
+        // Map the final state of DTO to Entity before returning
+        entity.setId(dto.getId());
+        entity.setAppointmentId(dto.getAppointmentId());
+        entity.setResult(dto.getResult());
+
+        return entity;
     }
+
 
     public boolean isAppointmentCompleted(int appointmentId) {
         try (Connection conn = getConnection();

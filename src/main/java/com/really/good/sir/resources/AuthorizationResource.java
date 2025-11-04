@@ -2,6 +2,9 @@ package com.really.good.sir.resources;
 
 import com.really.good.sir.converter.UserSessionConverter;
 import com.really.good.sir.dao.UserSessionDAO;
+import com.really.good.sir.dto.ErrorDTO;
+import com.really.good.sir.dto.LoginRequestDTO;
+import com.really.good.sir.dto.SessionCheckRequestDTO;
 import com.really.good.sir.dto.UserSessionDTO;
 import com.really.good.sir.entity.UserSessionEntity;
 import org.apache.logging.log4j.LogManager;
@@ -17,28 +20,22 @@ public class AuthorizationResource {
     private static final Logger LOGGER = LogManager.getLogger(AuthorizationResource.class);
     private final UserSessionDAO userSessionDAO = new UserSessionDAO();
     private final UserSessionConverter converter = new UserSessionConverter();
-
-    public static class LoginRequest {
-        public String email;
-        public String password;
-    }
-
-    public static class SessionCheckRequest {
-        public int sessionId;
-    }
-
     @POST
-    public Response authorize(LoginRequest request) {
-        if (request == null || request.email == null || request.password == null) {
+    public Response authorize(LoginRequestDTO request) {
+        if (request == null || request.getEmail() == null || request.getPassword() == null) {
+            final ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setMessage("Bad request");
             return Response.status(Response.Status.BAD_REQUEST)
-                    .entity("{\"error\":\"Email and password are required\"}")
+                    .entity(errorDTO)
                     .build();
         }
 
-        UserSessionEntity sessionEntity = userSessionDAO.authorize(request.email, request.password);
+        UserSessionEntity sessionEntity = userSessionDAO.authorize(request.getEmail(), request.getPassword());
         if (sessionEntity == null) {
+            final ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setMessage("Unauthorized to access resource");
             return Response.status(Response.Status.UNAUTHORIZED)
-                    .entity("{\"error\":\"Invalid credentials\"}")
+                    .entity(errorDTO)
                     .build();
         }
 
@@ -60,16 +57,18 @@ public class AuthorizationResource {
 
     @POST
     @Path("/check-session")
-    public Response checkSession(SessionCheckRequest request) {
+    public Response checkSession(SessionCheckRequestDTO request) {
         if (request == null) {
+            final ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setMessage("Session id is required");
             return Response.status(Response.Status.BAD_REQUEST)
-                    .entity("{\"error\":\"Session ID is required\"}")
+                    .entity(errorDTO)
                     .build();
         }
 
-        UserSessionEntity sessionEntity = userSessionDAO.getSessionById(request.sessionId);
+        UserSessionEntity sessionEntity = userSessionDAO.getSessionById(request.getSessionId());
         if (sessionEntity == null) {
-            return Response.ok(new UserSessionDTO()).build(); // empty DTO signals invalid
+            return Response.ok(new UserSessionDTO()).build();
         }
 
         long now = System.currentTimeMillis();
@@ -98,8 +97,10 @@ public class AuthorizationResource {
             return Response.noContent().cookie(expiredCookie).build();
         } else {
             LOGGER.warn("No session found with id {}", id);
-            return Response.status(Response.Status.NOT_FOUND)
-                    .entity("{\"error\":\"Session not found\"}")
+            final ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setMessage("Session not found");
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(errorDTO)
                     .build();
         }
     }

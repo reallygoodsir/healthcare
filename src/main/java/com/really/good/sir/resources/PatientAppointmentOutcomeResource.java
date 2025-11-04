@@ -1,9 +1,11 @@
 package com.really.good.sir.resources;
 
+import com.really.good.sir.converter.PatientAppointmentOutcomeConverter;
 import com.really.good.sir.dao.PatientAppointmentOutcomeDAO;
 import com.really.good.sir.dao.UserSessionDAO;
 import com.really.good.sir.dto.ErrorDTO;
 import com.really.good.sir.dto.PatientAppointmentOutcomeDTO;
+import com.really.good.sir.entity.PatientAppointmentOutcomeEntity;
 import com.really.good.sir.entity.Role;
 import com.really.good.sir.entity.UserSessionEntity;
 import com.really.good.sir.validator.PatientAppointmentOutcomeValidator;
@@ -20,6 +22,7 @@ public class PatientAppointmentOutcomeResource {
     private final PatientAppointmentOutcomeDAO dao = new PatientAppointmentOutcomeDAO();
     private final UserSessionDAO userSessionDAO = new UserSessionDAO();
     private final PatientAppointmentOutcomeValidator outcomeValidator = new PatientAppointmentOutcomeValidator();
+    private final PatientAppointmentOutcomeConverter converter = new PatientAppointmentOutcomeConverter();
 
     @GET
     @Path("/{appointmentId}")
@@ -39,11 +42,16 @@ public class PatientAppointmentOutcomeResource {
                     .entity(errorDTO)
                     .build();
         }
-        PatientAppointmentOutcomeDTO dto = dao.getOutcomeByAppointmentId(appointmentId);
+        PatientAppointmentOutcomeEntity entity = dao.getOutcomeByAppointmentId(appointmentId);
+        PatientAppointmentOutcomeDTO dto = converter.convert(entity);
         if (dto != null) {
             return Response.ok(dto).build();
         }
-        return Response.status(Response.Status.NOT_FOUND).build();
+        ErrorDTO errorDTO = new ErrorDTO();
+        errorDTO.setMessage("Not found");
+        return Response.status(Response.Status.NOT_FOUND)
+                .entity(errorDTO)
+                .build();
     }
 
     @PUT
@@ -75,15 +83,21 @@ public class PatientAppointmentOutcomeResource {
 
         try {
             dto.setAppointmentId(appointmentId);
-            PatientAppointmentOutcomeDTO saved = dao.saveOrUpdateOutcome(dto);
-            return Response.ok(saved).build();
+            PatientAppointmentOutcomeEntity entity = dao.saveOrUpdateOutcome(dto);
+            PatientAppointmentOutcomeDTO result = converter.convert(entity);
+            return Response.ok(result).build();
         } catch (IllegalStateException ise) {
+            ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setMessage("Bad request | Illegal State Exception");
             return Response.status(Response.Status.BAD_REQUEST)
-                    .entity(ise.getMessage())
+                    .entity(errorDTO)
                     .build();
+
         } catch (Exception e) {
+            ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setMessage("Failed to save or update outcome");
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity("Failed to save or update outcome")
+                    .entity(errorDTO)
                     .build();
         }
     }
