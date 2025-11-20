@@ -31,26 +31,36 @@ public class PatientValidator {
 
     public boolean isEmailValid(PatientDTO patient) {
         String email = patient.getEmail();
-        if (email == null || !email.matches(EMAIL_REGEX)) {
+        if (email == null || email.isEmpty() || !email.matches(EMAIL_REGEX)) {
             return false;
         }
         int credentialId = credentialDAO.getCredentialIdByEmail(email);
-        if (patient.getId() != patientDAO.getPatientIdByCredentialId(credentialId)) {
-            return credentialDAO.isEmailUnique(email);
+        if (credentialId == -1) {
+            return true;
         }
-        return true;
+        int existingPatientId = patientDAO.getPatientIdByCredentialId(credentialId);
+
+        if (patient.getId() == 0) {
+            return false;
+        }
+        return patient.getId() == existingPatientId;
     }
 
     public boolean isPhoneValid(PatientDTO patient) {
         String phone = patient.getPhone();
-        if (phone == null || !phone.matches(PHONE_REGEX)) {
+        if (phone == null || phone.isEmpty() || !phone.matches(PHONE_REGEX)) {
             return false;
         }
         int credentialId = credentialDAO.getCredentialIdByPhone(phone);
-        if (patient.getId() != patientDAO.getPatientIdByCredentialId(credentialId)) {
-            return credentialDAO.isPhoneUnique(phone);
+        if (credentialId == -1) {
+            return true;
         }
-        return true;
+        int existingPatientId = patientDAO.getPatientIdByCredentialId(credentialId);
+        if (patient.getId() == 0) {
+            return false;
+        }
+
+        return patient.getId() == existingPatientId;
     }
 
     public boolean isDateOfBirthValid(PatientDTO patient) {

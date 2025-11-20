@@ -139,8 +139,20 @@ public class PatientResource {
                     .entity(errorDTO)
                     .build();
         }
-        UserSessionEntity session = userSessionDAO.getSessionById(Integer.parseInt(sessionId));
-        if (!Role.ADMIN.toString().equalsIgnoreCase(session.getRole())) {
+
+        int sessionIdInt;
+        try {
+            sessionIdInt = Integer.parseInt(sessionId);
+        } catch (NumberFormatException e) {
+            final ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setMessage("Not authorized");
+            return Response.status(Response.Status.UNAUTHORIZED)
+                    .entity(errorDTO)
+                    .build();
+        }
+
+        UserSessionEntity session = userSessionDAO.getSessionById(sessionIdInt);
+        if (session == null || !Role.ADMIN.toString().equalsIgnoreCase(session.getRole())) {
             final ErrorDTO errorDTO = new ErrorDTO();
             errorDTO.setMessage("Forbidden to access resource");
             return Response.status(Response.Status.FORBIDDEN)
@@ -214,8 +226,20 @@ public class PatientResource {
                     .entity(errorDTO)
                     .build();
         }
-        UserSessionEntity session = userSessionDAO.getSessionById(Integer.parseInt(sessionId));
-        if (!Role.ADMIN.toString().equalsIgnoreCase(session.getRole())) {
+
+        int sessionIdInt;
+        try {
+            sessionIdInt = Integer.parseInt(sessionId);
+        } catch (NumberFormatException e) {
+            final ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setMessage("Not authorized");
+            return Response.status(Response.Status.UNAUTHORIZED)
+                    .entity(errorDTO)
+                    .build();
+        }
+
+        UserSessionEntity session = userSessionDAO.getSessionById(sessionIdInt);
+        if (session == null || !Role.ADMIN.toString().equalsIgnoreCase(session.getRole())) {
             final ErrorDTO errorDTO = new ErrorDTO();
             errorDTO.setMessage("Forbidden to access resource");
             return Response.status(Response.Status.FORBIDDEN)
@@ -286,8 +310,20 @@ public class PatientResource {
                     .entity(errorDTO)
                     .build();
         }
-        UserSessionEntity session = userSessionDAO.getSessionById(Integer.parseInt(sessionId));
-        if (!Role.ADMIN.toString().equalsIgnoreCase(session.getRole())) {
+
+        int sessionIdInt;
+        try {
+            sessionIdInt = Integer.parseInt(sessionId);
+        } catch (NumberFormatException e) {
+            final ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setMessage("Not authorized");
+            return Response.status(Response.Status.UNAUTHORIZED)
+                    .entity(errorDTO)
+                    .build();
+        }
+
+        UserSessionEntity session = userSessionDAO.getSessionById(sessionIdInt);
+        if (session == null || !Role.ADMIN.toString().equalsIgnoreCase(session.getRole())) {
             final ErrorDTO errorDTO = new ErrorDTO();
             errorDTO.setMessage("Forbidden to access resource");
             return Response.status(Response.Status.FORBIDDEN)

@@ -53,7 +53,6 @@ public class DoctorDAO extends BaseDao {
     private static final String GET_CREDENTIAL_ID =
             "SELECT credential_id FROM doctors WHERE doctor_id = ?";
 
-    // 🔹 NEW: Get doctor ID using credential ID
     private static final String GET_DOCTOR_ID_BY_CREDENTIAL =
             "SELECT doctor_id FROM doctors WHERE credential_id = ?";
 
@@ -106,8 +105,6 @@ public class DoctorDAO extends BaseDao {
             }
 
             connection.commit();
-            doctorEntity.setEmail(null);
-            doctorEntity.setPhone(null);
             return doctorEntity;
 
         } catch (Exception e) {
