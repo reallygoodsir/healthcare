@@ -13,6 +13,9 @@ import com.really.good.sir.entity.AppointmentOutcomeEntity;
 import com.really.good.sir.entity.Role;
 import com.really.good.sir.entity.UserSessionEntity;
 import com.really.good.sir.validator.AppointmentOutcomeValidator;
+import com.really.good.sir.validator.AppointmentValidator;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
@@ -23,58 +26,138 @@ import java.util.List;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class AppointmentResource {
-
+    private static final Logger LOGGER = LogManager.getLogger(AppointmentResource.class);
     private final AppointmentDAO appointmentDAO = new AppointmentDAO();
     private final AppointmentOutcomeDAO outcomeDAO = new AppointmentOutcomeDAO();
     private final AppointmentConverter converter = new AppointmentConverter();
     private final AppointmentOutcomeConverter outcomeConverter = new AppointmentOutcomeConverter();
     private final UserSessionDAO userSessionDAO = new UserSessionDAO();
     private final AppointmentOutcomeValidator patientValidator = new AppointmentOutcomeValidator();
+    private final AppointmentValidator appointmentValidator = new AppointmentValidator();
 
     @POST
-    public Response createAppointment(AppointmentDTO dto, @CookieParam("session_id") final String sessionId) {
-        if (sessionId == null || sessionId.isEmpty()) {
-            final ErrorDTO errorDTO = new ErrorDTO();
-            errorDTO.setMessage("Not authorized");
-            return Response.status(Response.Status.UNAUTHORIZED)
-                    .entity(errorDTO)
-                    .build();
-        }
-
-        int sessionIdInt;
+    public Response createAppointment(final AppointmentDTO appointmentDTO, @CookieParam("session_id") final String sessionId) {
         try {
-            sessionIdInt = Integer.parseInt(sessionId);
-        } catch (NumberFormatException e) {
+            // SECURITY CHECK
+            if (sessionId == null || sessionId.isEmpty()) {
+                final ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("Not authorized");
+                return Response.status(Response.Status.UNAUTHORIZED)
+                        .entity(errorDTO)
+                        .build();
+            }
+
+            int sessionIdInt;
+            try {
+                sessionIdInt = Integer.parseInt(sessionId);
+            } catch (NumberFormatException e) {
+                final ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("Not authorized. Session id has incorrect format.");
+                return Response.status(Response.Status.UNAUTHORIZED)
+                        .entity(errorDTO)
+                        .build();
+            }
+
+            UserSessionEntity session = userSessionDAO.getSessionById(sessionIdInt);
+            if (session == null) {
+                final ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("Not authorized. Session id does not exist.");
+                return Response.status(Response.Status.UNAUTHORIZED)
+                        .entity(errorDTO)
+                        .build();
+            }
+
+            if (!Role.CALL_CENTER_AGENT.toString().equalsIgnoreCase(session.getRole())) {
+                final ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("Forbidden to access resource. Role is not allowed.");
+                return Response.status(Response.Status.FORBIDDEN)
+                        .entity(errorDTO)
+                        .build();
+            }
+
+            // REQUEST VALIDATION
+
+            // if AppointmentDTO has appointmentId with value then return bad request
+            if (appointmentValidator.isAppointmentIdValid(appointmentDTO)) {
+                final ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("The appointment should have no preexisting appointment id");
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity(errorDTO)
+                        .build();
+            }
+            // if AppointmentDTO has status with value then return bad request
+            if (appointmentValidator.isStatusValid(appointmentDTO)) {
+                final ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("The appointment should have no preexisting status");
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity(errorDTO)
+                        .build();
+            }
+            // check if patientId is null or empty then return bad request
+            if (appointmentValidator.isPatientIdEmpty(appointmentDTO)) {
+                final ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("Patient id not provided");
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity(errorDTO)
+                        .build();
+            }
+            // check if patientId exists and if not then return bad request
+            if (appointmentValidator.isPatientInValid(appointmentDTO)) {
+                final ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("Incorrect patient id provided");
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity(errorDTO)
+                        .build();
+            }
+            // check if doctorId is null or empty then return bad request
+            if (appointmentValidator.isDoctorIdEmpty(appointmentDTO)) {
+                final ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("Doctor id not provided");
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity(errorDTO)
+                        .build();
+            }
+            // check if doctorId exists and if not then return bad request
+            if (appointmentValidator.isDoctorInValid(appointmentDTO)) {
+                final ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("Incorrect doctor id provided");
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity(errorDTO)
+                        .build();
+            }
+            // check if scheduleId is null or empty then return bad request
+            // check if scheduleId exists and if not then return bad request
+            if (!appointmentValidator.isScheduleIdValid(appointmentDTO)) {
+                final ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("Incorrect schedule id provided");
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity(errorDTO)
+                        .build();
+            }
+
+            appointmentDTO.setStatus("SCHEDULED");
+
+            // REQUEST CONVERSION TO DB ENTITY
+            AppointmentEntity entity = converter.convert(appointmentDTO);
+
+            // SAVE ENTITY TO DB
+            AppointmentEntity created = appointmentDAO.createAppointment(entity);
+            if (created == null) {
+                final ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("Failed to create an appointment");
+                return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                        .entity(errorDTO)
+                        .build();
+            }
+            return Response.ok(converter.convert(created)).build();
+        } catch (final Exception exception) {
+            LOGGER.error("Error during appointment creation", exception);
             final ErrorDTO errorDTO = new ErrorDTO();
-            errorDTO.setMessage("Not authorized");
-            return Response.status(Response.Status.UNAUTHORIZED)
+            errorDTO.setMessage("Error during appointment creation");
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity(errorDTO)
                     .build();
         }
-
-        UserSessionEntity session = userSessionDAO.getSessionById(sessionIdInt);
-        if (session == null || !Role.CALL_CENTER_AGENT.toString().equalsIgnoreCase(session.getRole())) {
-            final ErrorDTO errorDTO = new ErrorDTO();
-            errorDTO.setMessage("Forbidden to access resource");
-            return Response.status(Response.Status.FORBIDDEN)
-                    .entity(errorDTO)
-                    .build();
-        }
-
-        if (dto.getStatus() == null || dto.getStatus().isEmpty()) {
-            dto.setStatus("SCHEDULED");
-        }
-        AppointmentEntity entity = converter.convert(dto);
-        AppointmentEntity created = appointmentDAO.createAppointment(entity);
-        if(created == null) {
-            final ErrorDTO errorDTO = new ErrorDTO();
-            errorDTO.setMessage("Failed to create an appointment | Bad Request");
-            return Response.status(Response.Status.BAD_REQUEST)
-                    .entity(errorDTO)
-                    .build();
-        }
-        return Response.ok(converter.convert(created)).build();
-
     }
 
     @GET

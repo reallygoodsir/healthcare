@@ -21,12 +21,7 @@ public class AppointmentDAO extends BaseDao {
             "DELETE FROM appointments WHERE appointment_id = ?";
     private static final String UPDATE_STATUS =
             "UPDATE appointments SET status = ? WHERE appointment_id = ?";
-    private final DoctorScheduleDAO doctorScheduleDAO = new DoctorScheduleDAO();
     public AppointmentEntity createAppointment(AppointmentEntity entity) {
-        if (!doctorScheduleDAO.scheduleExists(entity.getScheduleId())) {
-            LOGGER.error("Provided schedule id [{}] doesn't exist)", entity.getScheduleId());
-            return null;
-        }
 
         try (Connection connection = getConnection();
              PreparedStatement ps = connection.prepareStatement(CREATE_APPOINTMENT, Statement.RETURN_GENERATED_KEYS)) {
