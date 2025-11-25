@@ -40,20 +40,41 @@ public class AppointmentResource {
                     .entity(errorDTO)
                     .build();
         }
-        UserSessionEntity session = userSessionDAO.getSessionById(Integer.parseInt(sessionId));
-        if (!Role.CALL_CENTER_AGENT.toString().equalsIgnoreCase(session.getRole())) {
+
+        int sessionIdInt;
+        try {
+            sessionIdInt = Integer.parseInt(sessionId);
+        } catch (NumberFormatException e) {
+            final ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setMessage("Not authorized");
+            return Response.status(Response.Status.UNAUTHORIZED)
+                    .entity(errorDTO)
+                    .build();
+        }
+
+        UserSessionEntity session = userSessionDAO.getSessionById(sessionIdInt);
+        if (session == null || !Role.CALL_CENTER_AGENT.toString().equalsIgnoreCase(session.getRole())) {
             final ErrorDTO errorDTO = new ErrorDTO();
             errorDTO.setMessage("Forbidden to access resource");
             return Response.status(Response.Status.FORBIDDEN)
                     .entity(errorDTO)
                     .build();
         }
+
         if (dto.getStatus() == null || dto.getStatus().isEmpty()) {
             dto.setStatus("SCHEDULED");
         }
         AppointmentEntity entity = converter.convert(dto);
         AppointmentEntity created = appointmentDAO.createAppointment(entity);
+        if(created == null) {
+            final ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setMessage("Failed to create an appointment | Bad Request");
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(errorDTO)
+                    .build();
+        }
         return Response.ok(converter.convert(created)).build();
+
     }
 
     @GET
@@ -142,21 +163,32 @@ public class AppointmentResource {
     @Path("/{appointmentId}")
     public Response updateAppointmentOutcome(@PathParam("appointmentId") int appointmentId, AppointmentOutcomeDTO dto, @CookieParam("session_id") final String sessionId) {
         if (sessionId == null || sessionId.isEmpty()) {
-            final ErrorDTO errorDTO = new ErrorDTO();
+            ErrorDTO errorDTO = new ErrorDTO();
             errorDTO.setMessage("Not authorized");
             return Response.status(Response.Status.UNAUTHORIZED)
                     .entity(errorDTO)
                     .build();
         }
-        UserSessionEntity session = userSessionDAO.getSessionById(Integer.parseInt(sessionId));
-        if (!Role.DOCTOR.toString().equalsIgnoreCase(session.getRole())) {
-            final ErrorDTO errorDTO = new ErrorDTO();
+
+        int sessionIdInt;
+        try {
+            sessionIdInt = Integer.parseInt(sessionId);
+        } catch (NumberFormatException e) {
+            ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setMessage("Not authorized");
+            return Response.status(Response.Status.UNAUTHORIZED)
+                    .entity(errorDTO)
+                    .build();
+        }
+
+        UserSessionEntity session = userSessionDAO.getSessionById(sessionIdInt);
+        if (session == null || !Role.DOCTOR.toString().equalsIgnoreCase(session.getRole())) {
+            ErrorDTO errorDTO = new ErrorDTO();
             errorDTO.setMessage("Forbidden to access resource");
             return Response.status(Response.Status.FORBIDDEN)
                     .entity(errorDTO)
                     .build();
         }
-
         if (!patientValidator.isDiagnosisValid(dto)) {
             ErrorDTO errorDTO = new ErrorDTO();
             errorDTO.setMessage("No diagnosis provided");
@@ -220,8 +252,20 @@ public class AppointmentResource {
                     .entity(errorDTO)
                     .build();
         }
-        UserSessionEntity session = userSessionDAO.getSessionById(Integer.parseInt(sessionId));
-        if (!Role.CALL_CENTER_AGENT.toString().equalsIgnoreCase(session.getRole())) {
+
+        int sessionIdInt;
+        try {
+            sessionIdInt = Integer.parseInt(sessionId);
+        } catch (NumberFormatException e) {
+            final ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setMessage("Not authorized");
+            return Response.status(Response.Status.UNAUTHORIZED)
+                    .entity(errorDTO)
+                    .build();
+        }
+
+        UserSessionEntity session = userSessionDAO.getSessionById(sessionIdInt);
+        if (session == null || !Role.CALL_CENTER_AGENT.toString().equalsIgnoreCase(session.getRole())) {
             final ErrorDTO errorDTO = new ErrorDTO();
             errorDTO.setMessage("Forbidden to access resource");
             return Response.status(Response.Status.FORBIDDEN)

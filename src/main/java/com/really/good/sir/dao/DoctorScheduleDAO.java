@@ -37,6 +37,8 @@ public class DoctorScheduleDAO extends BaseDao {
             "AND schedule_date = ? " +
             "ORDER BY start_time";
 
+    private static final String GET_SCHEDULE_ID_COUNTS = "SELECT COUNT(*) FROM doctor_schedules WHERE id = ?";
+
     public List<DoctorScheduleEntity> getSchedulesByDoctor(final int doctorId) {
         final List<DoctorScheduleEntity> schedules = new ArrayList<>();
         try (final Connection connection = getConnection();
@@ -51,6 +53,26 @@ public class DoctorScheduleDAO extends BaseDao {
             LOGGER.error("Error getting schedules for doctor {}", doctorId, exception);
         }
         return schedules;
+    }
+
+    public boolean scheduleExists(int scheduleId) {
+
+        try (Connection connection = getConnection();
+             PreparedStatement ps = connection.prepareStatement(GET_SCHEDULE_ID_COUNTS)) {
+
+            ps.setInt(1, scheduleId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1) > 0;
+                }
+            }
+
+        } catch (SQLException e) {
+            LOGGER.error("Error checking schedule existence", e);
+        }
+
+        return false;
     }
 
     public DoctorScheduleEntity createSchedule(final DoctorScheduleEntity schedule) {
