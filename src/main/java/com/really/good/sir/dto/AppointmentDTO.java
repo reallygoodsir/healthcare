@@ -46,4 +46,15 @@ public class AppointmentDTO {
     public void setStatus(String status) {
         this.status = status;
     }
+
+    @Override
+    public String toString() {
+        return "AppointmentDTO{" +
+                "appointmentId=" + appointmentId +
+                ", patientId=" + patientId +
+                ", doctorId=" + doctorId +
+                ", scheduleId=" + scheduleId +
+                ", status='" + status + '\'' +
+                '}';
+    }
 }

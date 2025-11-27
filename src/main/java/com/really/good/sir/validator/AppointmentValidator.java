@@ -12,6 +12,9 @@ public class AppointmentValidator {
     private final DoctorDAO doctorDAO = new DoctorDAO();
     private final PatientDAO patientDAO = new PatientDAO();
 
+    public boolean isScheduleIdEmpty(AppointmentDTO appointmentDTO) {
+        return appointmentDTO.getScheduleId() == null;
+    }
 
     public boolean isScheduleIdValid(AppointmentDTO appointmentDTO) {
         return doctorScheduleDAO.scheduleExists(appointmentDTO.getScheduleId());
@@ -30,13 +33,13 @@ public class AppointmentValidator {
         return doctorId == null;
     }
 
-    public boolean isDoctorInValid(AppointmentDTO appointmentDTO) {
+    public boolean isDoctorIdInvalid(AppointmentDTO appointmentDTO) {
         DoctorEntity doctor = doctorDAO.getDoctorById(appointmentDTO.getDoctorId());
         return doctor == null;
     }
 
 
-    public boolean isPatientInValid(AppointmentDTO appointmentDTO) {
+    public boolean isPatientIdInvalid(AppointmentDTO appointmentDTO) {
         PatientEntity patient = patientDAO.getPatientById(appointmentDTO.getPatientId());
         return patient == null;
     }

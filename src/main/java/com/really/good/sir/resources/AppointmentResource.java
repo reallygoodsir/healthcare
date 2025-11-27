@@ -37,9 +37,11 @@ public class AppointmentResource {
 
     @POST
     public Response createAppointment(final AppointmentDTO appointmentDTO, @CookieParam("session_id") final String sessionId) {
+        LOGGER.info("Start to create appointment. Session id [{}]. Appointment request[{}]", sessionId, appointmentDTO);
         try {
             // SECURITY CHECK
             if (sessionId == null || sessionId.isEmpty()) {
+                LOGGER.error("Session id is empty");
                 final ErrorDTO errorDTO = new ErrorDTO();
                 errorDTO.setMessage("Not authorized");
                 return Response.status(Response.Status.UNAUTHORIZED)
@@ -51,6 +53,7 @@ public class AppointmentResource {
             try {
                 sessionIdInt = Integer.parseInt(sessionId);
             } catch (NumberFormatException e) {
+                LOGGER.error("Session id is not valid", e);
                 final ErrorDTO errorDTO = new ErrorDTO();
                 errorDTO.setMessage("Not authorized. Session id has incorrect format.");
                 return Response.status(Response.Status.UNAUTHORIZED)
@@ -60,6 +63,7 @@ public class AppointmentResource {
 
             UserSessionEntity session = userSessionDAO.getSessionById(sessionIdInt);
             if (session == null) {
+                LOGGER.error("Session id does not exist [{}]", sessionId);
                 final ErrorDTO errorDTO = new ErrorDTO();
                 errorDTO.setMessage("Not authorized. Session id does not exist.");
                 return Response.status(Response.Status.UNAUTHORIZED)
@@ -68,6 +72,7 @@ public class AppointmentResource {
             }
 
             if (!Role.CALL_CENTER_AGENT.toString().equalsIgnoreCase(session.getRole())) {
+                LOGGER.error("Session id does not belong to call center agent role [{}]", sessionId);
                 final ErrorDTO errorDTO = new ErrorDTO();
                 errorDTO.setMessage("Forbidden to access resource. Role is not allowed.");
                 return Response.status(Response.Status.FORBIDDEN)
@@ -78,7 +83,8 @@ public class AppointmentResource {
             // REQUEST VALIDATION
 
             // if AppointmentDTO has appointmentId with value then return bad request
-            if (appointmentValidator.isAppointmentIdValid(appointmentDTO)) {
+            if (!appointmentValidator.isAppointmentIdValid(appointmentDTO)) {
+                LOGGER.error("The appointment request has a preexisting appointment id [{}]", appointmentDTO.getAppointmentId());
                 final ErrorDTO errorDTO = new ErrorDTO();
                 errorDTO.setMessage("The appointment should have no preexisting appointment id");
                 return Response.status(Response.Status.BAD_REQUEST)
@@ -86,7 +92,8 @@ public class AppointmentResource {
                         .build();
             }
             // if AppointmentDTO has status with value then return bad request
-            if (appointmentValidator.isStatusValid(appointmentDTO)) {
+            if (!appointmentValidator.isStatusValid(appointmentDTO)) {
+                LOGGER.error("The appointment request has a preexisting status [{}]", appointmentDTO.getStatus());
                 final ErrorDTO errorDTO = new ErrorDTO();
                 errorDTO.setMessage("The appointment should have no preexisting status");
                 return Response.status(Response.Status.BAD_REQUEST)
@@ -95,14 +102,16 @@ public class AppointmentResource {
             }
             // check if patientId is null or empty then return bad request
             if (appointmentValidator.isPatientIdEmpty(appointmentDTO)) {
+                LOGGER.error("The appointment request does not have a patient id");
                 final ErrorDTO errorDTO = new ErrorDTO();
-                errorDTO.setMessage("Patient id not provided");
+                errorDTO.setMessage("No patient id provided");
                 return Response.status(Response.Status.BAD_REQUEST)
                         .entity(errorDTO)
                         .build();
             }
             // check if patientId exists and if not then return bad request
-            if (appointmentValidator.isPatientInValid(appointmentDTO)) {
+            if (appointmentValidator.isPatientIdInvalid(appointmentDTO)) {
+                LOGGER.error("The appointment request patient id is incorrect");
                 final ErrorDTO errorDTO = new ErrorDTO();
                 errorDTO.setMessage("Incorrect patient id provided");
                 return Response.status(Response.Status.BAD_REQUEST)
@@ -111,14 +120,16 @@ public class AppointmentResource {
             }
             // check if doctorId is null or empty then return bad request
             if (appointmentValidator.isDoctorIdEmpty(appointmentDTO)) {
+                LOGGER.error("The appointment request does not have doctor id");
                 final ErrorDTO errorDTO = new ErrorDTO();
-                errorDTO.setMessage("Doctor id not provided");
+                errorDTO.setMessage("No doctor id provided");
                 return Response.status(Response.Status.BAD_REQUEST)
                         .entity(errorDTO)
                         .build();
             }
             // check if doctorId exists and if not then return bad request
-            if (appointmentValidator.isDoctorInValid(appointmentDTO)) {
+            if (appointmentValidator.isDoctorIdInvalid(appointmentDTO)) {
+                LOGGER.error("The appointment request doctor id is incorrect");
                 final ErrorDTO errorDTO = new ErrorDTO();
                 errorDTO.setMessage("Incorrect doctor id provided");
                 return Response.status(Response.Status.BAD_REQUEST)
@@ -126,8 +137,17 @@ public class AppointmentResource {
                         .build();
             }
             // check if scheduleId is null or empty then return bad request
+            if (appointmentValidator.isScheduleIdEmpty(appointmentDTO)) {
+                LOGGER.error("The appointment request doesn't have a schedule id");
+                final ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("No schedule id provided");
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity(errorDTO)
+                        .build();
+            }
             // check if scheduleId exists and if not then return bad request
             if (!appointmentValidator.isScheduleIdValid(appointmentDTO)) {
+                LOGGER.error("The appointment request schedule id is incorrect");
                 final ErrorDTO errorDTO = new ErrorDTO();
                 errorDTO.setMessage("Incorrect schedule id provided");
                 return Response.status(Response.Status.BAD_REQUEST)
@@ -143,6 +163,7 @@ public class AppointmentResource {
             // SAVE ENTITY TO DB
             AppointmentEntity created = appointmentDAO.createAppointment(entity);
             if (created == null) {
+                LOGGER.error("Failed to create an appointment [{}]", appointmentDTO);
                 final ErrorDTO errorDTO = new ErrorDTO();
                 errorDTO.setMessage("Failed to create an appointment");
                 return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
@@ -151,7 +172,7 @@ public class AppointmentResource {
             }
             return Response.ok(converter.convert(created)).build();
         } catch (final Exception exception) {
-            LOGGER.error("Error during appointment creation", exception);
+            LOGGER.error("Error during appointment creation [{}]", appointmentDTO, exception);
             final ErrorDTO errorDTO = new ErrorDTO();
             errorDTO.setMessage("Error during appointment creation");
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
