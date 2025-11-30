@@ -10,21 +10,21 @@ public class AppointmentOutcomeConverter {
 
     public AppointmentOutcomeEntity convert(final AppointmentOutcomeDTO dto) {
         final AppointmentOutcomeEntity entity = new AppointmentOutcomeEntity();
-        entity.setAppointmentId(dto.getAppointmentId());
-        entity.setDiagnosis(dto.getDiagnosis());
-        entity.setRecommendations(dto.getRecommendations());
-        entity.setCreatedAt(dto.getCreatedAt());
-        entity.setUpdatedAt(dto.getUpdatedAt());
+        if(dto.getAppointmentId() != null) entity.setAppointmentId(dto.getAppointmentId());
+        if(dto.getDiagnosis() != null) entity.setDiagnosis(dto.getDiagnosis());
+        if(dto.getRecommendations() != null) entity.setRecommendations(dto.getRecommendations());
+        if(dto.getCreatedAt() != null) entity.setCreatedAt(dto.getCreatedAt());
+        if(dto.getUpdatedAt() != null) entity.setUpdatedAt(dto.getUpdatedAt());
         return entity;
     }
 
     public AppointmentOutcomeDTO convert(final AppointmentOutcomeEntity entity) {
         final AppointmentOutcomeDTO dto = new AppointmentOutcomeDTO();
-        dto.setAppointmentId(entity.getAppointmentId());
-        dto.setDiagnosis(entity.getDiagnosis());
-        dto.setRecommendations(entity.getRecommendations());
-        dto.setCreatedAt(entity.getCreatedAt());
-        dto.setUpdatedAt(entity.getUpdatedAt());
+        if(entity.getAppointmentId() != null) dto.setAppointmentId(entity.getAppointmentId());
+        if(entity.getDiagnosis() != null) dto.setDiagnosis(entity.getDiagnosis());
+        if(entity.getRecommendations() != null) dto.setRecommendations(entity.getRecommendations());
+        if(entity.getCreatedAt() != null) dto.setCreatedAt(entity.getCreatedAt());
+        if(entity.getUpdatedAt() != null) dto.setUpdatedAt(entity.getUpdatedAt());
         return dto;
     }
 

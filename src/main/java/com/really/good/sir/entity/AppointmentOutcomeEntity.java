@@ -3,17 +3,17 @@ package com.really.good.sir.entity;
 import java.sql.Timestamp;
 
 public class AppointmentOutcomeEntity {
-    private int appointmentId;
+    private Integer appointmentId;
     private String diagnosis;
     private String recommendations;
     private Timestamp createdAt;
     private Timestamp updatedAt;
 
-    public int getAppointmentId() {
+    public Integer getAppointmentId() {
         return appointmentId;
     }
 
-    public void setAppointmentId(int appointmentId) {
+    public void setAppointmentId(Integer appointmentId) {
         this.appointmentId = appointmentId;
     }
 
