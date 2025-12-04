@@ -37,12 +37,14 @@ public class DoctorValidator {
 
     public boolean isEmailUnique(DoctorDTO doctor) {
         int credentialId = credentialDAO.getCredentialIdByEmail(doctor.getEmail());
-        if (doctor.getId() != doctorDAO.getDoctorIdByCredentialId(credentialId)) {
+        Integer doctorIdByCredential = doctorDAO.getDoctorIdByCredentialId(credentialId);
+        if (doctor.getId() == null || !doctor.getId().equals(doctorIdByCredential)) {
             return credentialDAO.isEmailUnique(doctor.getEmail());
         }
         return true;
     }
-    
+
+
     public boolean isPhoneValid(DoctorDTO doctor) {
         String phone = doctor.getPhone();
         return phone != null && phone.matches(PHONE_REGEX);
@@ -50,14 +52,15 @@ public class DoctorValidator {
 
     public boolean isPhoneUnique(DoctorDTO doctor) {
         int credentialId = credentialDAO.getCredentialIdByPhone(doctor.getPhone());
-        if (doctor.getId() != doctorDAO.getDoctorIdByCredentialId(credentialId)) {
+        Integer doctorIdByCredential = doctorDAO.getDoctorIdByCredentialId(credentialId);
+        if (doctor.getId() == null || !doctor.getId().equals(doctorIdByCredential)) {
             return credentialDAO.isPhoneUnique(doctor.getPhone());
         }
         return true;
     }
 
     public boolean isSpecializationIdValid(DoctorDTO doctor) {
-        return specializationDAO.getSpecializationById(doctor.getId()) != null;
+        return specializationDAO.getSpecializationById(doctor.getSpecializationId()) != null;
     }
 
     public boolean isSpecializationIdEmpty(DoctorDTO doctor) {

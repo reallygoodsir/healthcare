@@ -1,7 +1,7 @@
 package com.really.good.sir.entity;
 
 public class DoctorEntity {
-    private int id;
+    private Integer id;
     private String firstName;
     private String lastName;
     private String email;
@@ -9,11 +9,11 @@ public class DoctorEntity {
     private int specializationId;
     private byte[] photo;
 
-    public int getId() {
+    public Integer getId() {
         return id;
     }
 
-    public void setId(int id) {
+    public void setId(Integer id) {
         this.id = id;
     }
 

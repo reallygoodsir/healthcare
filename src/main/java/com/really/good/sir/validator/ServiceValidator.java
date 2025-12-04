@@ -27,6 +27,6 @@ public class ServiceValidator {
     }
 
     public boolean exists(final Integer id) {
-        return serviceDAO.getServiceById(id) == null;
+        return serviceDAO.getServiceById(id) != null;
     }
 }

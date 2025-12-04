@@ -9,7 +9,7 @@ import java.util.List;
 public class DoctorConverter {
     public DoctorEntity convert(final DoctorDTO doctorDTO) {
         final DoctorEntity doctorEntity = new DoctorEntity();
-        doctorEntity.setId(doctorDTO.getId());
+        if(doctorDTO.getId() != null) doctorEntity.setId(doctorDTO.getId());
         doctorEntity.setFirstName(doctorDTO.getFirstName());
         doctorEntity.setLastName(doctorDTO.getLastName());
         doctorEntity.setEmail(doctorDTO.getEmail());
@@ -21,7 +21,7 @@ public class DoctorConverter {
 
     public DoctorDTO convert(final DoctorEntity doctorEntity) {
         final DoctorDTO doctorDTO = new DoctorDTO();
-        doctorDTO.setId(doctorEntity.getId());
+        if(doctorEntity.getId() != null) doctorDTO.setId(doctorEntity.getId());
         doctorDTO.setFirstName(doctorEntity.getFirstName());
         doctorDTO.setLastName(doctorEntity.getLastName());
         doctorDTO.setEmail(doctorEntity.getEmail());
