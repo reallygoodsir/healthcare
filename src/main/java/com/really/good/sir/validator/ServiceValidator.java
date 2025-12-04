@@ -21,4 +21,12 @@ public class ServiceValidator {
     public boolean isPriceValid(ServiceDTO service) {
         return service.getPrice() > 0;
     }
+
+    public boolean isEmpty(final Integer id) {
+        return id == null;
+    }
+
+    public boolean exists(final Integer id) {
+        return serviceDAO.getServiceById(id) == null;
+    }
 }

@@ -20,79 +20,157 @@ public class AuthorizationResource {
     private static final Logger LOGGER = LogManager.getLogger(AuthorizationResource.class);
     private final UserSessionDAO userSessionDAO = new UserSessionDAO();
     private final UserSessionConverter converter = new UserSessionConverter();
+
     @POST
     public Response authorize(LoginRequestDTO request) {
-        if (request == null || request.getEmail() == null || request.getPassword() == null) {
+        try {
+            if (request == null) {
+                final ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("Login request is empty");
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity(errorDTO)
+                        .build();
+            }
+
+            if (request.getEmail() == null || request.getEmail().isEmpty()) {
+                final ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("Email is empty");
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity(errorDTO)
+                        .build();
+            }
+
+            if (request.getPassword() == null || request.getPassword().isEmpty()) {
+                final ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("Password is empty");
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity(errorDTO)
+                        .build();
+            }
+
+            UserSessionEntity sessionEntity = userSessionDAO.authorize(request.getEmail(), request.getPassword());
+            if (sessionEntity == null) {
+                final ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("Credentials are not valid");
+                return Response.status(Response.Status.UNAUTHORIZED)
+                        .entity(errorDTO)
+                        .build();
+            }
+            UserSessionDTO sessionDTO = converter.convert(sessionEntity);
+            NewCookie cookie = new NewCookie("session_id",
+                    String.valueOf(sessionDTO.getId()),
+                    "/", null,
+                    "User session ID",
+                    30 * 60, false);
+
+            LOGGER.info("User logged in with credential_id {} and role {}", sessionDTO.getCredentialId(), sessionDTO.getRole());
+
+            return Response.ok(sessionDTO).cookie(cookie).build();
+        } catch (Exception exception) {
+            LOGGER.error("Error trying to authorize the user", exception);
             final ErrorDTO errorDTO = new ErrorDTO();
-            errorDTO.setMessage("Bad request");
-            return Response.status(Response.Status.BAD_REQUEST)
+            errorDTO.setMessage("Error trying to authorize the user");
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity(errorDTO)
                     .build();
         }
-
-        UserSessionEntity sessionEntity = userSessionDAO.authorize(request.getEmail(), request.getPassword());
-        if (sessionEntity == null) {
-            final ErrorDTO errorDTO = new ErrorDTO();
-            errorDTO.setMessage("Unauthorized to access resource");
-            return Response.status(Response.Status.UNAUTHORIZED)
-                    .entity(errorDTO)
-                    .build();
-        }
-        UserSessionDTO sessionDTO = converter.convert(sessionEntity);
-        NewCookie cookie = new NewCookie("session_id",
-                String.valueOf(sessionDTO.getId()),
-                "/", null,
-                "User session ID",
-                30 * 60, false);
-
-        LOGGER.info("User logged in with credential_id {} and role {}", sessionDTO.getCredentialId(), sessionDTO.getRole());
-
-        return Response.ok(sessionDTO).cookie(cookie).build();
     }
 
     @POST
-    @Path("/check-session")
+    @Path("/session")
     public Response checkSession(SessionCheckRequestDTO request) {
-        if (request == null) {
+        try {
+            if (request == null) {
+                final ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("Session request is empty");
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity(errorDTO)
+                        .build();
+            }
+
+            if (request.getSessionId() == null) {
+                final ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("Session id is empty");
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity(errorDTO)
+                        .build();
+            }
+
+            UserSessionEntity sessionEntity = userSessionDAO.getSessionById(request.getSessionId());
+            if (sessionEntity == null) {
+                final ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("Session id is not valid");
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity(errorDTO)
+                        .build();
+            }
+
+            long now = System.currentTimeMillis();
+            long loginTime = sessionEntity.getLoginDateTime().getTime();
+            long elapsedMinutes = (now - loginTime) / (1000 * 60);
+            if (elapsedMinutes > 30) {
+                NewCookie deleteCookie = new NewCookie("session_id",
+                        null, "/", null,
+                        "Expired session",
+                        0, false);
+                return Response.ok(new UserSessionDTO()).cookie(deleteCookie).build();
+            }
+
+            return Response.ok(converter.convert(sessionEntity)).build();
+        } catch (Exception exception) {
+            LOGGER.error("Error trying to check the session", exception);
             final ErrorDTO errorDTO = new ErrorDTO();
-            errorDTO.setMessage("Session id is required");
-            return Response.status(Response.Status.BAD_REQUEST)
+            errorDTO.setMessage("Error trying to check the session");
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity(errorDTO)
                     .build();
         }
-
-        UserSessionEntity sessionEntity = userSessionDAO.getSessionById(request.getSessionId());
-        if (sessionEntity == null) {
-            return Response.ok(new UserSessionDTO()).build();
-        }
-
-        long now = System.currentTimeMillis();
-        long loginTime = sessionEntity.getLoginDateTime().getTime();
-        long elapsedMinutes = (now - loginTime) / (1000 * 60);
-
-        if (elapsedMinutes > 30) {
-            NewCookie deleteCookie = new NewCookie("session_id",
-                    null, "/", null,
-                    "Expired session",
-                    0, false);
-            return Response.ok(new UserSessionDTO()).cookie(deleteCookie).build();
-        }
-        return Response.ok(converter.convert(sessionEntity)).build();
     }
 
     @DELETE
-    @Path("/{id}")
-    public Response deleteSession(@PathParam("id") int id) {
-        boolean deleted = userSessionDAO.deleteSessionById(id);
-        if (deleted) {
-            LOGGER.info("Deleted user session with id {}", id);
-            NewCookie expiredCookie = new NewCookie("session_id", null, "/", null, "Session deleted", 0, false);
+    @Path("/session/{sessionId}")
+    public Response deleteSession(@PathParam("sessionId") Integer sessionId) {
+        try {
+            if (sessionId == null) {
+                final ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("Session id is empty");
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity(errorDTO)
+                        .build();
+            }
+
+            UserSessionEntity sessionEntity = userSessionDAO.getSessionById(sessionId);
+            if (sessionEntity == null) {
+                final ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("Session id is not valid");
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity(errorDTO)
+                        .build();
+            }
+            boolean deleted = userSessionDAO.deleteSessionById(sessionId);
+            if (!deleted) {
+                LOGGER.error("Session was not deleted with id {}", sessionId);
+                final ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("Session was not deleted");
+                return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                        .entity(errorDTO)
+                        .build();
+            }
+
+            LOGGER.info("Deleted user session with id {}", sessionId);
+            NewCookie expiredCookie = new NewCookie("session_id",
+                    null,
+                    "/",
+                    null,
+                    "Session deleted",
+                    0,
+                    false);
             return Response.noContent().cookie(expiredCookie).build();
-        } else {
-            LOGGER.warn("No session found with id {}", id);
+        } catch (Exception exception) {
+            LOGGER.error("Error trying to delete th user", exception);
             final ErrorDTO errorDTO = new ErrorDTO();
-            errorDTO.setMessage("Session not found");
-            return Response.status(Response.Status.BAD_REQUEST)
+            errorDTO.setMessage("Error trying to delete th user");
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity(errorDTO)
                     .build();
         }

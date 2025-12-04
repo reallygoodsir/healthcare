@@ -2,7 +2,9 @@ package com.really.good.sir.validator;
 
 import com.really.good.sir.dao.CredentialDAO;
 import com.really.good.sir.dao.DoctorDAO;
+import com.really.good.sir.dao.SpecializationDAO;
 import com.really.good.sir.dto.DoctorDTO;
+import com.really.good.sir.entity.DoctorEntity;
 
 public class DoctorValidator {
 
@@ -11,6 +13,12 @@ public class DoctorValidator {
     private static final String PHONE_REGEX = "^[+()\\d\\s-]{7,20}$";
     private final DoctorDAO doctorDAO = new DoctorDAO();
     private final CredentialDAO credentialDAO = new CredentialDAO();
+
+    private final SpecializationDAO specializationDAO = new SpecializationDAO();
+
+    public boolean isIdEmpty(DoctorDTO doctor) {
+        return doctor.getId() == null;
+    }
 
     public boolean isFirstNameValid(DoctorDTO doctor) {
         String firstName = doctor.getFirstName();
@@ -24,29 +32,51 @@ public class DoctorValidator {
 
     public boolean isEmailValid(DoctorDTO doctor) {
         String email = doctor.getEmail();
-        if (email == null || !email.matches(EMAIL_REGEX)) {
-            return false;
-        }
-        int credentialId = credentialDAO.getCredentialIdByEmail(email);
+        return email != null && email.matches(EMAIL_REGEX);
+    }
+
+    public boolean isEmailUnique(DoctorDTO doctor) {
+        int credentialId = credentialDAO.getCredentialIdByEmail(doctor.getEmail());
         if (doctor.getId() != doctorDAO.getDoctorIdByCredentialId(credentialId)) {
-            return credentialDAO.isEmailUnique(email);
+            return credentialDAO.isEmailUnique(doctor.getEmail());
         }
         return true;
     }
-
+    
     public boolean isPhoneValid(DoctorDTO doctor) {
         String phone = doctor.getPhone();
-        if (phone == null || !phone.matches(PHONE_REGEX)) {
-            return false;
-        }
-        int credentialId = credentialDAO.getCredentialIdByPhone(phone);
+        return phone != null && phone.matches(PHONE_REGEX);
+    }
+
+    public boolean isPhoneUnique(DoctorDTO doctor) {
+        int credentialId = credentialDAO.getCredentialIdByPhone(doctor.getPhone());
         if (doctor.getId() != doctorDAO.getDoctorIdByCredentialId(credentialId)) {
-            return credentialDAO.isPhoneUnique(phone);
+            return credentialDAO.isPhoneUnique(doctor.getPhone());
         }
         return true;
     }
 
     public boolean isSpecializationIdValid(DoctorDTO doctor) {
-        return doctor.getSpecializationId() > 0;
+        return specializationDAO.getSpecializationById(doctor.getId()) != null;
+    }
+
+    public boolean isSpecializationIdEmpty(DoctorDTO doctor) {
+        return doctor.getSpecializationId() == null;
+    }
+
+    public boolean isIdEmpty(final Integer doctorId) {
+        return doctorId == null;
+    }
+
+    public boolean idExists(final Integer doctorId) {
+        return doctorDAO.getDoctorById(doctorId) != null;
+    }
+
+    public boolean idExists(final DoctorDTO doctorDTO) {
+        return doctorDAO.getDoctorById(doctorDTO.getId()) != null;
+    }
+
+    public boolean isPhotoValid(DoctorDTO doctor) {
+        return doctor.getPhoto() != null && doctor.getPhoto().length > 0;
     }
 }

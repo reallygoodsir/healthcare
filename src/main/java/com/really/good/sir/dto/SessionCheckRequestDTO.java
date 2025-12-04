@@ -1,13 +1,13 @@
 package com.really.good.sir.dto;
 
 public class SessionCheckRequestDTO {
-    private int sessionId;
+    private Integer sessionId;
 
-    public int getSessionId() {
+    public Integer getSessionId() {
         return sessionId;
     }
 
-    public void setSessionId(int sessionId) {
+    public void setSessionId(Integer sessionId) {
         this.sessionId = sessionId;
     }
 }
