@@ -77,4 +77,22 @@ public class DoctorScheduleValidator {
         }
         return false;
     }
+
+    public boolean isScheduleIdEmpty(DoctorScheduleDTO schedule) {
+        return schedule.getId() == null;
+    }
+
+    public boolean isScheduleIdEmpty(Integer scheduleId) {
+        return scheduleId == null;
+    }
+
+
+    public boolean isScheduleIdExists(DoctorScheduleDTO schedule) {
+        return doctorScheduleDAO.scheduleExists(schedule.getId());
+    }
+
+    public boolean isScheduleIdExists(Integer scheduleId) {
+        return doctorScheduleDAO.scheduleExists(scheduleId);
+    }
+
 }

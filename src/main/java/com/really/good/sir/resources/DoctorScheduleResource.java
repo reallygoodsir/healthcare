@@ -9,6 +9,7 @@ import com.really.good.sir.entity.DoctorScheduleEntity;
 import com.really.good.sir.entity.Role;
 import com.really.good.sir.entity.UserSessionEntity;
 import com.really.good.sir.validator.DoctorScheduleValidator;
+import com.really.good.sir.validator.DoctorValidator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -26,221 +27,501 @@ public class DoctorScheduleResource {
     private final DoctorScheduleDAO scheduleDAO = new DoctorScheduleDAO();
     private final UserSessionDAO userSessionDAO = new UserSessionDAO();
     private final DoctorScheduleValidator doctorScheduleValidator = new DoctorScheduleValidator();
+    private final DoctorValidator doctorValidator = new DoctorValidator();
 
     @GET
     @Path("/{doctorId}")
-    public Response getSchedulesByDoctor(@PathParam("doctorId") final int doctorId, @CookieParam("session_id") final String sessionId) {
-        if (sessionId == null || sessionId.isEmpty()) {
+    public Response getSchedulesByDoctor(@PathParam("doctorId") final Integer doctorId,
+                                         @CookieParam("session_id") final String sessionId) {
+        try {
+            if (sessionId == null || sessionId.isEmpty()) {
+                final ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("Session id is empty");
+                return Response.status(Response.Status.UNAUTHORIZED)
+                        .entity(errorDTO)
+                        .build();
+            }
+
+            int sessionIdInt;
+            try {
+                sessionIdInt = Integer.parseInt(sessionId);
+            } catch (NumberFormatException exception) {
+                LOGGER.error("Session id is not valid", exception);
+                ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("Not authorized. Session id has incorrect format");
+                return Response.status(Response.Status.UNAUTHORIZED)
+                        .entity(errorDTO)
+                        .build();
+            }
+
+            UserSessionEntity session = userSessionDAO.getSessionById(sessionIdInt);
+            if (session == null) {
+                LOGGER.error("Session id does not exist [{}]", sessionId);
+                final ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("Not authorized. Session id does not exist");
+                return Response.status(Response.Status.UNAUTHORIZED)
+                        .entity(errorDTO)
+                        .build();
+            }
+
+            if (!Role.ADMIN.toString().equalsIgnoreCase(session.getRole()) &&
+                    !Role.CALL_CENTER_AGENT.toString().equalsIgnoreCase(session.getRole())) {
+                LOGGER.error("Session id does not belong to admin or call center agent role [{}]", sessionIdInt);
+                final ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("Forbidden to access resource. Role is not allowed.");
+                return Response.status(Response.Status.FORBIDDEN)
+                        .entity(errorDTO)
+                        .build();
+            }
+
+            if (doctorValidator.isIdEmpty(doctorId)) {
+                LOGGER.error("Doctor id is empty");
+                final ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("No doctor id provided");
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity(errorDTO)
+                        .build();
+            }
+
+            if (!doctorValidator.idExists(doctorId)) {
+                LOGGER.error("Doctor id does not exist");
+                final ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("Doctor id does not exist");
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity(errorDTO)
+                        .build();
+            }
+            final List<DoctorScheduleEntity> schedules = scheduleDAO.getSchedulesByDoctor(doctorId);
+            final List<DoctorScheduleDTO> scheduleDTOs = scheduleConverter.convert(schedules);
+            return Response.ok(scheduleDTOs).build();
+        } catch (final Exception exception) {
+            LOGGER.error("Error trying to get schedules by doctor id", exception);
             final ErrorDTO errorDTO = new ErrorDTO();
-            errorDTO.setMessage("Not authorized");
-            return Response.status(Response.Status.UNAUTHORIZED)
+            errorDTO.setMessage("Error trying to get schedules by doctor id");
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity(errorDTO)
                     .build();
         }
-        UserSessionEntity session = userSessionDAO.getSessionById(Integer.parseInt(sessionId));
-        if (!Role.ADMIN.toString().equalsIgnoreCase(session.getRole()) && !Role.CALL_CENTER_AGENT.toString().equalsIgnoreCase(session.getRole())) {
-            final ErrorDTO errorDTO = new ErrorDTO();
-            errorDTO.setMessage("Forbidden to access resource");
-            return Response.status(Response.Status.FORBIDDEN)
-                    .entity(errorDTO)
-                    .build();
-        }
-        final List<DoctorScheduleEntity> schedules = scheduleDAO.getSchedulesByDoctor(doctorId);
-        final List<DoctorScheduleDTO> scheduleDTOs = scheduleConverter.convert(schedules);
-        return Response.ok(scheduleDTOs).build();
     }
 
     @GET
-    @Path("/today/{doctorId}")
-    public Response getSchedulesForTodayWithAppointments(@PathParam("doctorId") final int doctorId, @CookieParam("session_id") final String sessionId) {
-        if (sessionId == null || sessionId.isEmpty()) {
+    @Path("/appointments/{doctorId}")
+    public Response getSchedulesWithAppointments(@PathParam("doctorId") final int doctorId,
+                                                 @CookieParam("session_id") final String sessionId) {
+        try {
+            if (sessionId == null || sessionId.isEmpty()) {
+                final ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("Session id is empty");
+                return Response.status(Response.Status.UNAUTHORIZED)
+                        .entity(errorDTO)
+                        .build();
+            }
+
+            int sessionIdInt;
+            try {
+                sessionIdInt = Integer.parseInt(sessionId);
+            } catch (NumberFormatException exception) {
+                LOGGER.error("Session id is not valid", exception);
+                ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("Not authorized. Session id has incorrect format");
+                return Response.status(Response.Status.UNAUTHORIZED)
+                        .entity(errorDTO)
+                        .build();
+            }
+
+            UserSessionEntity session = userSessionDAO.getSessionById(sessionIdInt);
+            if (session == null) {
+                LOGGER.error("Session id does not exist [{}]", sessionId);
+                final ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("Not authorized. Session id does not exist");
+                return Response.status(Response.Status.UNAUTHORIZED)
+                        .entity(errorDTO)
+                        .build();
+            }
+
+            if (!Role.DOCTOR.toString().equalsIgnoreCase(session.getRole())) {
+                LOGGER.error("Session id does not belong to doctor role [{}]", sessionIdInt);
+                final ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("Forbidden to access resource. Role is not allowed.");
+                return Response.status(Response.Status.FORBIDDEN)
+                        .entity(errorDTO)
+                        .build();
+            }
+            if (doctorValidator.isIdEmpty(doctorId)) {
+                LOGGER.error("Doctor id is empty");
+                final ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("No doctor id provided");
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity(errorDTO)
+                        .build();
+            }
+
+            if (!doctorValidator.idExists(doctorId)) {
+                LOGGER.error("Doctor id does not exist");
+                final ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("Doctor id does not exist");
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity(errorDTO)
+                        .build();
+            }
+
+            final List<DoctorScheduleEntity> schedules = scheduleDAO.getSchedulesForTodayWithAppointments(doctorId);
+            final List<DoctorScheduleDTO> scheduleDTOs = scheduleConverter.convert(schedules);
+            return Response.ok(scheduleDTOs).build();
+        } catch (final Exception exception) {
+            LOGGER.error("Error trying to get schedules with appointments by doctor id", exception);
             final ErrorDTO errorDTO = new ErrorDTO();
-            errorDTO.setMessage("Not authorized");
-            return Response.status(Response.Status.UNAUTHORIZED)
+            errorDTO.setMessage("Error trying to get schedules with appointments by doctor id");
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity(errorDTO)
                     .build();
         }
-        UserSessionEntity session = userSessionDAO.getSessionById(Integer.parseInt(sessionId));
-        if (!Role.DOCTOR.toString().equalsIgnoreCase(session.getRole())) {
-            final ErrorDTO errorDTO = new ErrorDTO();
-            errorDTO.setMessage("Forbidden to access resource");
-            return Response.status(Response.Status.FORBIDDEN)
-                    .entity(errorDTO)
-                    .build();
-        }
-        final List<DoctorScheduleEntity> schedules = scheduleDAO.getSchedulesForTodayWithAppointments(doctorId);
-        final List<DoctorScheduleDTO> scheduleDTOs = scheduleConverter.convert(schedules);
-        return Response.ok(scheduleDTOs).build();
     }
 
     @POST
-    public Response createSchedule(final DoctorScheduleDTO requestScheduleDTO, @CookieParam("session_id") final String sessionId) {
-        if (sessionId == null || sessionId.isEmpty()) {
-            final ErrorDTO errorDTO = new ErrorDTO();
-            errorDTO.setMessage("Not authorized");
-            return Response.status(Response.Status.UNAUTHORIZED)
-                    .entity(errorDTO)
-                    .build();
-        }
-
-        int sessionIdInt;
+    public Response createSchedule(final DoctorScheduleDTO requestScheduleDTO,
+                                   @CookieParam("session_id") final String sessionId) {
         try {
-            sessionIdInt = Integer.parseInt(sessionId);
-        } catch (NumberFormatException e) {
+            if (sessionId == null || sessionId.isEmpty()) {
+                final ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("Session id is empty");
+                return Response.status(Response.Status.UNAUTHORIZED)
+                        .entity(errorDTO)
+                        .build();
+            }
+
+            int sessionIdInt;
+            try {
+                sessionIdInt = Integer.parseInt(sessionId);
+            } catch (NumberFormatException exception) {
+                LOGGER.error("Session id is not valid", exception);
+                ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("Not authorized. Session id has incorrect format");
+                return Response.status(Response.Status.UNAUTHORIZED)
+                        .entity(errorDTO)
+                        .build();
+            }
+
+            UserSessionEntity session = userSessionDAO.getSessionById(sessionIdInt);
+            if (session == null) {
+                LOGGER.error("Session id does not exist [{}]", sessionId);
+                final ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("Not authorized. Session id does not exist");
+                return Response.status(Response.Status.UNAUTHORIZED)
+                        .entity(errorDTO)
+                        .build();
+            }
+
+            if (!Role.ADMIN.toString().equalsIgnoreCase(session.getRole())) {
+                LOGGER.error("Session id does not belong to admin role [{}]", sessionIdInt);
+                final ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("Forbidden to access resource. Role is not allowed.");
+                return Response.status(Response.Status.FORBIDDEN)
+                        .entity(errorDTO)
+                        .build();
+            }
+
+            if (requestScheduleDTO.getId() != null) {
+                LOGGER.error("Doctor schedule id must be empty when new schedule is created");
+                ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("Doctor schedule id must be empty when new schedule is created");
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity(errorDTO)
+                        .build();
+            }
+
+            if (doctorValidator.isIdEmpty(requestScheduleDTO.getDoctorId())) {
+                LOGGER.error("Doctor id must not be empty when existing doctor is deleted");
+                ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("Doctor id must not be empty when existing doctor is deleted");
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity(errorDTO)
+                        .build();
+            }
+
+            if (!doctorValidator.idExists(requestScheduleDTO.getDoctorId())) {
+                LOGGER.error("Doctor id does not exist");
+                ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("Doctor id does not exist");
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity(errorDTO)
+                        .build();
+            }
+
+            if (!doctorScheduleValidator.isScheduleDateValid(requestScheduleDTO)) {
+                LOGGER.error("Date must be not be in the past");
+                ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("Date must be not be in the past");
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity(errorDTO)
+                        .build();
+            }
+
+            if (!doctorScheduleValidator.isTimeRangeValid(requestScheduleDTO)) {
+                LOGGER.error("Invalid start/end time");
+                ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("Invalid start/end time");
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity(errorDTO)
+                        .build();
+            }
+
+            if (doctorScheduleValidator.isOverlapping(requestScheduleDTO)) {
+                LOGGER.error("Time overlaps with an existing schedule");
+                ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("Time overlaps with an existing schedule");
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity(errorDTO)
+                        .build();
+            }
+
+            final DoctorScheduleEntity scheduleEntity = scheduleConverter.convert(requestScheduleDTO);
+            final DoctorScheduleEntity createdEntity = scheduleDAO.createSchedule(scheduleEntity);
+            if (createdEntity == null) {
+                LOGGER.error("Doctor schedule is not created");
+                ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("Doctor schedule is not created");
+                return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                        .entity(errorDTO)
+                        .build();
+            }
+            final DoctorScheduleDTO responseScheduleDTO = scheduleConverter.convert(createdEntity);
+            return Response.ok(responseScheduleDTO).build();
+        } catch (final Exception exception) {
+            LOGGER.error("Error trying to create doctor schedule", exception);
             final ErrorDTO errorDTO = new ErrorDTO();
-            errorDTO.setMessage("Not authorized");
-            return Response.status(Response.Status.UNAUTHORIZED)
+            errorDTO.setMessage("Error trying to create doctor schedule");
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity(errorDTO)
                     .build();
         }
-
-        UserSessionEntity session = userSessionDAO.getSessionById(sessionIdInt);
-        if (session == null || !Role.ADMIN.toString().equalsIgnoreCase(session.getRole())) {
-            final ErrorDTO errorDTO = new ErrorDTO();
-            errorDTO.setMessage("Forbidden to access resource");
-            return Response.status(Response.Status.FORBIDDEN)
-                    .entity(errorDTO)
-                    .build();
-        }
-
-        if (!doctorScheduleValidator.isScheduleDateValid(requestScheduleDTO)) {
-            ErrorDTO errorDTO = new ErrorDTO();
-            errorDTO.setMessage("Date must be not be in the past");
-            return Response.status(Response.Status.BAD_REQUEST)
-                    .entity(errorDTO)
-                    .build();
-        }
-
-        if (!doctorScheduleValidator.isTimeRangeValid(requestScheduleDTO)) {
-            ErrorDTO errorDTO = new ErrorDTO();
-            errorDTO.setMessage("Invalid start/end time");
-            return Response.status(Response.Status.BAD_REQUEST)
-                    .entity(errorDTO)
-                    .build();
-        }
-
-        if (doctorScheduleValidator.isOverlapping(requestScheduleDTO)) {
-            ErrorDTO errorDTO = new ErrorDTO();
-            errorDTO.setMessage("Time overlaps with an existing schedule");
-            return Response.status(Response.Status.BAD_REQUEST)
-                    .entity(errorDTO)
-                    .build();
-        }
-
-        final DoctorScheduleEntity scheduleEntity = scheduleConverter.convert(requestScheduleDTO);
-        final DoctorScheduleEntity createdEntity = scheduleDAO.createSchedule(scheduleEntity);
-        final DoctorScheduleDTO responseScheduleDTO = scheduleConverter.convert(createdEntity);
-        return Response.ok(responseScheduleDTO).build();
     }
 
     @PUT
-    public Response updateSchedule(final DoctorScheduleDTO requestScheduleDTO, @CookieParam("session_id") final String sessionId) {
-        if (sessionId == null || sessionId.isEmpty()) {
-            ErrorDTO errorDTO = new ErrorDTO();
-            errorDTO.setMessage("Not authorized");
-            return Response.status(Response.Status.UNAUTHORIZED)
-                    .entity(errorDTO)
-                    .build();
-        }
-
-        int sessionIdInt;
+    public Response updateSchedule(final DoctorScheduleDTO requestScheduleDTO,
+                                   @CookieParam("session_id") final String sessionId) {
         try {
-            sessionIdInt = Integer.parseInt(sessionId);
-        } catch (NumberFormatException e) {
-            ErrorDTO errorDTO = new ErrorDTO();
-            errorDTO.setMessage("Not authorized");
-            return Response.status(Response.Status.UNAUTHORIZED)
+            if (sessionId == null || sessionId.isEmpty()) {
+                final ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("Session id is empty");
+                return Response.status(Response.Status.UNAUTHORIZED)
+                        .entity(errorDTO)
+                        .build();
+            }
+
+            int sessionIdInt;
+            try {
+                sessionIdInt = Integer.parseInt(sessionId);
+            } catch (NumberFormatException exception) {
+                LOGGER.error("Session id is not valid", exception);
+                ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("Not authorized. Session id has incorrect format");
+                return Response.status(Response.Status.UNAUTHORIZED)
+                        .entity(errorDTO)
+                        .build();
+            }
+
+            UserSessionEntity session = userSessionDAO.getSessionById(sessionIdInt);
+            if (session == null) {
+                LOGGER.error("Session id does not exist [{}]", sessionId);
+                final ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("Not authorized. Session id does not exist");
+                return Response.status(Response.Status.UNAUTHORIZED)
+                        .entity(errorDTO)
+                        .build();
+            }
+
+            if (!Role.ADMIN.toString().equalsIgnoreCase(session.getRole())) {
+                LOGGER.error("Session id does not belong to admin role [{}]", sessionIdInt);
+                final ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("Forbidden to access resource. Role is not allowed.");
+                return Response.status(Response.Status.FORBIDDEN)
+                        .entity(errorDTO)
+                        .build();
+            }
+
+            if (requestScheduleDTO.getId() != null) {
+                LOGGER.error("Doctor schedule id must be empty when new schedule is created");
+                ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("Doctor schedule id must be empty when new schedule is created");
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity(errorDTO)
+                        .build();
+            }
+
+            if (doctorValidator.isIdEmpty(requestScheduleDTO.getDoctorId())) {
+                LOGGER.error("Doctor id must not be empty when existing doctor is deleted");
+                ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("Doctor id must not be empty when existing doctor is deleted");
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity(errorDTO)
+                        .build();
+            }
+
+            if (!doctorValidator.idExists(requestScheduleDTO.getDoctorId())) {
+                LOGGER.error("Doctor id does not exist");
+                ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("Doctor id does not exist");
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity(errorDTO)
+                        .build();
+            }
+
+            if (doctorScheduleValidator.isScheduleIdEmpty(requestScheduleDTO)) {
+                LOGGER.error("Schedule id is empty");
+                ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("Schedule id is empty");
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity(errorDTO)
+                        .build();
+            }
+
+            if (!doctorScheduleValidator.isScheduleIdExists(requestScheduleDTO)) {
+                LOGGER.error("Schedule id does not exist");
+                ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("Schedule id does not exist");
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity(errorDTO)
+                        .build();
+            }
+
+            if (!doctorScheduleValidator.isTimeRangeValid(requestScheduleDTO)) {
+                LOGGER.error("Invalid start/end time");
+                ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("Invalid start/end time");
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity(errorDTO)
+                        .build();
+            }
+
+            if (doctorScheduleValidator.isOverlapping(requestScheduleDTO)) {
+                LOGGER.error("Time overlaps with an existing schedule");
+                ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("Time overlaps with an existing schedule");
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity(errorDTO)
+                        .build();
+            }
+
+            final DoctorScheduleEntity scheduleEntity = scheduleConverter.convert(requestScheduleDTO);
+            final boolean isScheduleEntityUpdated = scheduleDAO.updateSchedule(scheduleEntity);
+            if (!isScheduleEntityUpdated) {
+                LOGGER.error("Doctor schedule is not updated");
+                ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("Doctor schedule is not creaupdatedted");
+                return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                        .entity(errorDTO)
+                        .build();
+            }
+            final DoctorScheduleDTO responseScheduleDTO = scheduleConverter.convert(scheduleEntity);
+            return Response.ok(responseScheduleDTO).build();
+        } catch (final Exception exception) {
+            LOGGER.error("Error trying to update doctor schedule", exception);
+            final ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setMessage("Error trying to update doctor schedule");
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity(errorDTO)
                     .build();
         }
-
-        UserSessionEntity session = userSessionDAO.getSessionById(sessionIdInt);
-        if (session == null || !Role.ADMIN.toString().equalsIgnoreCase(session.getRole())) {
-            ErrorDTO errorDTO = new ErrorDTO();
-            errorDTO.setMessage("Forbidden to access resource");
-            return Response.status(Response.Status.FORBIDDEN)
-                    .entity(errorDTO)
-                    .build();
-        }
-
-        if (!doctorScheduleValidator.isScheduleDateValid(requestScheduleDTO)) {
-            ErrorDTO errorDTO = new ErrorDTO();
-            errorDTO.setMessage("Date must be not be in the past");
-            return Response.status(Response.Status.BAD_REQUEST)
-                    .entity(errorDTO)
-                    .build();
-        }
-
-        if (!doctorScheduleValidator.isTimeRangeValid(requestScheduleDTO)) {
-            ErrorDTO errorDTO = new ErrorDTO();
-            errorDTO.setMessage("Invalid start/end time");
-            return Response.status(Response.Status.BAD_REQUEST)
-                    .entity(errorDTO)
-                    .build();
-        }
-
-        if (doctorScheduleValidator.isOverlapping(requestScheduleDTO)) {
-            ErrorDTO errorDTO = new ErrorDTO();
-            errorDTO.setMessage("Time overlaps with an existing schedule");
-            return Response.status(Response.Status.BAD_REQUEST)
-                    .entity(errorDTO)
-                    .build();
-        }
-
-        final DoctorScheduleEntity scheduleEntity = scheduleConverter.convert(requestScheduleDTO);
-        final boolean isScheduleEntityUpdated = scheduleDAO.updateSchedule(scheduleEntity);
-        LOGGER.info("Schedule updated [{}]", isScheduleEntityUpdated);
-        final DoctorScheduleDTO responseScheduleDTO = scheduleConverter.convert(scheduleEntity);
-        if(isScheduleEntityUpdated) return Response.ok(responseScheduleDTO).build();
-
-        ErrorDTO errorDTO = new ErrorDTO();
-        errorDTO.setMessage("Failed to update schedule");
-        return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                .entity(errorDTO)
-                .build();
     }
 
     @DELETE
     @Path("/{doctorId}/{scheduleId}")
-    public Response deleteSchedule(@PathParam("doctorId") final int doctorId,
-                                   @PathParam("scheduleId") final int scheduleId,
+    public Response deleteSchedule(@PathParam("doctorId") final Integer doctorId,
+                                   @PathParam("scheduleId") final Integer scheduleId,
                                    @CookieParam("session_id") final String sessionId) {
-        if (sessionId == null || sessionId.isEmpty()) {
-            final ErrorDTO errorDTO = new ErrorDTO();
-            errorDTO.setMessage("Not authorized");
-            return Response.status(Response.Status.UNAUTHORIZED)
-                    .entity(errorDTO)
-                    .build();
-        }
-
-        int sessionIdInt;
         try {
-            sessionIdInt = Integer.parseInt(sessionId);
-        } catch (NumberFormatException e) {
+            if (sessionId == null || sessionId.isEmpty()) {
+                final ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("Session id is empty");
+                return Response.status(Response.Status.UNAUTHORIZED)
+                        .entity(errorDTO)
+                        .build();
+            }
+
+            int sessionIdInt;
+            try {
+                sessionIdInt = Integer.parseInt(sessionId);
+            } catch (NumberFormatException exception) {
+                LOGGER.error("Session id is not valid", exception);
+                ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("Not authorized. Session id has incorrect format");
+                return Response.status(Response.Status.UNAUTHORIZED)
+                        .entity(errorDTO)
+                        .build();
+            }
+
+            UserSessionEntity session = userSessionDAO.getSessionById(sessionIdInt);
+            if (session == null) {
+                LOGGER.error("Session id does not exist [{}]", sessionId);
+                final ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("Not authorized. Session id does not exist");
+                return Response.status(Response.Status.UNAUTHORIZED)
+                        .entity(errorDTO)
+                        .build();
+            }
+
+
+            if (!Role.ADMIN.toString().equalsIgnoreCase(session.getRole())) {
+                final ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("Forbidden to access resource");
+                return Response.status(Response.Status.FORBIDDEN)
+                        .entity(errorDTO)
+                        .build();
+            }
+            if (doctorValidator.isIdEmpty(doctorId)) {
+                LOGGER.error("Doctor id must not be empty when existing doctor schedule is deleted");
+                ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("Doctor id must not be empty when existing doctor schedule is deleted");
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity(errorDTO)
+                        .build();
+            }
+
+            if (!doctorValidator.idExists(doctorId)) {
+                LOGGER.error("Doctor id does not exist");
+                ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("Doctor id does not exist");
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity(errorDTO)
+                        .build();
+            }
+
+            if (doctorScheduleValidator.isScheduleIdEmpty(scheduleId)) {
+                LOGGER.error("Schedule id is empty");
+                ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("Schedule id is empty");
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity(errorDTO)
+                        .build();
+            }
+
+            if (!doctorScheduleValidator.isScheduleIdExists(scheduleId)) {
+                LOGGER.error("Schedule id does not exist");
+                ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("Schedule id does not exist");
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity(errorDTO)
+                        .build();
+            }
+
+            final boolean isScheduleEntityDeleted = scheduleDAO.deleteSchedule(scheduleId);
+            if (!isScheduleEntityDeleted) {
+                LOGGER.error("Doctor schedule is not deleted");
+                ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("Doctor schedule is not deleted");
+                return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                        .entity(errorDTO)
+                        .build();
+            }
+            return Response.noContent().build();
+        } catch (final Exception exception) {
+            LOGGER.error("Error trying to delete doctor schedule", exception);
             final ErrorDTO errorDTO = new ErrorDTO();
-            errorDTO.setMessage("Not authorized");
-            return Response.status(Response.Status.UNAUTHORIZED)
+            errorDTO.setMessage("Error trying to delete doctor schedule");
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity(errorDTO)
                     .build();
         }
-
-        UserSessionEntity session = userSessionDAO.getSessionById(sessionIdInt);
-        if (session == null || !Role.ADMIN.toString().equalsIgnoreCase(session.getRole())) {
-            final ErrorDTO errorDTO = new ErrorDTO();
-            errorDTO.setMessage("Forbidden to access resource");
-            return Response.status(Response.Status.FORBIDDEN)
-                    .entity(errorDTO)
-                    .build();
-        }
-
-        final boolean isScheduleEntityDeleted = scheduleDAO.deleteSchedule(scheduleId);
-        LOGGER.info("Schedule deleted [{}]", isScheduleEntityDeleted);
-        if(isScheduleEntityDeleted) return Response.noContent().build();
-
-        final ErrorDTO errorDTO = new ErrorDTO();
-        errorDTO.setMessage("Incorrect/absent id");
-        return Response.status(Response.Status.BAD_REQUEST)
-                .entity(errorDTO)
-                .build();
     }
 }
