@@ -4,25 +4,25 @@ import java.sql.Date;
 import java.sql.Time;
 
 public class DoctorScheduleEntity {
-    private int id;
-    private int doctorId;
+    private Integer id;
+    private Integer doctorId;
     private Date scheduleDate;
     private Time startTime;
     private Time endTime;
 
-    public int getId() {
+    public Integer getId() {
         return id;
     }
 
-    public void setId(int id) {
+    public void setId(Integer id) {
         this.id = id;
     }
 
-    public int getDoctorId() {
+    public Integer getDoctorId() {
         return doctorId;
     }
 
-    public void setDoctorId(int doctorId) {
+    public void setDoctorId(Integer doctorId) {
         this.doctorId = doctorId;
     }
 

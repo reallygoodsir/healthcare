@@ -231,9 +231,9 @@ public class DoctorScheduleResource {
             }
 
             if (doctorValidator.isIdEmpty(requestScheduleDTO.getDoctorId())) {
-                LOGGER.error("Doctor id must not be empty when existing doctor is deleted");
+                LOGGER.error("Doctor id must not be empty when new schedule is created");
                 ErrorDTO errorDTO = new ErrorDTO();
-                errorDTO.setMessage("Doctor id must not be empty when existing doctor is deleted");
+                errorDTO.setMessage("Doctor id must not be empty when new schedule is created");
                 return Response.status(Response.Status.BAD_REQUEST)
                         .entity(errorDTO)
                         .build();
@@ -340,37 +340,20 @@ public class DoctorScheduleResource {
                         .build();
             }
 
-            if (requestScheduleDTO.getId() != null) {
-                LOGGER.error("Doctor schedule id must be empty when new schedule is created");
-                ErrorDTO errorDTO = new ErrorDTO();
-                errorDTO.setMessage("Doctor schedule id must be empty when new schedule is created");
-                return Response.status(Response.Status.BAD_REQUEST)
-                        .entity(errorDTO)
-                        .build();
-            }
-
-            if (doctorValidator.isIdEmpty(requestScheduleDTO.getDoctorId())) {
-                LOGGER.error("Doctor id must not be empty when existing doctor is deleted");
-                ErrorDTO errorDTO = new ErrorDTO();
-                errorDTO.setMessage("Doctor id must not be empty when existing doctor is deleted");
-                return Response.status(Response.Status.BAD_REQUEST)
-                        .entity(errorDTO)
-                        .build();
-            }
-
-            if (!doctorValidator.idExists(requestScheduleDTO.getDoctorId())) {
-                LOGGER.error("Doctor id does not exist");
-                ErrorDTO errorDTO = new ErrorDTO();
-                errorDTO.setMessage("Doctor id does not exist");
-                return Response.status(Response.Status.BAD_REQUEST)
-                        .entity(errorDTO)
-                        .build();
-            }
 
             if (doctorScheduleValidator.isScheduleIdEmpty(requestScheduleDTO)) {
-                LOGGER.error("Schedule id is empty");
+                LOGGER.error("Doctor schedule id must not be empty when existing schedule is updated");
                 ErrorDTO errorDTO = new ErrorDTO();
-                errorDTO.setMessage("Schedule id is empty");
+                errorDTO.setMessage("Doctor schedule id must not be empty when existing schedule is updated");
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity(errorDTO)
+                        .build();
+            }
+
+            if (!doctorScheduleValidator.isScheduleDateValid(requestScheduleDTO)) {
+                LOGGER.error("Date must be not be in the past");
+                ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("Date must be not be in the past");
                 return Response.status(Response.Status.BAD_REQUEST)
                         .entity(errorDTO)
                         .build();
@@ -380,6 +363,24 @@ public class DoctorScheduleResource {
                 LOGGER.error("Schedule id does not exist");
                 ErrorDTO errorDTO = new ErrorDTO();
                 errorDTO.setMessage("Schedule id does not exist");
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity(errorDTO)
+                        .build();
+            }
+
+            if (doctorValidator.isIdEmpty(requestScheduleDTO.getDoctorId())) {
+                LOGGER.error("Doctor id must not be empty when existing schedule is updated");
+                ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("Doctor id must not be empty when existing doctor is updated");
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity(errorDTO)
+                        .build();
+            }
+
+            if (!doctorValidator.idExists(requestScheduleDTO.getDoctorId())) {
+                LOGGER.error("Doctor id does not exist");
+                ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("Doctor id does not exist");
                 return Response.status(Response.Status.BAD_REQUEST)
                         .entity(errorDTO)
                         .build();
@@ -463,26 +464,10 @@ public class DoctorScheduleResource {
 
 
             if (!Role.ADMIN.toString().equalsIgnoreCase(session.getRole())) {
+                LOGGER.error("Session id does not belong to admin role [{}]", sessionIdInt);
                 final ErrorDTO errorDTO = new ErrorDTO();
-                errorDTO.setMessage("Forbidden to access resource");
+                errorDTO.setMessage("Forbidden to access resource. Role is not allowed.");
                 return Response.status(Response.Status.FORBIDDEN)
-                        .entity(errorDTO)
-                        .build();
-            }
-            if (doctorValidator.isIdEmpty(doctorId)) {
-                LOGGER.error("Doctor id must not be empty when existing doctor schedule is deleted");
-                ErrorDTO errorDTO = new ErrorDTO();
-                errorDTO.setMessage("Doctor id must not be empty when existing doctor schedule is deleted");
-                return Response.status(Response.Status.BAD_REQUEST)
-                        .entity(errorDTO)
-                        .build();
-            }
-
-            if (!doctorValidator.idExists(doctorId)) {
-                LOGGER.error("Doctor id does not exist");
-                ErrorDTO errorDTO = new ErrorDTO();
-                errorDTO.setMessage("Doctor id does not exist");
-                return Response.status(Response.Status.BAD_REQUEST)
                         .entity(errorDTO)
                         .build();
             }
@@ -500,6 +485,24 @@ public class DoctorScheduleResource {
                 LOGGER.error("Schedule id does not exist");
                 ErrorDTO errorDTO = new ErrorDTO();
                 errorDTO.setMessage("Schedule id does not exist");
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity(errorDTO)
+                        .build();
+            }
+
+            if (!doctorValidator.idExists(doctorId)) {
+                LOGGER.error("Doctor id does not exist");
+                ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("Doctor id does not exist");
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity(errorDTO)
+                        .build();
+            }
+
+            if (doctorValidator.isIdEmpty(doctorId)) {
+                LOGGER.error("Doctor id must not be empty when existing doctor schedule is deleted");
+                ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("Doctor id must not be empty when existing doctor schedule is deleted");
                 return Response.status(Response.Status.BAD_REQUEST)
                         .entity(errorDTO)
                         .build();

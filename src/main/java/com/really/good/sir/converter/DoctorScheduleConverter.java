@@ -16,7 +16,7 @@ public class DoctorScheduleConverter {
 
     public DoctorScheduleEntity convert(final DoctorScheduleDTO dto) {
         final DoctorScheduleEntity entity = new DoctorScheduleEntity();
-        entity.setId(dto.getId());
+        if(dto.getId() != null) entity.setId(dto.getId());
         entity.setDoctorId(dto.getDoctorId());
         entity.setScheduleDate(Date.valueOf(dto.getScheduleDate()));
         try {
