@@ -14,6 +14,9 @@ public class CredentialDAO extends BaseDao {
             "SELECT credential_id FROM credentials WHERE email = ?";
     private static final String GET_ID_BY_PHONE =
             "SELECT credential_id FROM credentials WHERE phone = ?";
+
+    private static final String GET_ID_BY_ID =
+            "SELECT credential_id FROM credentials WHERE credential_id = ?";
     private static final String VERIFY_EMAIL =
             "SELECT email FROM credentials WHERE email = ?";
     private static final String VERIFY_PHONE =
@@ -75,5 +78,20 @@ public class CredentialDAO extends BaseDao {
             LOGGER.error("Phone verification failed", exception);
         }
         return false;
+    }
+
+    public int getCredentialIdById(Integer id) {
+        try (Connection connection = getConnection();
+             PreparedStatement ps = connection.prepareStatement(GET_ID_BY_ID)) {
+            ps.setInt(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt("credential_id");
+                }
+            }
+        } catch (Exception exception) {
+            LOGGER.error("Failed to get credential id by phone", exception);
+        }
+        return -1;
     }
 }

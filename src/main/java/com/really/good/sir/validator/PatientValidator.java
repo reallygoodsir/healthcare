@@ -19,6 +19,14 @@ public class PatientValidator {
     private final CredentialDAO credentialDAO = new CredentialDAO();
     private final PatientDAO patientDAO = new PatientDAO();
 
+    public boolean isPatientIdExists(PatientDTO patient) {
+        return patientDAO.getPatientById(patient.getId()) != null;
+    }
+
+    public boolean isPatientIdExists(Integer id) {
+        return patientDAO.getPatientById(id) != null;
+    }
+
     public boolean isFirstNameValid(PatientDTO patient) {
         String firstName = patient.getFirstName();
         return firstName != null && firstName.matches(NAME_REGEX);
@@ -34,16 +42,11 @@ public class PatientValidator {
         if (email == null || email.isEmpty() || !email.matches(EMAIL_REGEX)) {
             return false;
         }
-        int credentialId = credentialDAO.getCredentialIdByEmail(email);
-        if (credentialId == -1) {
-            return true;
-        }
-        int existingPatientId = patientDAO.getPatientIdByCredentialId(credentialId);
+        return true;
+    }
 
-        if (patient.getId() == 0) {
-            return false;
-        }
-        return patient.getId() == existingPatientId;
+    public boolean isEmailUnique(PatientDTO patient) {
+        return credentialDAO.getCredentialIdByEmail(patient.getEmail()) == -1;
     }
 
     public boolean isPhoneValid(PatientDTO patient) {
@@ -51,16 +54,19 @@ public class PatientValidator {
         if (phone == null || phone.isEmpty() || !phone.matches(PHONE_REGEX)) {
             return false;
         }
-        int credentialId = credentialDAO.getCredentialIdByPhone(phone);
-        if (credentialId == -1) {
-            return true;
-        }
-        int existingPatientId = patientDAO.getPatientIdByCredentialId(credentialId);
-        if (patient.getId() == 0) {
-            return false;
-        }
+        return true;
+    }
 
-        return patient.getId() == existingPatientId;
+    public boolean isPhoneExists(String phone) {
+        return credentialDAO.getCredentialIdByPhone(phone) != -1;
+    }
+
+    public boolean isPhoneUnique(PatientDTO patient) {
+        return credentialDAO.getCredentialIdByPhone(patient.getPhone()) == -1;
+    }
+
+    public boolean isPhoneEmpty(String phone) {
+        return phone == null || phone.isEmpty();
     }
 
     public boolean isDateOfBirthValid(PatientDTO patient) {
@@ -81,4 +87,21 @@ public class PatientValidator {
         String address = patient.getAddress();
         return address != null && !address.trim().isEmpty();
     }
+
+    public boolean isCredentialIdEmpty(Integer id) {
+        return id == null;
+    }
+
+    public boolean isPatientIdEmpty(PatientDTO patient) {
+        return patient.getId() == null;
+    }
+
+    public boolean isPatientIdEmpty(Integer id) {
+        return id == null;
+    }
+
+    public boolean credentialIdExists(Integer id) {
+        return credentialDAO.getCredentialIdById(id) != -1;
+    }
+
 }
