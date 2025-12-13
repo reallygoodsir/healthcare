@@ -37,6 +37,7 @@ public class DoctorResource {
     public Response getAllDoctors(@CookieParam("session_id") final String sessionId) {
         try {
             if (sessionId == null || sessionId.isEmpty()) {
+                LOGGER.error("Session id is empty");
                 final ErrorDTO errorDTO = new ErrorDTO();
                 errorDTO.setMessage("Session id is empty");
                 return Response.status(Response.Status.UNAUTHORIZED)
