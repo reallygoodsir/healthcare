@@ -433,9 +433,9 @@ public class PatientResource {
             }
 
             if (!patientValidator.isPhoneUnique(requestPatientDTO)) {
-                LOGGER.error("Phone number already exist");
+                LOGGER.error("Phone number already exists");
                 ErrorDTO errorDTO = new ErrorDTO();
-                errorDTO.setMessage("Phone number already exist");
+                errorDTO.setMessage("Phone number already exists");
                 return Response.status(Response.Status.BAD_REQUEST)
                         .entity(errorDTO)
                         .build();
@@ -590,9 +590,9 @@ public class PatientResource {
             }
 
             if (!patientValidator.isPhoneUnique(requestPatientDTO)) {
-                LOGGER.error("Phone number already exist");
+                LOGGER.error("Phone number already exists");
                 ErrorDTO errorDTO = new ErrorDTO();
-                errorDTO.setMessage("Phone number already exist");
+                errorDTO.setMessage("Phone number already exists");
                 return Response.status(Response.Status.BAD_REQUEST)
                         .entity(errorDTO)
                         .build();

@@ -12,7 +12,7 @@ public class PatientConverter {
 
     public PatientEntity convert(final PatientDTO patientDTO) {
         final PatientEntity patientEntity = new PatientEntity();
-        patientEntity.setId(patientDTO.getId());
+        if(patientDTO.getId() != null) patientEntity.setId(patientDTO.getId());
         patientEntity.setFirstName(patientDTO.getFirstName());
         patientEntity.setLastName(patientDTO.getLastName());
         patientEntity.setEmail(patientDTO.getEmail());
