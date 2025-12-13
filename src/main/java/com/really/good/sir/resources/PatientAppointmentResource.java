@@ -1,13 +1,13 @@
 package com.really.good.sir.resources;
 
 import com.really.good.sir.converter.PatientAppointmentConverter;
+import com.really.good.sir.converter.PatientAppointmentOutcomeConverter;
 import com.really.good.sir.dao.PatientAppointmentDAO;
+import com.really.good.sir.dao.PatientAppointmentOutcomeDAO;
 import com.really.good.sir.dao.UserSessionDAO;
-import com.really.good.sir.dto.AppointmentDTO;
-import com.really.good.sir.dto.ErrorDTO;
-import com.really.good.sir.dto.PatientAppointmentDTO;
-import com.really.good.sir.dto.PatientAppointmentDetailsDTO;
+import com.really.good.sir.dto.*;
 import com.really.good.sir.entity.PatientAppointmentEntity;
+import com.really.good.sir.entity.PatientAppointmentOutcomeEntity;
 import com.really.good.sir.entity.Role;
 import com.really.good.sir.entity.UserSessionEntity;
 import com.really.good.sir.validator.*;
@@ -31,7 +31,9 @@ public class PatientAppointmentResource {
     private final AppointmentValidator appointmentValidator = new AppointmentValidator();
     private final DoctorValidator doctorValidator = new DoctorValidator();
     private final PatientValidator patientValidator = new PatientValidator();
-
+    private final PatientAppointmentOutcomeValidator outcomeValidator = new PatientAppointmentOutcomeValidator();
+    private final PatientAppointmentOutcomeDAO patientAppointmentOutcomeDAO = new PatientAppointmentOutcomeDAO();
+    private final PatientAppointmentOutcomeConverter patientAppointmentOutcomeConverter = new PatientAppointmentOutcomeConverter();
     private final ServiceValidator serviceValidator = new ServiceValidator();
 
     @GET
@@ -748,6 +750,173 @@ public class PatientAppointmentResource {
             LOGGER.error("Error trying to get appointment details", exception);
             final ErrorDTO errorDTO = new ErrorDTO();
             errorDTO.setMessage("Error trying to get appointment details");
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity(errorDTO)
+                    .build();
+        }
+    }
+
+    @GET
+    @Path("/outcome/{appointmentId}")
+    public Response getOutcome(@PathParam("appointmentId") int appointmentId, @CookieParam("session_id") final String sessionId) {
+        try {
+            if (sessionId == null || sessionId.isEmpty()) {
+                LOGGER.error("Session id is empty");
+                final ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("Session id is empty");
+                return Response.status(Response.Status.UNAUTHORIZED)
+                        .entity(errorDTO)
+                        .build();
+            }
+
+            int sessionIdInt;
+            try {
+                sessionIdInt = Integer.parseInt(sessionId);
+            } catch (NumberFormatException exception) {
+                LOGGER.error("Session id is not valid", exception);
+                ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("Not authorized. Session id has incorrect format");
+                return Response.status(Response.Status.UNAUTHORIZED)
+                        .entity(errorDTO)
+                        .build();
+            }
+
+            UserSessionEntity session = userSessionDAO.getSessionById(sessionIdInt);
+            if (session == null) {
+                LOGGER.error("Session id does not exist [{}]", sessionId);
+                final ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("Not authorized. Session id does not exist");
+                return Response.status(Response.Status.UNAUTHORIZED)
+                        .entity(errorDTO)
+                        .build();
+            }
+
+            if (!Role.DOCTOR.toString().equalsIgnoreCase(session.getRole())) {
+                LOGGER.error("Session id does not belong to doctor role [{}]", sessionIdInt);
+                final ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("Forbidden to access resource. Role is not allowed.");
+                return Response.status(Response.Status.FORBIDDEN)
+                        .entity(errorDTO)
+                        .build();
+            }
+
+            if (patientAppointmentValidator.isIdEmpty(appointmentId)) {
+                LOGGER.error("Appointment id is empty");
+                ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("Appointment id is empty");
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity(errorDTO)
+                        .build();
+            }
+
+            if (!patientAppointmentValidator.isIdExists(appointmentId)) {
+                LOGGER.error("Appointment id does not exist");
+                ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("Appointment id does not exist");
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity(errorDTO)
+                        .build();
+            }
+
+            PatientAppointmentOutcomeEntity entity = patientAppointmentOutcomeDAO.getOutcomeByAppointmentId(appointmentId);
+            if (entity == null) {
+                LOGGER.error("Appointment outcome not found");
+                final ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("Appointment outcome not found");
+                return Response.status(Response.Status.NOT_FOUND)
+                        .entity(errorDTO)
+                        .build();
+            }
+            PatientAppointmentOutcomeDTO dto = patientAppointmentOutcomeConverter.convert(entity);
+            return Response.ok(dto).build();
+        } catch (final Exception exception) {
+            LOGGER.error("Error trying to get appointment outcome", exception);
+            final ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setMessage("Error trying to get appointment outcome");
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity(errorDTO)
+                    .build();
+        }
+    }
+
+    @PUT
+    @Path("/outcome")
+    public Response saveOrUpdateOutcome(PatientAppointmentOutcomeDTO dto,
+                                        @CookieParam("session_id") final String sessionId) {
+        try {
+            if (sessionId == null || sessionId.isEmpty()) {
+                LOGGER.error("Session id is empty");
+                final ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("Session id is empty");
+                return Response.status(Response.Status.UNAUTHORIZED)
+                        .entity(errorDTO)
+                        .build();
+            }
+
+            int sessionIdInt;
+            try {
+                sessionIdInt = Integer.parseInt(sessionId);
+            } catch (NumberFormatException exception) {
+                LOGGER.error("Session id is not valid", exception);
+                ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("Not authorized. Session id has incorrect format");
+                return Response.status(Response.Status.UNAUTHORIZED)
+                        .entity(errorDTO)
+                        .build();
+            }
+
+            UserSessionEntity session = userSessionDAO.getSessionById(sessionIdInt);
+            if (session == null) {
+                LOGGER.error("Session id does not exist [{}]", sessionId);
+                final ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("Not authorized. Session id does not exist");
+                return Response.status(Response.Status.UNAUTHORIZED)
+                        .entity(errorDTO)
+                        .build();
+            }
+
+            if (!Role.DOCTOR.toString().equalsIgnoreCase(session.getRole())) {
+                LOGGER.error("Session id does not belong to doctor role [{}]", sessionIdInt);
+                final ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("Forbidden to access resource. Role is not allowed.");
+                return Response.status(Response.Status.FORBIDDEN)
+                        .entity(errorDTO)
+                        .build();
+            }
+
+            if (patientAppointmentValidator.isIdEmpty(dto.getAppointmentId())) {
+                LOGGER.error("Appointment id is empty");
+                ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("Appointment id is empty");
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity(errorDTO)
+                        .build();
+            }
+
+            if (!patientAppointmentValidator.isIdExists(dto.getAppointmentId())) {
+                LOGGER.error("Appointment id does not exist");
+                ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("Appointment id does not exist");
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity(errorDTO)
+                        .build();
+            }
+
+            PatientAppointmentOutcomeEntity entity = patientAppointmentOutcomeDAO.saveOrUpdateOutcome(dto);
+            if (entity == null) {
+                LOGGER.error("Appointment outcome not found");
+                final ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("Appointment outcome not found");
+                return Response.status(Response.Status.NOT_FOUND)
+                        .entity(errorDTO)
+                        .build();
+            }
+            PatientAppointmentOutcomeDTO result = patientAppointmentOutcomeConverter.convert(entity);
+            return Response.ok(result).build();
+        } catch (final Exception exception) {
+            LOGGER.error("Error trying to update appointment outcome", exception);
+            final ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setMessage("Error trying to update appointment outcome");
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity(errorDTO)
                     .build();
