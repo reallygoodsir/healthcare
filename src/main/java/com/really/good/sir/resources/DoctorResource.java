@@ -150,6 +150,7 @@ public class DoctorResource {
                         .entity(errorDTO)
                         .build();
             }
+
             final DoctorEntity doctorEntity = doctorDAO.getDoctorById(doctorId);
             final DoctorDTO doctorDTO = doctorConverter.convert(doctorEntity);
             return Response.ok(doctorDTO).build();
@@ -709,6 +710,7 @@ public class DoctorResource {
                         .entity(errorDTO)
                         .build();
             }
+
             final boolean isDoctorDeleted = doctorDAO.deleteDoctor(doctorId);
             if (!isDoctorDeleted) {
                 LOGGER.error("Doctor is not deleted");

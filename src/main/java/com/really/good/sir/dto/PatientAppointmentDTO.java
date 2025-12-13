@@ -1,10 +1,10 @@
 package com.really.good.sir.dto;
 
 public class PatientAppointmentDTO {
-    private int appointmentId;
-    private int patientId;
-    private int serviceId;
-    private int doctorId; // <-- Added this
+    private Integer appointmentId;
+    private Integer patientId;
+    private Integer serviceId;
+    private Integer doctorId; // <-- Added this
     private String date;
     private String startTime;
     private String endTime;
@@ -17,36 +17,91 @@ public class PatientAppointmentDTO {
 
     // Getters & Setters
 
-    public int getAppointmentId() { return appointmentId; }
-    public void setAppointmentId(int appointmentId) { this.appointmentId = appointmentId; }
+    public int getAppointmentId() {
+        return appointmentId;
+    }
 
-    public int getPatientId() { return patientId; }
-    public void setPatientId(int patientId) { this.patientId = patientId; }
+    public void setAppointmentId(int appointmentId) {
+        this.appointmentId = appointmentId;
+    }
 
-    public int getServiceId() { return serviceId; }
-    public void setServiceId(int serviceId) { this.serviceId = serviceId; }
+    public int getPatientId() {
+        return patientId;
+    }
 
-    public int getDoctorId() { return doctorId; }
-    public void setDoctorId(int doctorId) { this.doctorId = doctorId; }
+    public void setPatientId(int patientId) {
+        this.patientId = patientId;
+    }
 
-    public String getDate() { return date; }
-    public void setDate(String date) { this.date = date; }
+    public int getServiceId() {
+        return serviceId;
+    }
 
-    public String getStartTime() { return startTime; }
-    public void setStartTime(String startTime) { this.startTime = startTime; }
+    public void setServiceId(int serviceId) {
+        this.serviceId = serviceId;
+    }
 
-    public String getEndTime() { return endTime; }
-    public void setEndTime(String endTime) { this.endTime = endTime; }
+    public int getDoctorId() {
+        return doctorId;
+    }
 
-    public String getStatus() { return status; }
-    public void setStatus(String status) { this.status = status; }
+    public void setDoctorId(int doctorId) {
+        this.doctorId = doctorId;
+    }
 
-    public String getPatientFirstName() { return patientFirstName; }
-    public void setPatientFirstName(String patientFirstName) { this.patientFirstName = patientFirstName; }
+    public String getDate() {
+        return date;
+    }
 
-    public String getPatientLastName() { return patientLastName; }
-    public void setPatientLastName(String patientLastName) { this.patientLastName = patientLastName; }
+    public void setDate(String date) {
+        this.date = date;
+    }
 
-    public String getServiceName() { return serviceName; }
-    public void setServiceName(String serviceName) { this.serviceName = serviceName; }
+    public String getStartTime() {
+        return startTime;
+    }
+
+    public void setStartTime(String startTime) {
+        this.startTime = startTime;
+    }
+
+    public String getEndTime() {
+        return endTime;
+    }
+
+    public void setEndTime(String endTime) {
+        this.endTime = endTime;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public String getPatientFirstName() {
+        return patientFirstName;
+    }
+
+    public void setPatientFirstName(String patientFirstName) {
+        this.patientFirstName = patientFirstName;
+    }
+
+    public String getPatientLastName() {
+        return patientLastName;
+    }
+
+    public void setPatientLastName(String patientLastName) {
+        this.patientLastName = patientLastName;
+    }
+
+    public String getServiceName() {
+        return serviceName;
+    }
+
+    public void setServiceName(String serviceName) {
+        this.serviceName = serviceName;
+    }
 }

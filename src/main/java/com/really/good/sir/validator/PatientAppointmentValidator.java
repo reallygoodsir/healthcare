@@ -67,4 +67,12 @@ public class PatientAppointmentValidator {
             return false;
         }
     }
+
+    public boolean isIdEmpty(final Integer id) {
+        return id == null;
+    }
+
+    public boolean isIdExists(final Integer id) {
+        return patientAppointmentDAO.getAppointmentStatusById(id) != null;
+    }
 }

@@ -407,7 +407,6 @@ public class ServiceResource {
 
             if (!serviceValidator.exists(id)) {
                 LOGGER.error("Service id does not exist");
-                LOGGER.error("Service id does not exist");
                 final ErrorDTO errorDTO = new ErrorDTO();
                 errorDTO.setMessage("Service id does not exist");
                 return Response.status(Response.Status.BAD_REQUEST)
