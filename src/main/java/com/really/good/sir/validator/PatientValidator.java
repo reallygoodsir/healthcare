@@ -46,7 +46,16 @@ public class PatientValidator {
     }
 
     public boolean isEmailUnique(PatientDTO patient) {
-        return credentialDAO.getCredentialIdByEmail(patient.getEmail()) == -1;
+        String email = patient.getEmail();
+        int credentialId = credentialDAO.getCredentialIdByEmail(email);
+        if(patient.getId() == null){
+            return credentialDAO.isEmailUnique(email);
+        }
+        if (patient.getId() != patientDAO.getPatientIdByCredentialId(credentialId)) {
+            return credentialDAO.isEmailUnique(email);
+        }else{
+            return true;
+        }
     }
 
     public boolean isPhoneValid(PatientDTO patient) {
@@ -62,7 +71,16 @@ public class PatientValidator {
     }
 
     public boolean isPhoneUnique(PatientDTO patient) {
-        return credentialDAO.getCredentialIdByPhone(patient.getPhone()) == -1;
+        String phone = patient.getPhone();
+        int credentialId = credentialDAO.getCredentialIdByPhone(phone);
+        if(patient.getId() == null){
+            return credentialDAO.isPhoneUnique(phone);
+        }
+        if (patient.getId() != patientDAO.getPatientIdByCredentialId(credentialId)) {
+            return credentialDAO.isPhoneUnique(phone);
+        }else{
+            return true;
+        }
     }
 
     public boolean isPhoneEmpty(String phone) {

@@ -110,6 +110,15 @@ public class SpecializationResource {
             }
 
             UserSessionEntity session = userSessionDAO.getSessionById(sessionIdInt);
+            if (session == null) {
+                LOGGER.error("Session id does not exist [{}]", sessionId);
+                final ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("Not authorized. Session id does not exist");
+                return Response.status(Response.Status.UNAUTHORIZED)
+                        .entity(errorDTO)
+                        .build();
+            }
+
             if (!Role.CALL_CENTER_AGENT.toString().equalsIgnoreCase(session.getRole()) &&
                     !Role.ADMIN.toString().equalsIgnoreCase(session.getRole())) {
                 LOGGER.error("Session id does not belong to admin or call center agent role [{}]", sessionIdInt);
