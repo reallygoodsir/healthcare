@@ -309,7 +309,7 @@ public class PatientAppointmentResource {
             if (doctorValidator.isIdEmpty(dto.getDoctorId())) {
                 LOGGER.error("Doctor id is empty");
                 final ErrorDTO errorDTO = new ErrorDTO();
-                errorDTO.setMessage("No doctor id provided");
+                errorDTO.setMessage("Doctor id is empty");
                 return Response.status(Response.Status.BAD_REQUEST)
                         .entity(errorDTO)
                         .build();
@@ -345,7 +345,7 @@ public class PatientAppointmentResource {
             if (serviceValidator.isEmpty(dto.getServiceId())) {
                 LOGGER.error("Service id is empty");
                 final ErrorDTO errorDTO = new ErrorDTO();
-                errorDTO.setMessage("No doctor id provided");
+                errorDTO.setMessage("Service id is empty");
                 return Response.status(Response.Status.BAD_REQUEST)
                         .entity(errorDTO)
                         .build();
@@ -362,14 +362,16 @@ public class PatientAppointmentResource {
 
 
             if (!patientAppointmentValidator.isDateValid(dto)) {
+                LOGGER.error("Date must not be in the past");
                 ErrorDTO errorDTO = new ErrorDTO();
-                errorDTO.setMessage("Date must be not be in the past");
+                errorDTO.setMessage("Date must not be in the past");
                 return Response.status(Response.Status.BAD_REQUEST)
                         .entity(errorDTO)
                         .build();
             }
 
             if (!patientAppointmentValidator.isTimeRangeValid(dto)) {
+                LOGGER.error("Invalid start/end time");
                 ErrorDTO errorDTO = new ErrorDTO();
                 errorDTO.setMessage("Invalid start/end time");
                 return Response.status(Response.Status.BAD_REQUEST)
@@ -378,6 +380,7 @@ public class PatientAppointmentResource {
             }
 
             if (patientAppointmentValidator.isOverlapping(dto)) {
+                LOGGER.error("Time overlaps with an existing schedule");
                 ErrorDTO errorDTO = new ErrorDTO();
                 errorDTO.setMessage("Time overlaps with an existing schedule");
                 return Response.status(Response.Status.BAD_REQUEST)
@@ -406,9 +409,113 @@ public class PatientAppointmentResource {
         }
     }
 
+    @PATCH
+    @Path("/{appointmentId}/{status}")
+    public Response updateStatus(@PathParam("appointmentId") Integer appointmentId,
+                                 @PathParam("status") String status,
+                                 @CookieParam("session_id") final String sessionId) {
+        try {
+            if (sessionId == null || sessionId.isEmpty()) {
+                LOGGER.error("Session id is empty");
+                final ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("Session id is empty");
+                return Response.status(Response.Status.UNAUTHORIZED)
+                        .entity(errorDTO)
+                        .build();
+            }
+
+            int sessionIdInt;
+            try {
+                sessionIdInt = Integer.parseInt(sessionId);
+            } catch (NumberFormatException exception) {
+                LOGGER.error("Session id is not valid", exception);
+                ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("Not authorized. Session id has incorrect format");
+                return Response.status(Response.Status.UNAUTHORIZED)
+                        .entity(errorDTO)
+                        .build();
+            }
+
+            UserSessionEntity session = userSessionDAO.getSessionById(sessionIdInt);
+            if (session == null) {
+                LOGGER.error("Session id does not exist [{}]", sessionId);
+                final ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("Not authorized. Session id does not exist");
+                return Response.status(Response.Status.UNAUTHORIZED)
+                        .entity(errorDTO)
+                        .build();
+            }
+
+            if (!Role.DOCTOR.toString().equalsIgnoreCase(session.getRole())) {
+                LOGGER.error("Session id does not belong to doctor role [{}]", sessionIdInt);
+                final ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("Forbidden to access resource. Role is not allowed.");
+                return Response.status(Response.Status.FORBIDDEN)
+                        .entity(errorDTO)
+                        .build();
+            }
+
+            if (patientAppointmentValidator.isIdEmpty(appointmentId)) {
+                LOGGER.error("Appointment id is empty");
+                ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("Appointment id is empty");
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity(errorDTO)
+                        .build();
+            }
+
+            if (!patientAppointmentValidator.isIdExists(appointmentId)) {
+                LOGGER.error("Appointment id does not exist");
+                ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("Appointment id does not exist");
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity(errorDTO)
+                        .build();
+            }
+
+            if (status == null || status.isBlank()) {
+                LOGGER.error("Appointment status is empty");
+                final ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("Appointment status is empty");
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity(errorDTO)
+                        .build();
+
+            }
+
+            if (!status.equalsIgnoreCase("SCHEDULED") &&
+                    !status.equalsIgnoreCase("COMPLETED")) {
+                LOGGER.error("Appointment status has incorrect value");
+                final ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("Appointment status has incorrect value");
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity(errorDTO)
+                        .build();
+            }
+
+            boolean updated = dao.updateStatus(appointmentId, status);
+            if (!updated) {
+                LOGGER.error("Appointment status is not updated");
+                ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("Appointment status is not updated");
+                return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                        .entity(errorDTO)
+                        .build();
+            }
+            return Response.noContent().build();
+        } catch (final Exception exception) {
+            LOGGER.error("Error trying to update appointment status", exception);
+            final ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setMessage("Error trying to update appointment status");
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity(errorDTO)
+                    .build();
+        }
+    }
+
     @DELETE
     @Path("/{appointmentId}")
-    public Response deleteAppointment(@PathParam("appointmentId") int appointmentId,
+    public Response deleteAppointment(@PathParam("appointmentId") Integer appointmentId,
                                       @CookieParam("session_id") final String sessionId) {
         try {
             if (sessionId == null || sessionId.isEmpty()) {
@@ -454,7 +561,7 @@ public class PatientAppointmentResource {
             if (patientAppointmentValidator.isIdEmpty(appointmentId)) {
                 LOGGER.error("Appointment id must not be empty when existing appointment is deleted");
                 ErrorDTO errorDTO = new ErrorDTO();
-                errorDTO.setMessage("Doctor id must not be empty when existing doctor is deleted");
+                errorDTO.setMessage("Doctor id must not be empty when existing appointment is deleted");
                 return Response.status(Response.Status.BAD_REQUEST)
                         .entity(errorDTO)
                         .build();
@@ -489,114 +596,10 @@ public class PatientAppointmentResource {
         }
     }
 
-    @PATCH
-    @Path("/{appointmentId}/{status}")
-    public Response updateStatus(@PathParam("appointmentId") int appointmentId,
-                                 @PathParam("status") String status,
-                                 @CookieParam("session_id") final String sessionId) {
-        try {
-            if (sessionId == null || sessionId.isEmpty()) {
-                LOGGER.error("Session id is empty");
-                final ErrorDTO errorDTO = new ErrorDTO();
-                errorDTO.setMessage("Session id is empty");
-                return Response.status(Response.Status.UNAUTHORIZED)
-                        .entity(errorDTO)
-                        .build();
-            }
-
-            int sessionIdInt;
-            try {
-                sessionIdInt = Integer.parseInt(sessionId);
-            } catch (NumberFormatException exception) {
-                LOGGER.error("Session id is not valid", exception);
-                ErrorDTO errorDTO = new ErrorDTO();
-                errorDTO.setMessage("Not authorized. Session id has incorrect format");
-                return Response.status(Response.Status.UNAUTHORIZED)
-                        .entity(errorDTO)
-                        .build();
-            }
-
-            UserSessionEntity session = userSessionDAO.getSessionById(sessionIdInt);
-            if (session == null) {
-                LOGGER.error("Session id does not exist [{}]", sessionId);
-                final ErrorDTO errorDTO = new ErrorDTO();
-                errorDTO.setMessage("Not authorized. Session id does not exist");
-                return Response.status(Response.Status.UNAUTHORIZED)
-                        .entity(errorDTO)
-                        .build();
-            }
-
-            if (!Role.DOCTOR.toString().equalsIgnoreCase(session.getRole())) {
-                LOGGER.error("Session id does not belong to doctor role [{}]", sessionIdInt);
-                final ErrorDTO errorDTO = new ErrorDTO();
-                errorDTO.setMessage("Forbidden to access resource. Role is not allowed.");
-                return Response.status(Response.Status.FORBIDDEN)
-                        .entity(errorDTO)
-                        .build();
-            }
-
-            if (patientAppointmentValidator.isIdEmpty(appointmentId)) {
-                LOGGER.error("Appointment id must not be empty when existing appointment is deleted");
-                ErrorDTO errorDTO = new ErrorDTO();
-                errorDTO.setMessage("Doctor id must not be empty when existing doctor is deleted");
-                return Response.status(Response.Status.BAD_REQUEST)
-                        .entity(errorDTO)
-                        .build();
-            }
-
-            if (!patientAppointmentValidator.isIdExists(appointmentId)) {
-                LOGGER.error("Appointment id does not exist");
-                ErrorDTO errorDTO = new ErrorDTO();
-                errorDTO.setMessage("Appointment id does not exist");
-                return Response.status(Response.Status.BAD_REQUEST)
-                        .entity(errorDTO)
-                        .build();
-            }
-
-            if (status == null || status.isBlank()) {
-                LOGGER.error("Status is empty");
-                final ErrorDTO errorDTO = new ErrorDTO();
-                errorDTO.setMessage("Status is empty");
-                return Response.status(Response.Status.BAD_REQUEST)
-                        .entity(errorDTO)
-                        .build();
-
-            }
-
-            if (!status.equalsIgnoreCase("SCHEDULED") &&
-                    !status.equalsIgnoreCase("COMPLETED")) {
-                LOGGER.error("Status has incorrect value");
-                final ErrorDTO errorDTO = new ErrorDTO();
-                errorDTO.setMessage("Status has incorrect value");
-                return Response.status(Response.Status.BAD_REQUEST)
-                        .entity(errorDTO)
-                        .build();
-
-            }
-
-            boolean updated = dao.updateStatus(appointmentId, status);
-            if (!updated) {
-                LOGGER.error("Service is not updated");
-                ErrorDTO errorDTO = new ErrorDTO();
-                errorDTO.setMessage("Service is not updated");
-                return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                        .entity(errorDTO)
-                        .build();
-            }
-            return Response.noContent().build();
-        } catch (final Exception exception) {
-            LOGGER.error("Error trying to update appointment status", exception);
-            final ErrorDTO errorDTO = new ErrorDTO();
-            errorDTO.setMessage("Error trying to update appointment status");
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity(errorDTO)
-                    .build();
-        }
-    }
 
     @GET
     @Path("/status/{appointmentId}")
-    public Response getAppointmentStatus(@PathParam("appointmentId") int appointmentId,
+    public Response getAppointmentStatus(@PathParam("appointmentId") Integer appointmentId,
                                          @CookieParam("session_id") final String sessionId) {
         try {
             if (sessionId == null || sessionId.isEmpty()) {
@@ -640,9 +643,9 @@ public class PatientAppointmentResource {
             }
 
             if (patientAppointmentValidator.isIdEmpty(appointmentId)) {
-                LOGGER.error("Appointment id must not be empty when existing appointment is deleted");
+                LOGGER.error("Appointment id is empty");
                 ErrorDTO errorDTO = new ErrorDTO();
-                errorDTO.setMessage("Doctor id must not be empty when existing doctor is deleted");
+                errorDTO.setMessage("Appointment id is empty");
                 return Response.status(Response.Status.BAD_REQUEST)
                         .entity(errorDTO)
                         .build();
@@ -658,7 +661,7 @@ public class PatientAppointmentResource {
             }
 
             String status = dao.getAppointmentStatusById(appointmentId);
-            if (status == null) {
+            if (status == null || status.isBlank()) {
                 LOGGER.error("Appointment status not found");
                 ErrorDTO errorDTO = new ErrorDTO();
                 errorDTO.setMessage("Appointment status not found");
@@ -758,7 +761,8 @@ public class PatientAppointmentResource {
 
     @GET
     @Path("/outcome/{appointmentId}")
-    public Response getOutcome(@PathParam("appointmentId") int appointmentId, @CookieParam("session_id") final String sessionId) {
+    public Response getOutcome(@PathParam("appointmentId") Integer appointmentId,
+                               @CookieParam("session_id") final String sessionId) {
         try {
             if (sessionId == null || sessionId.isEmpty()) {
                 LOGGER.error("Session id is empty");
@@ -884,6 +888,15 @@ public class PatientAppointmentResource {
                         .build();
             }
 
+            if (outcomeValidator.isOutcomeIdEmpty(dto)) {
+                LOGGER.error("Outcome id is empty");
+                ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("Outcome id is empty");
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity(errorDTO)
+                        .build();
+            }
+
             if (patientAppointmentValidator.isIdEmpty(dto.getAppointmentId())) {
                 LOGGER.error("Appointment id is empty");
                 ErrorDTO errorDTO = new ErrorDTO();
@@ -902,11 +915,20 @@ public class PatientAppointmentResource {
                         .build();
             }
 
+            if (!outcomeValidator.isResultValid(dto)) {
+                LOGGER.error("Appointment outcome result is empty");
+                ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setMessage("Appointment outcome result is empty");
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity(errorDTO)
+                        .build();
+            }
+
             PatientAppointmentOutcomeEntity entity = patientAppointmentOutcomeDAO.saveOrUpdateOutcome(dto);
             if (entity == null) {
-                LOGGER.error("Appointment outcome not found");
+                LOGGER.error("Appointment outcome was not updated");
                 final ErrorDTO errorDTO = new ErrorDTO();
-                errorDTO.setMessage("Appointment outcome not found");
+                errorDTO.setMessage("Appointment outcome was not updated");
                 return Response.status(Response.Status.NOT_FOUND)
                         .entity(errorDTO)
                         .build();

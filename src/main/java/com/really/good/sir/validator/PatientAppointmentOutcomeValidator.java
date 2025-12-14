@@ -8,4 +8,8 @@ public class PatientAppointmentOutcomeValidator {
         String result = outcome.getResult();
         return result != null && !result.trim().isEmpty();
     }
+
+    public boolean isOutcomeIdEmpty(PatientAppointmentOutcomeDTO outcome) {
+        return outcome.getId() == null;
+    }
 }
