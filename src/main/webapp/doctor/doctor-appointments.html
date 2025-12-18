@@ -144,7 +144,7 @@
 
   async function loadSchedules() {
     try {
-      const resp = await fetch(`${API_BASE}/today/${doctorId}`);
+      const resp = await fetch(`${API_BASE}/appointments/${doctorId}`);
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
       const schedules = await resp.json();
       scheduleTableBody.innerHTML = '';

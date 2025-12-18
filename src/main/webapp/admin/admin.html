@@ -138,7 +138,7 @@
         }
 
         try {
-            const response = await fetch('http://localhost:8080/healthcare/api/authorization/check-session', {
+            const response = await fetch('http://localhost:8080/healthcare/api/authorization/session', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ sessionId: parseInt(sessionId) })
@@ -173,7 +173,7 @@
         }
 
         try {
-            const response = await fetch(`http://localhost:8080/healthcare/api/authorization/${sessionId}`, {
+            const response = await fetch(`http://localhost:8080/healthcare/api/authorization/session/${sessionId}`, {
                 method: 'DELETE'
             });
 

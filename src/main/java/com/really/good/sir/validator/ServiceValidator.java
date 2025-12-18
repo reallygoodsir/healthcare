@@ -14,8 +14,12 @@ public class ServiceValidator {
     }
 
     public boolean isNameUnique(ServiceDTO service) {
-        int id = service.getId();
-        return !serviceDAO.isServiceNameExists(service.getName(), id);
+        Integer id = service.getId();
+        try {
+            return !serviceDAO.isServiceNameExists(service.getName(), id);
+        }catch(Exception exception){
+            return true;
+        }
     }
 
     public boolean isPriceValid(ServiceDTO service) {

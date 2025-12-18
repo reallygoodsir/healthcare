@@ -113,7 +113,7 @@
 
         try {
             // 1️⃣ Check session → get credentialId
-            const sessionResponse = await fetch('http://localhost:8080/healthcare/api/authorization/check-session', {
+            const sessionResponse = await fetch('http://localhost:8080/healthcare/api/authorization/session', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ sessionId: parseInt(sessionId) })
@@ -126,7 +126,7 @@
             if (!credentialId) throw new Error('Credential ID missing');
 
             // 2️⃣ Get patientId using credentialId
-            const patientResponse = await fetch(`http://localhost:8080/healthcare/api/patients/by-credential/${credentialId}`, {
+            const patientResponse = await fetch(`http://localhost:8080/healthcare/api/patients/credentials/${credentialId}`, {
                 headers: { 'Content-Type': 'application/json' }
             });
 
@@ -151,7 +151,7 @@
         }
 
         try {
-            const response = await fetch(`http://localhost:8080/healthcare/api/authorization/${sessionId}`, {
+            const response = await fetch(`http://localhost:8080/healthcare/api/authorization/session/${sessionId}`, {
                 method: 'DELETE'
             });
 

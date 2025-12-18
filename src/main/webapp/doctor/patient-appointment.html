@@ -173,10 +173,12 @@
     async function saveOutcome(sign=false){
         try {
             const payload = {
+                appointmentId: Number(appointmentId),
                 diagnosis: diagnosisEl.value,
                 recommendations: recommendationsEl.value
             };
-            const resp = await fetch(`${API_BASE}/appointments/${appointmentId}`, {
+
+            const resp = await fetch(`${API_BASE}/appointments/`, {
                 method: 'PUT',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(payload)
@@ -195,7 +197,7 @@
             }
 
             if(sign){
-                const statusResp = await fetch(`${API_BASE}/appointments/${appointmentId}/status?status=COMPLETED`, {method:'PATCH'});
+                const statusResp = await fetch(`${API_BASE}/appointments/${appointmentId}/COMPLETED`, {method: 'PATCH'});
                 if(!statusResp.ok) throw new Error(`HTTP ${statusResp.status}`);
                 appointmentStatus = 'COMPLETED';
                 alert('Appointment signed successfully!');

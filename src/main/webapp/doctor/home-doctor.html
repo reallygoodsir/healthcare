@@ -139,7 +139,7 @@
 
         try {
             // 1️⃣ Check session → get credentialId
-            const sessionResponse = await fetch('http://localhost:8080/healthcare/api/authorization/check-session', {
+            const sessionResponse = await fetch('http://localhost:8080/healthcare/api/authorization/session', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ sessionId: parseInt(sessionId) })
@@ -152,11 +152,18 @@
             if (!credentialId) throw new Error('Credential ID missing');
 
             // 2️⃣ Get doctorId using credentialId
-            const doctorResponse = await fetch(`http://localhost:8080/healthcare/api/doctors/by-credential/${credentialId}`);
+            const doctorResponse = await fetch(`http://localhost:8080/healthcare/api/doctors/credential/${credentialId}`);
             if (!doctorResponse.ok) throw new Error('Doctor not found');
 
-            const doctorId = await doctorResponse.json();
+            const doctorIdResponse = await doctorResponse.json();
+            const doctorId = doctorIdResponse.id;
+
+            if (!doctorId) {
+                throw new Error('Doctor ID missing in response');
+            }
+
             console.log('Doctor ID:', doctorId);
+
 
             // Update appointments button link
             const appointmentsBtn = document.getElementById('appointmentsBtn');
@@ -178,7 +185,7 @@
         }
 
         try {
-            const response = await fetch(`http://localhost:8080/healthcare/api/authorization/${sessionId}`, {
+            const response = await fetch(`http://localhost:8080/healthcare/api/authorization/session/${sessionId}`, {
                 method: 'DELETE'
             });
 

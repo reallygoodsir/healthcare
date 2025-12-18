@@ -4,10 +4,10 @@ import java.sql.Date;
 import java.sql.Time;
 
 public class PatientAppointmentEntity {
-    private int appointmentId;
-    private int patientId;
-    private int serviceId;
-    private int doctorId; // <-- Added this
+    private Integer appointmentId;
+    private Integer patientId;
+    private Integer serviceId;
+    private Integer doctorId; // <-- Added this
     private Date date;
     private Time startTime;
     private Time endTime;
@@ -19,17 +19,39 @@ public class PatientAppointmentEntity {
     private String serviceName;
 
     // Getters and setters
-    public int getAppointmentId() { return appointmentId; }
-    public void setAppointmentId(int appointmentId) { this.appointmentId = appointmentId; }
 
-    public int getPatientId() { return patientId; }
-    public void setPatientId(int patientId) { this.patientId = patientId; }
 
-    public int getServiceId() { return serviceId; }
-    public void setServiceId(int serviceId) { this.serviceId = serviceId; }
+    public Integer getAppointmentId() {
+        return appointmentId;
+    }
 
-    public int getDoctorId() { return doctorId; } // <-- Added getter
-    public void setDoctorId(int doctorId) { this.doctorId = doctorId; } // <-- Added setter
+    public void setAppointmentId(Integer appointmentId) {
+        this.appointmentId = appointmentId;
+    }
+
+    public Integer getPatientId() {
+        return patientId;
+    }
+
+    public void setPatientId(Integer patientId) {
+        this.patientId = patientId;
+    }
+
+    public Integer getServiceId() {
+        return serviceId;
+    }
+
+    public void setServiceId(Integer serviceId) {
+        this.serviceId = serviceId;
+    }
+
+    public Integer getDoctorId() {
+        return doctorId;
+    }
+
+    public void setDoctorId(Integer doctorId) {
+        this.doctorId = doctorId;
+    }
 
     public Date getDate() { return date; }
     public void setDate(Date date) { this.date = date; }
