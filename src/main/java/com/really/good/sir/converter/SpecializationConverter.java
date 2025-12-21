@@ -8,6 +8,7 @@ import java.util.List;
 
 public class SpecializationConverter {
     public SpecializationEntity convert(final SpecializationDTO specializationDTO) {
+        if(specializationDTO == null) return null;
         final SpecializationEntity specializationEntity = new SpecializationEntity();
         specializationEntity.setId(specializationDTO.getId());
         specializationEntity.setName(specializationDTO.getName());
@@ -15,6 +16,7 @@ public class SpecializationConverter {
     }
 
     public SpecializationDTO convert(final SpecializationEntity specializationEntity) {
+        if(specializationEntity == null) return null;
         final SpecializationDTO specializationDTO = new SpecializationDTO();
         specializationDTO.setId(specializationEntity.getId());
         specializationDTO.setName(specializationEntity.getName());

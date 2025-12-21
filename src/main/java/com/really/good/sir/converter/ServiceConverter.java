@@ -9,6 +9,7 @@ import java.util.List;
 public class ServiceConverter {
 
     public ServiceEntity convert(final ServiceDTO dto) {
+        if(dto == null) return null;
         final ServiceEntity entity = new ServiceEntity();
         entity.setId(dto.getId());
         entity.setName(dto.getName());
@@ -17,6 +18,7 @@ public class ServiceConverter {
     }
 
     public ServiceDTO convert(final ServiceEntity entity) {
+        if(entity == null) return null;
         final ServiceDTO dto = new ServiceDTO();
         dto.setId(entity.getId());
         dto.setName(entity.getName());

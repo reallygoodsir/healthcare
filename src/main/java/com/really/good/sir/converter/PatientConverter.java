@@ -11,8 +11,9 @@ import java.util.List;
 public class PatientConverter {
 
     public PatientEntity convert(final PatientDTO patientDTO) {
+        if (patientDTO == null) return null;
         final PatientEntity patientEntity = new PatientEntity();
-        if(patientDTO.getId() != null) patientEntity.setId(patientDTO.getId());
+        if (patientDTO.getId() != null) patientEntity.setId(patientDTO.getId());
         patientEntity.setFirstName(patientDTO.getFirstName());
         patientEntity.setLastName(patientDTO.getLastName());
         patientEntity.setEmail(patientDTO.getEmail());
@@ -23,6 +24,7 @@ public class PatientConverter {
     }
 
     public PatientDTO convert(final PatientEntity patientEntity) {
+        if (patientEntity == null) return null;
         final PatientDTO patientDTO = new PatientDTO();
         patientDTO.setId(patientEntity.getId());
         patientDTO.setFirstName(patientEntity.getFirstName());

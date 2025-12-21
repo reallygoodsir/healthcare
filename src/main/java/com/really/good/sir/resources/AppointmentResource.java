@@ -1,17 +1,13 @@
 package com.really.good.sir.resources;
 
-import com.really.good.sir.converter.AppointmentOutcomeConverter;
-import com.really.good.sir.dao.AppointmentDAO;
-import com.really.good.sir.dao.AppointmentOutcomeDAO;
-import com.really.good.sir.dao.UserSessionDAO;
 import com.really.good.sir.dto.AppointmentDTO;
 import com.really.good.sir.dto.AppointmentOutcomeDTO;
 import com.really.good.sir.dto.ErrorDTO;
-import com.really.good.sir.entity.AppointmentEntity;
-import com.really.good.sir.converter.AppointmentConverter;
-import com.really.good.sir.entity.AppointmentOutcomeEntity;
+import com.really.good.sir.dto.UserSessionDTO;
 import com.really.good.sir.entity.Role;
-import com.really.good.sir.entity.UserSessionEntity;
+import com.really.good.sir.service.AppointmentOutcomeService;
+import com.really.good.sir.service.AppointmentService;
+import com.really.good.sir.service.UserSessionService;
 import com.really.good.sir.validator.AppointmentOutcomeValidator;
 import com.really.good.sir.validator.AppointmentValidator;
 import org.apache.logging.log4j.LogManager;
@@ -27,11 +23,9 @@ import java.util.List;
 @Consumes(MediaType.APPLICATION_JSON)
 public class AppointmentResource {
     private static final Logger LOGGER = LogManager.getLogger(AppointmentResource.class);
-    private final AppointmentDAO appointmentDAO = new AppointmentDAO();
-    private final AppointmentOutcomeDAO outcomeDAO = new AppointmentOutcomeDAO();
-    private final AppointmentConverter converter = new AppointmentConverter();
-    private final AppointmentOutcomeConverter outcomeConverter = new AppointmentOutcomeConverter();
-    private final UserSessionDAO userSessionDAO = new UserSessionDAO();
+    private final AppointmentService appointmentService = new AppointmentService();
+    private final AppointmentOutcomeService outcomeService = new AppointmentOutcomeService();
+    private final UserSessionService userSessionService = new UserSessionService();
     private final AppointmentOutcomeValidator patientValidator = new AppointmentOutcomeValidator();
     private final AppointmentValidator appointmentValidator = new AppointmentValidator();
 
@@ -61,7 +55,7 @@ public class AppointmentResource {
                         .build();
             }
 
-            UserSessionEntity session = userSessionDAO.getSessionById(sessionIdInt);
+            UserSessionDTO session = userSessionService.getSessionById(sessionIdInt);
             if (session == null) {
                 LOGGER.error("Session id does not exist [{}]", sessionId);
                 final ErrorDTO errorDTO = new ErrorDTO();
@@ -157,11 +151,7 @@ public class AppointmentResource {
 
             appointmentDTO.setStatus("SCHEDULED");
 
-            // REQUEST CONVERSION TO DB ENTITY
-            AppointmentEntity entity = converter.convert(appointmentDTO);
-
-            // SAVE ENTITY TO DB
-            AppointmentEntity created = appointmentDAO.createAppointment(entity);
+            AppointmentDTO created = appointmentService.createAppointment(appointmentDTO);
             if (created == null) {
                 LOGGER.error("Failed to create an appointment [{}]", appointmentDTO);
                 final ErrorDTO errorDTO = new ErrorDTO();
@@ -170,7 +160,7 @@ public class AppointmentResource {
                         .entity(errorDTO)
                         .build();
             }
-            return Response.ok(converter.convert(created)).build();
+            return Response.ok(created).build();
         } catch (final Exception exception) {
             LOGGER.error("Error during appointment creation [{}]", appointmentDTO, exception);
             final ErrorDTO errorDTO = new ErrorDTO();
@@ -204,7 +194,7 @@ public class AppointmentResource {
                     .build();
         }
 
-        UserSessionEntity session = userSessionDAO.getSessionById(sessionIdInt);
+        UserSessionDTO session = userSessionService.getSessionById(sessionIdInt);
         if (session == null) {
             LOGGER.error("Session id does not exist [{}]", sessionId);
             final ErrorDTO errorDTO = new ErrorDTO();
@@ -256,9 +246,7 @@ public class AppointmentResource {
         }
 
         try {
-            AppointmentOutcomeEntity entity = outcomeConverter.convert(appointmentOutcomeDTO);
-            AppointmentOutcomeEntity entityResponse = outcomeDAO.saveOrUpdateOutcome(entity);
-            AppointmentOutcomeDTO outcome = outcomeConverter.convert(entityResponse);
+            AppointmentOutcomeDTO outcome = outcomeService.saveOrUpdateOutcome(appointmentOutcomeDTO);
             return Response.ok(outcome).build();
         } catch (Exception exception) {
             LOGGER.error("Error during appointment outcome processing [{}]", appointmentOutcomeDTO, exception);
@@ -294,7 +282,7 @@ public class AppointmentResource {
                         .build();
             }
 
-            UserSessionEntity session = userSessionDAO.getSessionById(sessionIdInt);
+            UserSessionDTO session = userSessionService.getSessionById(sessionIdInt);
             if (session == null) {
                 LOGGER.error("Session id does not exist [{}]", sessionIdInt);
                 final ErrorDTO errorDTO = new ErrorDTO();
@@ -312,8 +300,8 @@ public class AppointmentResource {
                         .entity(errorDTO)
                         .build();
             }
-            List<AppointmentEntity> appointments = appointmentDAO.getAllAppointments(); // an empty response is fine
-            return Response.ok(converter.convert(appointments)).build();
+            List<AppointmentDTO> appointments = appointmentService.getAllAppointments(); // an empty response is fine
+            return Response.ok(appointments).build();
         } catch (Exception exception) {
             LOGGER.error("Error while getting all appointments", exception);
             final ErrorDTO errorDTO = new ErrorDTO();
@@ -349,7 +337,7 @@ public class AppointmentResource {
                         .build();
             }
 
-            UserSessionEntity session = userSessionDAO.getSessionById(sessionIdInt);
+            UserSessionDTO session = userSessionService.getSessionById(sessionIdInt);
             if (session == null) {
                 LOGGER.error("Session id does not exist [{}]", sessionId);
                 final ErrorDTO errorDTO = new ErrorDTO();
@@ -376,8 +364,8 @@ public class AppointmentResource {
                         .build();
             }
 
-            AppointmentEntity entity = appointmentDAO.getAppointmentById(appointmentId);
-            if (entity == null) {
+            AppointmentDTO appointment = appointmentService.getAppointmentById(appointmentId);
+            if (appointment == null) {
                 LOGGER.error("Failed to get an appointment using id [{}]", appointmentId);
                 final ErrorDTO errorDTO = new ErrorDTO();
                 errorDTO.setMessage("Failed to get an appointment by id");
@@ -385,7 +373,7 @@ public class AppointmentResource {
                         .entity(errorDTO)
                         .build();
             }
-            return Response.ok(converter.convert(entity)).build();
+            return Response.ok(appointment).build();
         } catch (Exception exception) {
             LOGGER.error("Error while getting an appointment using id [{}]", appointmentId, exception);
             final ErrorDTO errorDTO = new ErrorDTO();
@@ -422,7 +410,7 @@ public class AppointmentResource {
                         .build();
             }
 
-            UserSessionEntity session = userSessionDAO.getSessionById(sessionIdInt);
+            UserSessionDTO session = userSessionService.getSessionById(sessionIdInt);
             if (session == null) {
                 LOGGER.error("Session id does not exist [{}]", sessionId);
                 final ErrorDTO errorDTO = new ErrorDTO();
@@ -448,8 +436,8 @@ public class AppointmentResource {
                         .entity(errorDTO)
                         .build();
             }
-            AppointmentOutcomeEntity entity = outcomeDAO.getOutcomeByAppointmentId(appointmentId);
-            if (entity == null) {
+            AppointmentOutcomeDTO outcome = outcomeService.getOutcomeByAppointmentId(appointmentId);
+            if (outcome == null) {
                 LOGGER.error("Failed to get an appointment outcome [{}]", appointmentId);
                 final ErrorDTO errorDTO = new ErrorDTO();
                 errorDTO.setMessage("Failed to get an appointment outcome");
@@ -457,8 +445,6 @@ public class AppointmentResource {
                         .entity(errorDTO)
                         .build();
             }
-
-            AppointmentOutcomeDTO outcome = outcomeConverter.convert(entity);
             return Response.ok(outcome).build();
         } catch (Exception exception) {
             LOGGER.error("Error while getting an appointment outcome for id [{}]", appointmentId, exception);
@@ -495,7 +481,7 @@ public class AppointmentResource {
                         .build();
             }
 
-            UserSessionEntity session = userSessionDAO.getSessionById(sessionIdInt);
+            UserSessionDTO session = userSessionService.getSessionById(sessionIdInt);
             if (session == null) {
                 LOGGER.error("Session id does not exist [{}]", sessionId);
                 final ErrorDTO errorDTO = new ErrorDTO();
@@ -548,7 +534,7 @@ public class AppointmentResource {
                         .build();
             }
 
-            boolean success = appointmentDAO.updateAppointmentStatus(appointmentId, status);
+            boolean success = appointmentService.updateAppointmentStatus(appointmentId, status);
 
             if (success) return Response.noContent().build();
 
@@ -595,7 +581,7 @@ public class AppointmentResource {
                         .build();
             }
 
-            UserSessionEntity session = userSessionDAO.getSessionById(sessionIdInt);
+            UserSessionDTO session = userSessionService.getSessionById(sessionIdInt);
             if (session == null) {
                 LOGGER.error("Session id does not exist [{}]", sessionId);
                 final ErrorDTO errorDTO = new ErrorDTO();
@@ -630,7 +616,7 @@ public class AppointmentResource {
                         .build();
             }
 
-            boolean deleted = appointmentDAO.deleteAppointment(appointmentId);
+            boolean deleted = appointmentService.deleteAppointment(appointmentId);
             if (!deleted) {
                 LOGGER.error("Failed to delete an appointment [{}]", appointmentId);
                 final ErrorDTO errorDTO = new ErrorDTO();

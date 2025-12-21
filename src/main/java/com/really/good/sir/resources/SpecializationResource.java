@@ -1,13 +1,12 @@
 package com.really.good.sir.resources;
 
 import com.really.good.sir.converter.SpecializationConverter;
-import com.really.good.sir.dao.SpecializationDAO;
-import com.really.good.sir.dao.UserSessionDAO;
 import com.really.good.sir.dto.ErrorDTO;
 import com.really.good.sir.dto.SpecializationDTO;
+import com.really.good.sir.dto.UserSessionDTO;
 import com.really.good.sir.entity.Role;
-import com.really.good.sir.entity.SpecializationEntity;
-import com.really.good.sir.entity.UserSessionEntity;
+import com.really.good.sir.service.SpecializationService;
+import com.really.good.sir.service.UserSessionService;
 import com.really.good.sir.validator.SpecializationValidator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -21,11 +20,9 @@ import java.util.List;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class SpecializationResource {
-    private static final Logger LOGGER = LogManager.getLogger(DoctorResource.class);
-    private final SpecializationConverter specializationConverter = new SpecializationConverter();
-    private final SpecializationDAO specializationDAO = new SpecializationDAO();
-    private final UserSessionDAO userSessionDAO = new UserSessionDAO();
-
+    private static final Logger LOGGER = LogManager.getLogger(SpecializationResource.class);
+    private final SpecializationService specializationService = new SpecializationService();
+    private final UserSessionService userSessionService = new UserSessionService();
     private final SpecializationValidator specializationValidator = new SpecializationValidator();
 
     @GET
@@ -52,7 +49,7 @@ public class SpecializationResource {
                         .build();
             }
 
-            UserSessionEntity session = userSessionDAO.getSessionById(sessionIdInt);
+            UserSessionDTO session = userSessionService.getSessionById(sessionIdInt);
             if (session == null) {
                 LOGGER.error("Session id does not exist [{}]", sessionId);
                 final ErrorDTO errorDTO = new ErrorDTO();
@@ -70,8 +67,7 @@ public class SpecializationResource {
                         .entity(errorDTO)
                         .build();
             }
-            final List<SpecializationEntity> specializationEntities = specializationDAO.getAllSpecializations();
-            final List<SpecializationDTO> specializationDTOs = specializationConverter.convert(specializationEntities);
+            final List<SpecializationDTO> specializationDTOs = specializationService.getAllSpecializations();
             return Response.ok(specializationDTOs).build();
         } catch (final Exception exception) {
             LOGGER.error("Error trying to get all specializations", exception);
@@ -109,7 +105,7 @@ public class SpecializationResource {
                         .build();
             }
 
-            UserSessionEntity session = userSessionDAO.getSessionById(sessionIdInt);
+            UserSessionDTO session = userSessionService.getSessionById(sessionIdInt);
             if (session == null) {
                 LOGGER.error("Session id does not exist [{}]", sessionId);
                 final ErrorDTO errorDTO = new ErrorDTO();
@@ -147,8 +143,8 @@ public class SpecializationResource {
                         .build();
             }
 
-            final SpecializationEntity specializationEntity = specializationDAO.getSpecializationById(specializationId);
-            if (specializationEntity == null) {
+            final SpecializationDTO specializationDTO = specializationService.getSpecializationById(specializationId);
+            if (specializationDTO == null) {
                 LOGGER.error("Specialization was not found");
                 ErrorDTO errorDTO = new ErrorDTO();
                 errorDTO.setMessage("Specialization was not found");
@@ -156,7 +152,6 @@ public class SpecializationResource {
                         .entity(errorDTO)
                         .build();
             }
-            final SpecializationDTO specializationDTO = specializationConverter.convert(specializationEntity);
             return Response.ok(specializationDTO).build();
         } catch (final Exception exception) {
             LOGGER.error("Error trying to get specialization by id", exception);

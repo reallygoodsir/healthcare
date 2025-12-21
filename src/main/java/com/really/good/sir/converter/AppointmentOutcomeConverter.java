@@ -19,6 +19,7 @@ public class AppointmentOutcomeConverter {
     }
 
     public AppointmentOutcomeDTO convert(final AppointmentOutcomeEntity entity) {
+        if(entity == null) return null;
         final AppointmentOutcomeDTO dto = new AppointmentOutcomeDTO();
         if(entity.getAppointmentId() != null) dto.setAppointmentId(entity.getAppointmentId());
         if(entity.getDiagnosis() != null) dto.setDiagnosis(entity.getDiagnosis());

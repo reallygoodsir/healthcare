@@ -1,13 +1,11 @@
 package com.really.good.sir.resources;
 
-import com.really.good.sir.converter.ServiceConverter;
-import com.really.good.sir.dao.ServiceDAO;
-import com.really.good.sir.dao.UserSessionDAO;
 import com.really.good.sir.dto.ErrorDTO;
 import com.really.good.sir.dto.ServiceDTO;
+import com.really.good.sir.dto.UserSessionDTO;
 import com.really.good.sir.entity.Role;
-import com.really.good.sir.entity.ServiceEntity;
-import com.really.good.sir.entity.UserSessionEntity;
+import com.really.good.sir.service.ServiceService;
+import com.really.good.sir.service.UserSessionService;
 import com.really.good.sir.validator.ServiceValidator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -22,10 +20,8 @@ import java.util.List;
 @Consumes(MediaType.APPLICATION_JSON)
 public class ServiceResource {
     private static final Logger LOGGER = LogManager.getLogger(ServiceResource.class);
-
-    private final ServiceDAO serviceDAO = new ServiceDAO();
-    private final ServiceConverter serviceConverter = new ServiceConverter();
-    private final UserSessionDAO userSessionDAO = new UserSessionDAO();
+    private final ServiceService service = new ServiceService();
+    private final UserSessionService userSessionService = new UserSessionService();
     private final ServiceValidator serviceValidator = new ServiceValidator();
 
     @GET
@@ -52,7 +48,7 @@ public class ServiceResource {
                         .build();
             }
 
-            UserSessionEntity session = userSessionDAO.getSessionById(sessionIdInt);
+            UserSessionDTO session = userSessionService.getSessionById(sessionIdInt);
             if (session == null) {
                 LOGGER.error("Session id does not exist [{}]", sessionId);
                 final ErrorDTO errorDTO = new ErrorDTO();
@@ -71,8 +67,7 @@ public class ServiceResource {
                         .entity(errorDTO)
                         .build();
             }
-            List<ServiceEntity> entities = serviceDAO.getAllServices();
-            List<ServiceDTO> dtos = serviceConverter.convert(entities);
+            List<ServiceDTO> dtos = service.getAllServices();
             return Response.ok(dtos).build();
         } catch (final Exception exception) {
             LOGGER.error("Error trying to get all services", exception);
@@ -110,7 +105,7 @@ public class ServiceResource {
                         .build();
             }
 
-            UserSessionEntity session = userSessionDAO.getSessionById(sessionIdInt);
+            UserSessionDTO session = userSessionService.getSessionById(sessionIdInt);
             if (session == null) {
                 LOGGER.error("Session id does not exist [{}]", sessionId);
                 final ErrorDTO errorDTO = new ErrorDTO();
@@ -148,8 +143,8 @@ public class ServiceResource {
                         .build();
             }
 
-            ServiceEntity entity = serviceDAO.getServiceById(id);
-            if (entity == null) {
+            ServiceDTO dto = service.getServiceById(id);
+            if (dto == null) {
                 LOGGER.error("Service was not found");
                 final ErrorDTO errorDTO = new ErrorDTO();
                 errorDTO.setMessage("Service was not found");
@@ -157,7 +152,7 @@ public class ServiceResource {
                         .entity(errorDTO)
                         .build();
             }
-            return Response.ok(serviceConverter.convert(entity)).build();
+            return Response.ok(dto).build();
         } catch (final Exception exception) {
             LOGGER.error("Error trying to get service by id", exception);
             final ErrorDTO errorDTO = new ErrorDTO();
@@ -193,7 +188,7 @@ public class ServiceResource {
                         .build();
             }
 
-            UserSessionEntity session = userSessionDAO.getSessionById(sessionIdInt);
+            UserSessionDTO session = userSessionService.getSessionById(sessionIdInt);
             if (session == null) {
                 LOGGER.error("Session id does not exist [{}]", sessionId);
                 final ErrorDTO errorDTO = new ErrorDTO();
@@ -239,8 +234,7 @@ public class ServiceResource {
                         .build();
             }
 
-            ServiceEntity entity = serviceConverter.convert(dto);
-            ServiceEntity created = serviceDAO.createService(entity);
+            ServiceDTO created = service.createService(dto);
             if (created == null) {
                 LOGGER.error("Service is not created");
                 ErrorDTO errorDTO = new ErrorDTO();
@@ -249,7 +243,7 @@ public class ServiceResource {
                         .entity(errorDTO)
                         .build();
             }
-            return Response.ok(serviceConverter.convert(created)).build();
+            return Response.ok(created).build();
         } catch (final Exception exception) {
             LOGGER.error("Error trying to create new service", exception);
             final ErrorDTO errorDTO = new ErrorDTO();
@@ -285,7 +279,7 @@ public class ServiceResource {
                         .build();
             }
 
-            UserSessionEntity session = userSessionDAO.getSessionById(sessionIdInt);
+            UserSessionDTO session = userSessionService.getSessionById(sessionIdInt);
             if (session == null) {
                 LOGGER.error("Session id does not exist [{}]", sessionId);
                 final ErrorDTO errorDTO = new ErrorDTO();
@@ -330,9 +324,8 @@ public class ServiceResource {
                         .entity(errorDTO)
                         .build();
             }
-            ServiceEntity entity = serviceConverter.convert(dto);
-            boolean updated = serviceDAO.updateService(entity);
-            if (!updated) {
+            ServiceDTO result = service.updateService(dto);
+            if (result == null) {
                 LOGGER.error("Service is not updated");
                 ErrorDTO errorDTO = new ErrorDTO();
                 errorDTO.setMessage("Service is not updated");
@@ -340,7 +333,7 @@ public class ServiceResource {
                         .entity(errorDTO)
                         .build();
             }
-            return Response.ok(serviceConverter.convert(entity)).build();
+            return Response.ok(result).build();
         } catch (final Exception exception) {
             LOGGER.error("Error trying to update existing service", exception);
             final ErrorDTO errorDTO = new ErrorDTO();
@@ -377,7 +370,7 @@ public class ServiceResource {
                         .build();
             }
 
-            UserSessionEntity session = userSessionDAO.getSessionById(sessionIdInt);
+            UserSessionDTO session = userSessionService.getSessionById(sessionIdInt);
             if (session == null) {
                 LOGGER.error("Session id does not exist [{}]", sessionId);
                 final ErrorDTO errorDTO = new ErrorDTO();
@@ -413,7 +406,7 @@ public class ServiceResource {
                         .entity(errorDTO)
                         .build();
             }
-            boolean deleted = serviceDAO.deleteService(id);
+            boolean deleted = service.deleteService(id);
             if (!deleted) {
                 LOGGER.error("Service is not deleted");
                 final ErrorDTO errorDTO = new ErrorDTO();

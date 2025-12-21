@@ -10,21 +10,24 @@ public class AppointmentConverter {
 
     public AppointmentEntity convert(AppointmentDTO dto) {
         AppointmentEntity entity = new AppointmentEntity();
-        if(dto.getAppointmentId() != null) entity.setAppointmentId(dto.getAppointmentId());
-        if(dto.getPatientId() != null) entity.setPatientId(dto.getPatientId());
-        if(dto.getDoctorId() != null) entity.setDoctorId(dto.getDoctorId());
-        if(dto.getScheduleId() != null) entity.setScheduleId(dto.getScheduleId());
-        if(dto.getStatus() != null) entity.setStatus(dto.getStatus());
+        if (dto.getAppointmentId() != null) entity.setAppointmentId(dto.getAppointmentId());
+        if (dto.getPatientId() != null) entity.setPatientId(dto.getPatientId());
+        if (dto.getDoctorId() != null) entity.setDoctorId(dto.getDoctorId());
+        if (dto.getScheduleId() != null) entity.setScheduleId(dto.getScheduleId());
+        if (dto.getStatus() != null) entity.setStatus(dto.getStatus());
         return entity;
     }
 
     public AppointmentDTO convert(AppointmentEntity entity) {
+        if (entity == null) {
+            return null;
+        }
         AppointmentDTO dto = new AppointmentDTO();
-        if(entity.getAppointmentId() != null) dto.setAppointmentId(entity.getAppointmentId());
-        if(entity.getPatientId() != null) dto.setPatientId(entity.getPatientId());
-        if(entity.getDoctorId() != null) dto.setDoctorId(entity.getDoctorId());
-        if(entity.getScheduleId() != null) dto.setScheduleId(entity.getScheduleId());
-        if(entity.getStatus() != null) dto.setStatus(entity.getStatus());
+        if (entity.getAppointmentId() != null) dto.setAppointmentId(entity.getAppointmentId());
+        if (entity.getPatientId() != null) dto.setPatientId(entity.getPatientId());
+        if (entity.getDoctorId() != null) dto.setDoctorId(entity.getDoctorId());
+        if (entity.getScheduleId() != null) dto.setScheduleId(entity.getScheduleId());
+        if (entity.getStatus() != null) dto.setStatus(entity.getStatus());
         return dto;
     }
 

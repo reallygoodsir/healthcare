@@ -7,6 +7,7 @@ import com.really.good.sir.dto.LoginRequestDTO;
 import com.really.good.sir.dto.SessionCheckRequestDTO;
 import com.really.good.sir.dto.UserSessionDTO;
 import com.really.good.sir.entity.UserSessionEntity;
+import com.really.good.sir.service.UserSessionService;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -18,7 +19,7 @@ import javax.ws.rs.core.*;
 @Consumes(MediaType.APPLICATION_JSON)
 public class AuthorizationResource {
     private static final Logger LOGGER = LogManager.getLogger(AuthorizationResource.class);
-    private final UserSessionDAO userSessionDAO = new UserSessionDAO();
+    private final UserSessionService userSessionService = new UserSessionService();
     private final UserSessionConverter converter = new UserSessionConverter();
 
     @POST
@@ -48,15 +49,14 @@ public class AuthorizationResource {
                         .build();
             }
 
-            UserSessionEntity sessionEntity = userSessionDAO.authorize(request.getEmail(), request.getPassword());
-            if (sessionEntity == null) {
+            UserSessionDTO sessionDTO = userSessionService.authorize(request.getEmail(), request.getPassword());
+            if (sessionDTO == null) {
                 final ErrorDTO errorDTO = new ErrorDTO();
                 errorDTO.setMessage("Credentials are not valid");
                 return Response.status(Response.Status.UNAUTHORIZED)
                         .entity(errorDTO)
                         .build();
             }
-            UserSessionDTO sessionDTO = converter.convert(sessionEntity);
             NewCookie cookie = new NewCookie("session_id",
                     String.valueOf(sessionDTO.getId()),
                     "/", null,
@@ -96,7 +96,7 @@ public class AuthorizationResource {
                         .build();
             }
 
-            UserSessionEntity sessionEntity = userSessionDAO.getSessionById(request.getSessionId());
+            UserSessionDTO sessionEntity = userSessionService.getSessionById(request.getSessionId());
             if (sessionEntity == null) {
                 final ErrorDTO errorDTO = new ErrorDTO();
                 errorDTO.setMessage("Session id is not valid");
@@ -139,7 +139,7 @@ public class AuthorizationResource {
                         .build();
             }
 
-            UserSessionEntity sessionEntity = userSessionDAO.getSessionById(sessionId);
+            UserSessionDTO sessionEntity = userSessionService.getSessionById(sessionId);
             if (sessionEntity == null) {
                 final ErrorDTO errorDTO = new ErrorDTO();
                 errorDTO.setMessage("Session id is not valid");
@@ -147,7 +147,7 @@ public class AuthorizationResource {
                         .entity(errorDTO)
                         .build();
             }
-            boolean deleted = userSessionDAO.deleteSessionById(sessionId);
+            boolean deleted = userSessionService.deleteSessionById(sessionId);
             if (!deleted) {
                 LOGGER.error("Session was not deleted with id {}", sessionId);
                 final ErrorDTO errorDTO = new ErrorDTO();

@@ -15,6 +15,7 @@ public class DoctorScheduleConverter {
     private static final SimpleDateFormat TIME_FORMAT = new SimpleDateFormat("HH:mm");
 
     public DoctorScheduleEntity convert(final DoctorScheduleDTO dto) {
+        if(dto == null) return null;
         final DoctorScheduleEntity entity = new DoctorScheduleEntity();
         if(dto.getId() != null) entity.setId(dto.getId());
         entity.setDoctorId(dto.getDoctorId());
@@ -29,6 +30,7 @@ public class DoctorScheduleConverter {
     }
 
     public DoctorScheduleDTO convert(final DoctorScheduleEntity entity) {
+        if(entity == null) return null;
         final DoctorScheduleDTO dto = new DoctorScheduleDTO();
         dto.setId(entity.getId());
         dto.setDoctorId(entity.getDoctorId());

@@ -1,13 +1,11 @@
 package com.really.good.sir.resources;
 
-import com.really.good.sir.converter.DoctorScheduleConverter;
-import com.really.good.sir.dao.DoctorScheduleDAO;
-import com.really.good.sir.dao.UserSessionDAO;
 import com.really.good.sir.dto.DoctorScheduleDTO;
 import com.really.good.sir.dto.ErrorDTO;
-import com.really.good.sir.entity.DoctorScheduleEntity;
+import com.really.good.sir.dto.UserSessionDTO;
 import com.really.good.sir.entity.Role;
-import com.really.good.sir.entity.UserSessionEntity;
+import com.really.good.sir.service.DoctorScheduleService;
+import com.really.good.sir.service.UserSessionService;
 import com.really.good.sir.validator.DoctorScheduleValidator;
 import com.really.good.sir.validator.DoctorValidator;
 import org.apache.logging.log4j.LogManager;
@@ -23,9 +21,8 @@ import java.util.List;
 @Consumes(MediaType.APPLICATION_JSON)
 public class DoctorScheduleResource {
     private static final Logger LOGGER = LogManager.getLogger(DoctorScheduleResource.class);
-    private final DoctorScheduleConverter scheduleConverter = new DoctorScheduleConverter();
-    private final DoctorScheduleDAO scheduleDAO = new DoctorScheduleDAO();
-    private final UserSessionDAO userSessionDAO = new UserSessionDAO();
+    private final DoctorScheduleService scheduleService = new DoctorScheduleService();
+    private final UserSessionService userSessionService = new UserSessionService();
     private final DoctorScheduleValidator doctorScheduleValidator = new DoctorScheduleValidator();
     private final DoctorValidator doctorValidator = new DoctorValidator();
 
@@ -54,7 +51,7 @@ public class DoctorScheduleResource {
                         .build();
             }
 
-            UserSessionEntity session = userSessionDAO.getSessionById(sessionIdInt);
+            UserSessionDTO session = userSessionService.getSessionById(sessionIdInt);
             if (session == null) {
                 LOGGER.error("Session id does not exist [{}]", sessionId);
                 final ErrorDTO errorDTO = new ErrorDTO();
@@ -91,9 +88,8 @@ public class DoctorScheduleResource {
                         .entity(errorDTO)
                         .build();
             }
-            final List<DoctorScheduleEntity> schedules = scheduleDAO.getSchedulesByDoctor(doctorId);
-            final List<DoctorScheduleDTO> scheduleDTOs = scheduleConverter.convert(schedules);
-            return Response.ok(scheduleDTOs).build();
+            final List<DoctorScheduleDTO> schedules = scheduleService.getSchedulesByDoctor(doctorId);
+            return Response.ok(schedules).build();
         } catch (final Exception exception) {
             LOGGER.error("Error trying to get schedules by doctor id", exception);
             final ErrorDTO errorDTO = new ErrorDTO();
@@ -129,7 +125,7 @@ public class DoctorScheduleResource {
                         .build();
             }
 
-            UserSessionEntity session = userSessionDAO.getSessionById(sessionIdInt);
+            UserSessionDTO session = userSessionService.getSessionById(sessionIdInt);
             if (session == null) {
                 LOGGER.error("Session id does not exist [{}]", sessionId);
                 final ErrorDTO errorDTO = new ErrorDTO();
@@ -165,9 +161,8 @@ public class DoctorScheduleResource {
                         .build();
             }
 
-            final List<DoctorScheduleEntity> schedules = scheduleDAO.getSchedulesForTodayWithAppointments(doctorId);
-            final List<DoctorScheduleDTO> scheduleDTOs = scheduleConverter.convert(schedules);
-            return Response.ok(scheduleDTOs).build();
+            final List<DoctorScheduleDTO> schedules = scheduleService.getSchedulesForTodayWithAppointments(doctorId);
+            return Response.ok(schedules).build();
         } catch (final Exception exception) {
             LOGGER.error("Error trying to get schedules with appointments by doctor id", exception);
             final ErrorDTO errorDTO = new ErrorDTO();
@@ -202,7 +197,7 @@ public class DoctorScheduleResource {
                         .build();
             }
 
-            UserSessionEntity session = userSessionDAO.getSessionById(sessionIdInt);
+            UserSessionDTO session = userSessionService.getSessionById(sessionIdInt);
             if (session == null) {
                 LOGGER.error("Session id does not exist [{}]", sessionId);
                 final ErrorDTO errorDTO = new ErrorDTO();
@@ -275,8 +270,7 @@ public class DoctorScheduleResource {
                         .build();
             }
 
-            final DoctorScheduleEntity scheduleEntity = scheduleConverter.convert(requestScheduleDTO);
-            final DoctorScheduleEntity createdEntity = scheduleDAO.createSchedule(scheduleEntity);
+            final DoctorScheduleDTO createdEntity = scheduleService.createSchedule(requestScheduleDTO);
             if (createdEntity == null) {
                 LOGGER.error("Doctor schedule is not created");
                 ErrorDTO errorDTO = new ErrorDTO();
@@ -285,8 +279,7 @@ public class DoctorScheduleResource {
                         .entity(errorDTO)
                         .build();
             }
-            final DoctorScheduleDTO responseScheduleDTO = scheduleConverter.convert(createdEntity);
-            return Response.ok(responseScheduleDTO).build();
+            return Response.ok(createdEntity).build();
         } catch (final Exception exception) {
             LOGGER.error("Error trying to create doctor schedule", exception);
             final ErrorDTO errorDTO = new ErrorDTO();
@@ -321,7 +314,7 @@ public class DoctorScheduleResource {
                         .build();
             }
 
-            UserSessionEntity session = userSessionDAO.getSessionById(sessionIdInt);
+            UserSessionDTO session = userSessionService.getSessionById(sessionIdInt);
             if (session == null) {
                 LOGGER.error("Session id does not exist [{}]", sessionId);
                 final ErrorDTO errorDTO = new ErrorDTO();
@@ -404,18 +397,16 @@ public class DoctorScheduleResource {
                         .build();
             }
 
-            final DoctorScheduleEntity scheduleEntity = scheduleConverter.convert(requestScheduleDTO);
-            final boolean isScheduleEntityUpdated = scheduleDAO.updateSchedule(scheduleEntity);
-            if (!isScheduleEntityUpdated) {
+            DoctorScheduleDTO doctorScheduleDTO = scheduleService.updateSchedule(requestScheduleDTO);
+            if (doctorScheduleDTO == null) {
                 LOGGER.error("Doctor schedule is not updated");
                 ErrorDTO errorDTO = new ErrorDTO();
-                errorDTO.setMessage("Doctor schedule is not creaupdatedted");
+                errorDTO.setMessage("Doctor schedule is not updated");
                 return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                         .entity(errorDTO)
                         .build();
             }
-            final DoctorScheduleDTO responseScheduleDTO = scheduleConverter.convert(scheduleEntity);
-            return Response.ok(responseScheduleDTO).build();
+            return Response.ok(doctorScheduleDTO).build();
         } catch (final Exception exception) {
             LOGGER.error("Error trying to update doctor schedule", exception);
             final ErrorDTO errorDTO = new ErrorDTO();
@@ -452,7 +443,7 @@ public class DoctorScheduleResource {
                         .build();
             }
 
-            UserSessionEntity session = userSessionDAO.getSessionById(sessionIdInt);
+            UserSessionDTO session = userSessionService.getSessionById(sessionIdInt);
             if (session == null) {
                 LOGGER.error("Session id does not exist [{}]", sessionId);
                 final ErrorDTO errorDTO = new ErrorDTO();
@@ -508,7 +499,7 @@ public class DoctorScheduleResource {
                         .build();
             }
 
-            final boolean isScheduleEntityDeleted = scheduleDAO.deleteSchedule(scheduleId);
+            final boolean isScheduleEntityDeleted = scheduleService.deleteSchedule(scheduleId);
             if (!isScheduleEntityDeleted) {
                 LOGGER.error("Doctor schedule is not deleted");
                 ErrorDTO errorDTO = new ErrorDTO();

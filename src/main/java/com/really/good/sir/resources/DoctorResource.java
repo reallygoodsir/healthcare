@@ -1,14 +1,12 @@
 package com.really.good.sir.resources;
 
-import com.really.good.sir.converter.DoctorConverter;
-import com.really.good.sir.dao.DoctorDAO;
-import com.really.good.sir.dao.UserSessionDAO;
 import com.really.good.sir.dto.DoctorDTO;
 import com.really.good.sir.dto.DoctorIdDTO;
 import com.really.good.sir.dto.ErrorDTO;
-import com.really.good.sir.entity.DoctorEntity;
+import com.really.good.sir.dto.UserSessionDTO;
 import com.really.good.sir.entity.Role;
-import com.really.good.sir.entity.UserSessionEntity;
+import com.really.good.sir.service.DoctorService;
+import com.really.good.sir.service.UserSessionService;
 import com.really.good.sir.validator.DoctorValidator;
 import com.really.good.sir.validator.ServiceValidator;
 import org.apache.logging.log4j.LogManager;
@@ -26,11 +24,9 @@ import java.util.List;
 @Consumes(MediaType.APPLICATION_JSON)
 public class DoctorResource {
     private static final Logger LOGGER = LogManager.getLogger(DoctorResource.class);
-    private final DoctorConverter doctorConverter = new DoctorConverter();
-    private final DoctorDAO doctorDAO = new DoctorDAO();
-    private final UserSessionDAO userSessionDAO = new UserSessionDAO();
+    private final DoctorService doctorService = new DoctorService();
+    private final UserSessionService userSessionService = new UserSessionService();
     private final DoctorValidator doctorValidator = new DoctorValidator();
-
     private final ServiceValidator serviceValidator = new ServiceValidator();
 
     @GET
@@ -57,7 +53,7 @@ public class DoctorResource {
                         .build();
             }
 
-            UserSessionEntity session = userSessionDAO.getSessionById(sessionIdInt);
+            UserSessionDTO session = userSessionService.getSessionById(sessionIdInt);
             if (session == null) {
                 LOGGER.error("Session id does not exist [{}]", sessionId);
                 final ErrorDTO errorDTO = new ErrorDTO();
@@ -76,8 +72,7 @@ public class DoctorResource {
                         .entity(errorDTO)
                         .build();
             }
-            final List<DoctorEntity> doctorEntities = doctorDAO.getAllDoctors();
-            final List<DoctorDTO> doctorDTOs = doctorConverter.convert(doctorEntities);
+            final List<DoctorDTO> doctorDTOs = doctorService.getAllDoctors();
             return Response.ok(doctorDTOs).build();
         } catch (final Exception exception) {
             LOGGER.error("Error trying to get all doctors", exception);
@@ -114,7 +109,7 @@ public class DoctorResource {
                         .build();
             }
 
-            UserSessionEntity session = userSessionDAO.getSessionById(sessionIdInt);
+            UserSessionDTO session = userSessionService.getSessionById(sessionIdInt);
             if (session == null) {
                 LOGGER.error("Session id does not exist [{}]", sessionId);
                 final ErrorDTO errorDTO = new ErrorDTO();
@@ -151,8 +146,7 @@ public class DoctorResource {
                         .build();
             }
 
-            final DoctorEntity doctorEntity = doctorDAO.getDoctorById(doctorId);
-            final DoctorDTO doctorDTO = doctorConverter.convert(doctorEntity);
+            final DoctorDTO doctorDTO = doctorService.getDoctorById(doctorId);
             return Response.ok(doctorDTO).build();
         } catch (final Exception exception) {
             LOGGER.error("Error trying to get doctor by id", exception);
@@ -189,7 +183,7 @@ public class DoctorResource {
                         .build();
             }
 
-            UserSessionEntity session = userSessionDAO.getSessionById(sessionIdInt);
+            UserSessionDTO session = userSessionService.getSessionById(sessionIdInt);
             if (session == null) {
                 LOGGER.error("Session id does not exist [{}]", sessionId);
                 final ErrorDTO errorDTO = new ErrorDTO();
@@ -226,8 +220,7 @@ public class DoctorResource {
                         .build();
             }
 
-            final List<DoctorEntity> doctorEntities = doctorDAO.getDoctorsByServiceId(serviceId);
-            final List<DoctorDTO> doctorDTOs = doctorConverter.convert(doctorEntities);
+            final List<DoctorDTO> doctorDTOs = doctorService.getDoctorsByServiceId(serviceId);
             return Response.ok(doctorDTOs).build();
         } catch (final Exception exception) {
             LOGGER.error("Error trying to get doctors by service id", exception);
@@ -264,7 +257,7 @@ public class DoctorResource {
                         .build();
             }
 
-            UserSessionEntity session = userSessionDAO.getSessionById(sessionIdInt);
+            UserSessionDTO session = userSessionService.getSessionById(sessionIdInt);
             if (session == null) {
                 LOGGER.error("Session id does not exist [{}]", sessionId);
                 final ErrorDTO errorDTO = new ErrorDTO();
@@ -300,7 +293,7 @@ public class DoctorResource {
                         .entity(errorDTO)
                         .build();
             }
-            final int doctorId = doctorDAO.getDoctorIdByCredentialId(credentialId);
+            final int doctorId = doctorService.getDoctorIdByCredentialId(credentialId);
             if (doctorId == -1) {
                 LOGGER.error("Doctor id not found");
                 final ErrorDTO errorDTO = new ErrorDTO();
@@ -348,7 +341,7 @@ public class DoctorResource {
                         .build();
             }
 
-            UserSessionEntity session = userSessionDAO.getSessionById(sessionIdInt);
+            UserSessionDTO session = userSessionService.getSessionById(sessionIdInt);
             if (session == null) {
                 LOGGER.error("Session id does not exist [{}]", sessionId);
                 final ErrorDTO errorDTO = new ErrorDTO();
@@ -457,9 +450,8 @@ public class DoctorResource {
                         .build();
             }
 
-            final DoctorEntity doctorEntity = doctorConverter.convert(doctorDTO);
-            final DoctorEntity createdDoctorEntity = doctorDAO.createDoctor(doctorEntity);
-            if (createdDoctorEntity == null) {
+            DoctorDTO doctor = doctorService.createDoctor(doctorDTO);
+            if (doctor == null) {
                 LOGGER.error("Doctor is not created");
                 ErrorDTO errorDTO = new ErrorDTO();
                 errorDTO.setMessage("Doctor is not created");
@@ -467,11 +459,10 @@ public class DoctorResource {
                         .entity(errorDTO)
                         .build();
             }
-            final DoctorDTO responseDoctorDTO = doctorConverter.convert(createdDoctorEntity);
             return Response.created(uriInfo.getAbsolutePathBuilder()
-                            .path(String.valueOf(responseDoctorDTO.getId()))
+                            .path(String.valueOf(doctor.getId()))
                             .build())
-                    .entity(responseDoctorDTO)
+                    .entity(doctor)
                     .build();
         } catch (final Exception exception) {
             LOGGER.error("Error trying to create doctor", exception);
@@ -508,7 +499,7 @@ public class DoctorResource {
                         .build();
             }
 
-            UserSessionEntity session = userSessionDAO.getSessionById(sessionIdInt);
+            UserSessionDTO session = userSessionService.getSessionById(sessionIdInt);
             if (session == null) {
                 LOGGER.error("Session id does not exist [{}]", sessionId);
                 final ErrorDTO errorDTO = new ErrorDTO();
@@ -626,9 +617,8 @@ public class DoctorResource {
                         .build();
             }
 
-            final DoctorEntity doctorEntity = doctorConverter.convert(doctorDTO);
-            final boolean isDoctorUpdated = doctorDAO.updateDoctor(doctorEntity);
-            if (!isDoctorUpdated) {
+            DoctorDTO updatedDoctorDTO = doctorService.updateDoctor(doctorDTO);
+            if (updatedDoctorDTO == null) {
                 LOGGER.error("Doctor is not updated");
                 ErrorDTO errorDTO = new ErrorDTO();
                 errorDTO.setMessage("Doctor is not updated");
@@ -636,8 +626,7 @@ public class DoctorResource {
                         .entity(errorDTO)
                         .build();
             }
-            final DoctorDTO responseDoctorDTO = doctorConverter.convert(doctorEntity);
-            return Response.ok(responseDoctorDTO).build();
+            return Response.ok(updatedDoctorDTO).build();
         } catch (final Exception exception) {
             LOGGER.error("Error trying to update doctor", exception);
             final ErrorDTO errorDTO = new ErrorDTO();
@@ -674,7 +663,7 @@ public class DoctorResource {
                         .build();
             }
 
-            UserSessionEntity session = userSessionDAO.getSessionById(sessionIdInt);
+            UserSessionDTO session = userSessionService.getSessionById(sessionIdInt);
             if (session == null) {
                 LOGGER.error("Session id does not exist [{}]", sessionId);
                 final ErrorDTO errorDTO = new ErrorDTO();
@@ -711,7 +700,7 @@ public class DoctorResource {
                         .build();
             }
 
-            final boolean isDoctorDeleted = doctorDAO.deleteDoctor(doctorId);
+            final boolean isDoctorDeleted = doctorService.deleteDoctor(doctorId);
             if (!isDoctorDeleted) {
                 LOGGER.error("Doctor is not deleted");
                 ErrorDTO errorDTO = new ErrorDTO();

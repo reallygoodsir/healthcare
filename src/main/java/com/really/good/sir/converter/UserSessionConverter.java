@@ -5,6 +5,7 @@ import com.really.good.sir.entity.UserSessionEntity;
 
 public class UserSessionConverter {
     public UserSessionDTO convert(UserSessionEntity entity) {
+        if(entity == null) return null;
         UserSessionDTO dto = new UserSessionDTO();
         dto.setId(entity.getId());
         dto.setCredentialId(entity.getCredentialId());
@@ -14,6 +15,7 @@ public class UserSessionConverter {
     }
 
     public UserSessionEntity convert(UserSessionDTO dto) {
+        if(dto == null) return null;
         UserSessionEntity entity = new UserSessionEntity();
         entity.setId(dto.getId());
         entity.setCredentialId(dto.getCredentialId());

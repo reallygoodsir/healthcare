@@ -1,13 +1,11 @@
 package com.really.good.sir.resources;
 
-import com.really.good.sir.converter.PatientConverter;
-import com.really.good.sir.dao.PatientDAO;
-import com.really.good.sir.dao.UserSessionDAO;
 import com.really.good.sir.dto.ErrorDTO;
 import com.really.good.sir.dto.PatientDTO;
-import com.really.good.sir.entity.PatientEntity;
+import com.really.good.sir.dto.UserSessionDTO;
 import com.really.good.sir.entity.Role;
-import com.really.good.sir.entity.UserSessionEntity;
+import com.really.good.sir.service.PatientService;
+import com.really.good.sir.service.UserSessionService;
 import com.really.good.sir.validator.PatientValidator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -23,10 +21,9 @@ import java.util.List;
 @Consumes(MediaType.APPLICATION_JSON)
 public class PatientResource {
     private static final Logger LOGGER = LogManager.getLogger(PatientResource.class);
-    private final PatientConverter patientConverter = new PatientConverter();
     private final PatientValidator patientValidator = new PatientValidator();
-    private final PatientDAO patientDAO = new PatientDAO();
-    private final UserSessionDAO userSessionDAO = new UserSessionDAO();
+    private final PatientService patientService = new PatientService();
+    private final UserSessionService userSessionService = new UserSessionService();
 
     @GET
     public Response getAllPatients(@CookieParam("session_id") final String sessionId) {
@@ -52,7 +49,7 @@ public class PatientResource {
                         .build();
             }
 
-            UserSessionEntity session = userSessionDAO.getSessionById(sessionIdInt);
+            UserSessionDTO session = userSessionService.getSessionById(sessionIdInt);
             if (session == null) {
                 LOGGER.error("Session id does not exist [{}]", sessionId);
                 final ErrorDTO errorDTO = new ErrorDTO();
@@ -71,8 +68,7 @@ public class PatientResource {
                         .build();
             }
 
-            final List<PatientEntity> patientEntities = patientDAO.getAllPatients();
-            final List<PatientDTO> patientDTOs = patientConverter.convert(patientEntities);
+            final List<PatientDTO> patientDTOs = patientService.getAllPatients();
             return Response.ok(patientDTOs).build();
         } catch (final Exception exception) {
             LOGGER.error("Error trying to get all patients", exception);
@@ -110,7 +106,7 @@ public class PatientResource {
                         .build();
             }
 
-            UserSessionEntity session = userSessionDAO.getSessionById(sessionIdInt);
+            UserSessionDTO session = userSessionService.getSessionById(sessionIdInt);
             if (session == null) {
                 LOGGER.error("Session id does not exist [{}]", sessionId);
                 final ErrorDTO errorDTO = new ErrorDTO();
@@ -146,7 +142,7 @@ public class PatientResource {
                         .entity(errorDTO)
                         .build();
             }
-            final int patientId = patientDAO.getPatientIdByCredentialId(credentialId);
+            final int patientId = patientService.getPatientIdByCredentialId(credentialId);
             if (patientId == -1) {
                 LOGGER.error("Patient id was not found");
                 final ErrorDTO errorDTO = new ErrorDTO();
@@ -193,7 +189,7 @@ public class PatientResource {
                         .build();
             }
 
-            UserSessionEntity session = userSessionDAO.getSessionById(sessionIdInt);
+            UserSessionDTO session = userSessionService.getSessionById(sessionIdInt);
             if (session == null) {
                 LOGGER.error("Session id does not exist [{}]", sessionId);
                 final ErrorDTO errorDTO = new ErrorDTO();
@@ -231,8 +227,8 @@ public class PatientResource {
                         .build();
             }
 
-            final PatientEntity patientEntity = patientDAO.getPatientById(patientId);
-            if (patientEntity == null) {
+            final PatientDTO patientDTO = patientService.getPatientById(patientId);
+            if (patientDTO == null) {
                 LOGGER.error("Patient was not found");
                 final ErrorDTO errorDTO = new ErrorDTO();
                 errorDTO.setMessage("Patient was not found");
@@ -240,7 +236,6 @@ public class PatientResource {
                         .entity(errorDTO)
                         .build();
             }
-            final PatientDTO patientDTO = patientConverter.convert(patientEntity);
             return Response.ok(patientDTO).build();
         } catch (final Exception exception) {
             LOGGER.error("Error trying to get patient by id", exception);
@@ -278,7 +273,7 @@ public class PatientResource {
                         .build();
             }
 
-            UserSessionEntity session = userSessionDAO.getSessionById(sessionIdInt);
+            UserSessionDTO session = userSessionService.getSessionById(sessionIdInt);
             if (session == null) {
                 LOGGER.error("Session id does not exist [{}]", sessionId);
                 final ErrorDTO errorDTO = new ErrorDTO();
@@ -315,8 +310,8 @@ public class PatientResource {
                         .build();
             }
 
-            final PatientEntity patientEntity = patientDAO.getPatientByPhone(phoneNumber);
-            if (patientEntity == null) {
+            final PatientDTO patientDTO = patientService.getPatientByPhone(phoneNumber);
+            if (patientDTO == null) {
                 LOGGER.error("Patient was not found");
                 final ErrorDTO errorDTO = new ErrorDTO();
                 errorDTO.setMessage("Patient was not found");
@@ -324,7 +319,6 @@ public class PatientResource {
                         .entity(errorDTO)
                         .build();
             }
-            final PatientDTO patientDTO = patientConverter.convert(patientEntity);
             return Response.ok(patientDTO).build();
         } catch (final Exception exception) {
             LOGGER.error("Error trying to get patient by phone number", exception);
@@ -361,7 +355,7 @@ public class PatientResource {
                         .build();
             }
 
-            UserSessionEntity session = userSessionDAO.getSessionById(sessionIdInt);
+            UserSessionDTO session = userSessionService.getSessionById(sessionIdInt);
             if (session == null) {
                 LOGGER.error("Session id does not exist [{}]", sessionId);
                 final ErrorDTO errorDTO = new ErrorDTO();
@@ -459,9 +453,8 @@ public class PatientResource {
                         .build();
             }
 
-            final PatientEntity patientEntity = patientConverter.convert(requestPatientDTO);
-            final PatientEntity createdEntity = patientDAO.createPatient(patientEntity);
-            if (createdEntity == null) {
+            final PatientDTO responsePatientDTO = patientService.createPatient(requestPatientDTO);
+            if (responsePatientDTO == null) {
                 LOGGER.error("Patient is not created");
                 ErrorDTO errorDTO = new ErrorDTO();
                 errorDTO.setMessage("Patient is not created");
@@ -469,8 +462,7 @@ public class PatientResource {
                         .entity(errorDTO)
                         .build();
             }
-            final PatientDTO responsePatientDTO = patientConverter.convert(createdEntity);
-            final URI location = URI.create("/healthcare/api/patients/" + createdEntity.getId());
+            final URI location = URI.create("/healthcare/api/patients/" + responsePatientDTO.getId());
             return Response.created(location)
                     .entity(responsePatientDTO)
                     .build();
@@ -509,7 +501,7 @@ public class PatientResource {
                         .build();
             }
 
-            UserSessionEntity session = userSessionDAO.getSessionById(sessionIdInt);
+            UserSessionDTO session = userSessionService.getSessionById(sessionIdInt);
             if (session == null) {
                 LOGGER.error("Session id does not exist [{}]", sessionId);
                 final ErrorDTO errorDTO = new ErrorDTO();
@@ -616,9 +608,8 @@ public class PatientResource {
                         .build();
             }
 
-            final PatientEntity patientEntity = patientConverter.convert(requestPatientDTO);
-            boolean updated = patientDAO.updatePatient(patientEntity);
-            if (!updated) {
+            PatientDTO patientDTO = patientService.updatePatient(requestPatientDTO);
+            if (patientDTO == null) {
                 LOGGER.error("Patient is not updated");
                 ErrorDTO errorDTO = new ErrorDTO();
                 errorDTO.setMessage("Patient is not updated");
@@ -626,9 +617,8 @@ public class PatientResource {
                         .entity(errorDTO)
                         .build();
             }
-            final PatientDTO responsePatientDTO = patientConverter.convert(patientEntity);
             return Response.ok()
-                    .entity(responsePatientDTO)
+                    .entity(patientDTO)
                     .build();
         } catch (final Exception exception) {
             LOGGER.error("Error trying to update patient", exception);
@@ -666,7 +656,7 @@ public class PatientResource {
                         .build();
             }
 
-            UserSessionEntity session = userSessionDAO.getSessionById(sessionIdInt);
+            UserSessionDTO session = userSessionService.getSessionById(sessionIdInt);
             if (session == null) {
                 LOGGER.error("Session id does not exist [{}]", sessionId);
                 final ErrorDTO errorDTO = new ErrorDTO();
@@ -703,7 +693,7 @@ public class PatientResource {
                         .build();
             }
 
-            final boolean isPatientDeleted = patientDAO.deletePatient(patientId);
+            final boolean isPatientDeleted = patientService.deletePatient(patientId);
             if (!isPatientDeleted) {
                 LOGGER.error("Patient is not deleted");
                 final ErrorDTO errorDTO = new ErrorDTO();
