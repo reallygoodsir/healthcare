@@ -2,9 +2,9 @@
 setlocal
 
 :: === CONFIGURATION ===
-set MAVEN_HOME=d:\dddd\apache-maven-3.9.9
-set CATALINA_HOME=d:\apache-tomcat-9.0.98
-set PROJECT_DIR=D:\workspaces\healthcare
+set MAVEN_HOME=d:\data\Java\apache-maven-3.9.11
+set CATALINA_HOME=d:\data\Java\apache-tomcat-9.0.93
+set PROJECT_DIR=d:\data\Java\projects\healthcare
 set WAR_NAME=healthcare.war
 set APP_NAME=healthcare
 

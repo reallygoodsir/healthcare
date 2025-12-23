@@ -11,7 +11,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-public class DoctorDAO extends BaseDao {
+import static com.really.good.sir.dao.HikariDataSourceProvider.DATA_SOURCE;
+
+public class DoctorDAO {
     private static final Logger LOGGER = LogManager.getLogger(DoctorDAO.class);
 
     private static final String GET_ALL_DOCTORS =
@@ -60,7 +62,7 @@ public class DoctorDAO extends BaseDao {
     public DoctorEntity createDoctor(final DoctorEntity doctorEntity) {
         Connection connection = null;
         try {
-            connection = getConnection();
+            connection = HikariDataSourceProvider.DATA_SOURCE.getConnection();
             connection.setAutoCommit(false); // start transaction
 
             String rawPassword = generateRandomPassword();
@@ -125,9 +127,10 @@ public class DoctorDAO extends BaseDao {
     // --- GET ALL DOCTORS ---
     public List<DoctorEntity> getAllDoctors() {
         List<DoctorEntity> doctors = new ArrayList<>();
-        try (Connection conn = getConnection();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(GET_ALL_DOCTORS)) {
+
+        try (Connection conn = DATA_SOURCE.getConnection();
+             PreparedStatement ps = conn.prepareStatement(GET_ALL_DOCTORS);
+             ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {
                 doctors.add(mapResultSetToDoctor(rs));
@@ -140,7 +143,7 @@ public class DoctorDAO extends BaseDao {
 
     // --- GET DOCTOR BY ID ---
     public DoctorEntity getDoctorById(final int doctorId) {
-        try (Connection conn = getConnection();
+        try (Connection conn = HikariDataSourceProvider.DATA_SOURCE.getConnection();
              PreparedStatement ps = conn.prepareStatement(GET_DOCTOR_BY_ID)) {
 
             ps.setInt(1, doctorId);
@@ -158,7 +161,7 @@ public class DoctorDAO extends BaseDao {
     // --- GET DOCTORS BY SERVICE ---
     public List<DoctorEntity> getDoctorsByServiceId(final int serviceId) {
         List<DoctorEntity> doctors = new ArrayList<>();
-        try (Connection conn = getConnection();
+        try (Connection conn = HikariDataSourceProvider.DATA_SOURCE.getConnection();
              PreparedStatement ps = conn.prepareStatement(GET_DOCTORS_BY_SERVICE)) {
 
             ps.setInt(1, serviceId);
@@ -177,7 +180,7 @@ public class DoctorDAO extends BaseDao {
     public boolean updateDoctor(final DoctorEntity doctorEntity) {
         Connection connection = null;
         try {
-            connection = getConnection();
+            connection = HikariDataSourceProvider.DATA_SOURCE.getConnection();
             connection.setAutoCommit(false);
 
             try (PreparedStatement psDoctor = connection.prepareStatement(UPDATE_DOCTOR)) {
@@ -224,7 +227,7 @@ public class DoctorDAO extends BaseDao {
 
     // --- DELETE DOCTOR ---
     public boolean deleteDoctor(final int doctorId) {
-        try (Connection conn = getConnection();
+        try (Connection conn = HikariDataSourceProvider.DATA_SOURCE.getConnection();
              PreparedStatement ps = conn.prepareStatement(DELETE_DOCTOR)) {
 
             ps.setInt(1, doctorId);
@@ -238,7 +241,7 @@ public class DoctorDAO extends BaseDao {
 
     // --- NEW: GET DOCTOR ID BY CREDENTIAL ID ---
     public int getDoctorIdByCredentialId(final int credentialId) {
-        try (Connection conn = getConnection();
+        try (Connection conn = HikariDataSourceProvider.DATA_SOURCE.getConnection();
              PreparedStatement ps = conn.prepareStatement(GET_DOCTOR_ID_BY_CREDENTIAL)) {
 
             ps.setInt(1, credentialId);
