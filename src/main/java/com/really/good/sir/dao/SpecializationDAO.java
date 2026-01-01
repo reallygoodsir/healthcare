@@ -8,43 +8,49 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
-public class SpecializationDAO extends BaseDao {
-    private static final Logger LOGGER = LogManager.getLogger(SpecializationDAO.class);
-    private static final String GET_ALL_SPECIALIZATIONS = "SELECT id, name FROM specializations";
-    private static final String GET_SPECIALIZATION_BY_ID = "SELECT id, name FROM specializations WHERE id = ?";
+import javax.persistence.EntityManager;
+import javax.persistence.TypedQuery;
 
+public class SpecializationDAO {
+    private static final Logger LOGGER = LogManager.getLogger(SpecializationDAO.class);
+
+    // Named Query example
     public List<SpecializationEntity> getAllSpecializations() {
-        final List<SpecializationEntity> specializationEntities = new ArrayList<>();
-        try (final Connection connection = getConnection();
-             final Statement statement = connection.createStatement();
-             final ResultSet resultSet = statement.executeQuery(GET_ALL_SPECIALIZATIONS)) {
-            while (resultSet.next()) {
-                final SpecializationEntity spec = new SpecializationEntity();
-                spec.setId(resultSet.getInt("id"));
-                spec.setName(resultSet.getString("name"));
-                specializationEntities.add(spec);
-            }
-        } catch (final SQLException exception) {
-            LOGGER.error("Error get all specializations", exception);
+        EntityManager em = null;
+        try {
+            em = EntityManagerProvider.getEntityManager();
+
+            // Named query defined in orm.xml
+            TypedQuery<SpecializationEntity> query = em.createNamedQuery("Specialization.findAll", SpecializationEntity.class);
+            return query.getResultList();
+
+        } catch (Exception e) {
+            LOGGER.error("Error fetching all specializations", e);
+            return null;
+        } finally {
+            if (em != null) em.close();
         }
-        return specializationEntities;
     }
 
-    public SpecializationEntity getSpecializationById(final int id) {
-        try (final Connection connection = getConnection();
-             final PreparedStatement preparedStatement = connection.prepareStatement(GET_SPECIALIZATION_BY_ID)) {
-            preparedStatement.setInt(1, id);
-            try (final ResultSet resultSet = preparedStatement.executeQuery()) {
-                if (resultSet.next()) {
-                    final SpecializationEntity spec = new SpecializationEntity();
-                    spec.setId(resultSet.getInt("id"));
-                    spec.setName(resultSet.getString("name"));
-                    return spec;
-                }
-            }
-        } catch (SQLException exception) {
-            LOGGER.error("Error get specialization by id {}", id, exception);
+    // Native Query example
+    public SpecializationEntity getSpecializationById(int id) {
+        EntityManager em = null;
+        try {
+            em = EntityManagerProvider.getEntityManager();
+
+            // Using native SQL query
+            return (SpecializationEntity) em.createNativeQuery(
+                            "SELECT * FROM specializations WHERE id = ?", SpecializationEntity.class)
+                    .setParameter(1, id)
+                    .getResultStream()
+                    .findFirst()
+                    .orElse(null);
+
+        } catch (Exception e) {
+            LOGGER.error("Error fetching specialization by id {}", id, e);
+            return null;
+        } finally {
+            if (em != null) em.close();
         }
-        return null;
     }
 }

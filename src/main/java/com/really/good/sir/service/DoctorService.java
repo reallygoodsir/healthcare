@@ -38,9 +38,9 @@ public class DoctorService {
 
     public DoctorDTO updateDoctor(DoctorDTO doctorDTO) {
         final DoctorEntity doctorEntity = doctorConverter.convert(doctorDTO);
-        final boolean isDoctorUpdated = doctorDAO.updateDoctor(doctorEntity);
-        if (isDoctorUpdated) {
-            return doctorConverter.convert(doctorEntity);
+        final DoctorEntity updatedDoctorEntity = doctorDAO.updateDoctor(doctorEntity);
+        if (updatedDoctorEntity != null) {
+            return doctorConverter.convert(updatedDoctorEntity);
         } else {
             return null;
         }

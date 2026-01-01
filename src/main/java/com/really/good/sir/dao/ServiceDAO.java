@@ -4,114 +4,151 @@ import com.really.good.sir.entity.ServiceEntity;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.sql.*;
-import java.util.ArrayList;
+import javax.persistence.EntityManager;
 import java.util.List;
+import javax.persistence.*;
+import javax.persistence.criteria.*;
 
-public class ServiceDAO extends BaseDao {
+public class ServiceDAO {
+
     private static final Logger LOGGER = LogManager.getLogger(ServiceDAO.class);
 
-    private static final String GET_ALL_SERVICES = "SELECT * FROM service";
-    private static final String GET_SERVICE_BY_ID = "SELECT * FROM service WHERE id = ?";
-    private static final String CREATE_SERVICE = "INSERT INTO service (name, price) VALUES (?, ?)";
-    private static final String UPDATE_SERVICE = "UPDATE service SET name = ?, price = ? WHERE id = ?";
-    private static final String DELETE_SERVICE = "DELETE FROM service WHERE id = ?";
-    private static final String CHECK_SERVICE_NAME_EXISTS_EXCLUDE_ID = "SELECT COUNT(*) FROM service WHERE name = ? AND id <> ?";
-
-    public List<ServiceEntity> getAllServices() {
-        List<ServiceEntity> services = new ArrayList<>();
-        try (Connection conn = getConnection();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(GET_ALL_SERVICES)) {
-
-            while (rs.next()) {
-                services.add(mapResultSetToService(rs));
-            }
-        } catch (SQLException e) {
-            LOGGER.error("Error fetching all services", e);
-        }
-        return services;
-    }
-
-    public ServiceEntity getServiceById(int id) {
-        try (Connection conn = getConnection();
-             PreparedStatement ps = conn.prepareStatement(GET_SERVICE_BY_ID)) {
-            ps.setInt(1, id);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) return mapResultSetToService(rs);
-            }
-        } catch (SQLException e) {
-            LOGGER.error("Error fetching service by id {}", id, e);
-        }
-        return null;
-    }
-
+    /* =========================
+       CREATE
+       ========================= */
     public ServiceEntity createService(ServiceEntity service) {
-        try (Connection conn = getConnection();
-             PreparedStatement ps = conn.prepareStatement(CREATE_SERVICE, Statement.RETURN_GENERATED_KEYS)) {
-            ps.setString(1, service.getName());
-            ps.setInt(2, service.getPrice());
-            ps.executeUpdate();
+        EntityManager em = null;
+        try {
+            em = EntityManagerProvider.getEntityManager();
+            em.getTransaction().begin();
 
-            try (ResultSet rs = ps.getGeneratedKeys()) {
-                if (rs.next()) service.setId(rs.getInt(1));
-            }
-        } catch (SQLException e) {
+            service.setId(null); // required for IDENTITY
+            em.persist(service);
+            em.flush();          // ensures IDENTITY is generated
+            em.getTransaction().commit();
+
+            return service;
+        } catch (Exception e) {
+            if (em != null && em.getTransaction().isActive()) em.getTransaction().rollback();
             LOGGER.error("Error creating service", e);
+            return null;
+        } finally {
+            if (em != null) em.close();
         }
-        return service;
     }
 
-    public boolean isServiceNameExists(String name, int excludeId) {
-        String sql = excludeId > 0
-                ? "SELECT COUNT(*) FROM service WHERE name = ? AND id <> ?"
-                : "SELECT COUNT(*) FROM service WHERE name = ?";
-
-        try (Connection conn = getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, name);
-            if (excludeId > 0) ps.setInt(2, excludeId);
-
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) return rs.getInt(1) > 0;
-            }
-        } catch (SQLException e) {
-            LOGGER.error("Error checking service name existence", e);
+    /* =========================
+       READ - ALL (JPQL)
+       ========================= */
+    public List<ServiceEntity> getAllServices() {
+        EntityManager em = null;
+        try {
+            em = EntityManagerProvider.getEntityManager();
+            TypedQuery<ServiceEntity> query = em.createQuery("SELECT s FROM ServiceEntity s", ServiceEntity.class);
+            return query.getResultList();
+        } catch (Exception e) {
+            LOGGER.error("Error fetching all services", e);
+            return null;
+        } finally {
+            if (em != null) em.close();
         }
-        return false;
     }
 
+    /* =========================
+       READ - BY ID (EntityManager.find)
+       ========================= */
+    public ServiceEntity getServiceById(Integer id) {
+        EntityManager em = null;
+        try {
+            em = EntityManagerProvider.getEntityManager();
+            return em.find(ServiceEntity.class, id);
+        } catch (Exception e) {
+            LOGGER.error("Error fetching service by id {}", id, e);
+            return null;
+        } finally {
+            if (em != null) em.close();
+        }
+    }
 
+    /* =========================
+       UPDATE (EntityManager.merge)
+       ========================= */
     public boolean updateService(ServiceEntity service) {
-        try (Connection conn = getConnection();
-             PreparedStatement ps = conn.prepareStatement(UPDATE_SERVICE)) {
-            ps.setString(1, service.getName());
-            ps.setInt(2, service.getPrice());
-            ps.setInt(3, service.getId());
-            return ps.executeUpdate() > 0;
-        } catch (SQLException e) {
+        EntityManager em = null;
+        try {
+            em = EntityManagerProvider.getEntityManager();
+            em.getTransaction().begin();
+
+            em.merge(service);  // merge updates the entity in DB
+            em.getTransaction().commit();
+
+            return true;
+        } catch (Exception e) {
+            if (em != null && em.getTransaction().isActive()) em.getTransaction().rollback();
             LOGGER.error("Error updating service", e);
+            return false;
+        } finally {
+            if (em != null) em.close();
         }
-        return false;
     }
 
-    public boolean deleteService(int id) {
-        try (Connection conn = getConnection();
-             PreparedStatement ps = conn.prepareStatement(DELETE_SERVICE)) {
-            ps.setInt(1, id);
-            return ps.executeUpdate() > 0;
-        } catch (SQLException e) {
+    /* =========================
+       DELETE
+       ========================= */
+    public boolean deleteService(Integer id) {
+        EntityManager em = null;
+        try {
+            em = EntityManagerProvider.getEntityManager();
+            em.getTransaction().begin();
+
+            ServiceEntity entity = em.find(ServiceEntity.class, id);
+            if (entity != null) {
+                em.remove(entity);
+                em.getTransaction().commit();
+                return true;
+            } else {
+                em.getTransaction().rollback();
+                return false;
+            }
+        } catch (Exception e) {
+            if (em != null && em.getTransaction().isActive()) em.getTransaction().rollback();
             LOGGER.error("Error deleting service", e);
+            return false;
+        } finally {
+            if (em != null) em.close();
         }
-        return false;
     }
 
-    private ServiceEntity mapResultSetToService(ResultSet rs) throws SQLException {
-        ServiceEntity service = new ServiceEntity();
-        service.setId(rs.getInt("id"));
-        service.setName(rs.getString("name"));
-        service.setPrice(rs.getInt("price"));
-        LOGGER.info(service);
-        return service;
+    /* =========================
+       CHECK SERVICE NAME EXISTS (Criteria API)
+       ========================= */
+    public boolean isServiceNameExists(String name, Integer excludeId) {
+        EntityManager em = null;
+        try {
+            em = EntityManagerProvider.getEntityManager();
+            CriteriaBuilder cb = em.getCriteriaBuilder();
+            CriteriaQuery<Long> cq = cb.createQuery(Long.class);
+
+            Root<ServiceEntity> root = cq.from(ServiceEntity.class);
+            cq.select(cb.count(root));
+
+            if (excludeId != null && excludeId > 0) {
+                cq.where(cb.and(
+                        cb.equal(root.get("name"), name),
+                        cb.notEqual(root.get("id"), excludeId)
+                ));
+            } else {
+                cq.where(cb.equal(root.get("name"), name));
+            }
+
+            Long count = em.createQuery(cq).getSingleResult();
+            return count > 0;
+
+        } catch (Exception e) {
+            LOGGER.error("Error checking service name existence", e);
+            return false;
+        } finally {
+            if (em != null) em.close();
+        }
     }
 }

@@ -4,10 +4,9 @@ public class DoctorEntity {
     private Integer id;
     private String firstName;
     private String lastName;
-    private String email;
-    private String phone;
     private int specializationId;
     private byte[] photo;
+    private CredentialEntity credentialEntity;
 
     public Integer getId() {
         return id;
@@ -33,21 +32,21 @@ public class DoctorEntity {
         this.lastName = lastName;
     }
 
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    public String getPhone() {
-        return phone;
-    }
-
-    public void setPhone(String phone) {
-        this.phone = phone;
-    }
+//    public String getEmail() {
+//        return email;
+//    }
+//
+//    public void setEmail(String email) {
+//        this.email = email;
+//    }
+//
+//    public String getPhone() {
+//        return phone;
+//    }
+//
+//    public void setPhone(String phone) {
+//        this.phone = phone;
+//    }
 
     public int getSpecializationId() {
         return specializationId;
@@ -63,5 +62,13 @@ public class DoctorEntity {
 
     public void setPhoto(byte[] photo) {
         this.photo = photo;
+    }
+
+    public CredentialEntity getCredentialEntity() {
+        return credentialEntity;
+    }
+
+    public void setCredentialEntity(CredentialEntity credentialEntity) {
+        this.credentialEntity = credentialEntity;
     }
 }

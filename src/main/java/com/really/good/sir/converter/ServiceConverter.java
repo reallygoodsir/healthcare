@@ -9,17 +9,19 @@ import java.util.List;
 public class ServiceConverter {
 
     public ServiceEntity convert(final ServiceDTO dto) {
-        if(dto == null) return null;
-        final ServiceEntity entity = new ServiceEntity();
-        entity.setId(dto.getId());
+        if (dto == null) return null;
+        ServiceEntity entity = new ServiceEntity();
+        if (dto.getId() != null && dto.getId() > 0) {
+            entity.setId(dto.getId());
+        }
         entity.setName(dto.getName());
         entity.setPrice(dto.getPrice());
         return entity;
     }
 
     public ServiceDTO convert(final ServiceEntity entity) {
-        if(entity == null) return null;
-        final ServiceDTO dto = new ServiceDTO();
+        if (entity == null) return null;
+        ServiceDTO dto = new ServiceDTO();
         dto.setId(entity.getId());
         dto.setName(entity.getName());
         dto.setPrice(entity.getPrice());

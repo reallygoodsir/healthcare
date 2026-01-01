@@ -1,6 +1,7 @@
 package com.really.good.sir.converter;
 
 import com.really.good.sir.dto.DoctorDTO;
+import com.really.good.sir.entity.CredentialEntity;
 import com.really.good.sir.entity.DoctorEntity;
 
 import java.util.ArrayList;
@@ -12,8 +13,10 @@ public class DoctorConverter {
         if(doctorDTO.getId() != null) doctorEntity.setId(doctorDTO.getId());
         doctorEntity.setFirstName(doctorDTO.getFirstName());
         doctorEntity.setLastName(doctorDTO.getLastName());
-        doctorEntity.setEmail(doctorDTO.getEmail());
-        doctorEntity.setPhone(doctorDTO.getPhone());
+        CredentialEntity credentialEntity = new CredentialEntity();
+        credentialEntity.setEmail(doctorDTO.getEmail());
+        credentialEntity.setPhone(doctorDTO.getPhone());
+        doctorEntity.setCredentialEntity(credentialEntity);
         doctorEntity.setSpecializationId(doctorDTO.getSpecializationId());
         doctorEntity.setPhoto(doctorDTO.getPhoto());
         return doctorEntity;
@@ -21,15 +24,20 @@ public class DoctorConverter {
 
     public DoctorDTO convert(final DoctorEntity doctorEntity) {
         final DoctorDTO doctorDTO = new DoctorDTO();
-        if(doctorEntity.getId() != null) doctorDTO.setId(doctorEntity.getId());
+        if (doctorEntity.getId() != null) doctorDTO.setId(doctorEntity.getId());
         doctorDTO.setFirstName(doctorEntity.getFirstName());
         doctorDTO.setLastName(doctorEntity.getLastName());
-        doctorDTO.setEmail(doctorEntity.getEmail());
-        doctorDTO.setPhone(doctorEntity.getPhone());
+
+        if (doctorEntity.getCredentialEntity() != null) {
+            doctorDTO.setEmail(doctorEntity.getCredentialEntity().getEmail());
+            doctorDTO.setPhone(doctorEntity.getCredentialEntity().getPhone());
+        }
+
         doctorDTO.setSpecializationId(doctorEntity.getSpecializationId());
         doctorDTO.setPhoto(doctorEntity.getPhoto());
         return doctorDTO;
     }
+
 
     public List<DoctorDTO> convert(final List<DoctorEntity> doctorEntities) {
         final List<DoctorDTO> doctorDTOs = new ArrayList<>();

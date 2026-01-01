@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<entity-mappings
+        xmlns="http://xmlns.jcp.org/xml/ns/persistence/orm"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="
+            http://xmlns.jcp.org/xml/ns/persistence/orm
+            http://xmlns.jcp.org/xml/ns/persistence/orm_2_2.xsd"
+        version="2.2">
+
+    <entity class="com.really.good.sir.entity.ServiceEntity"
+            access="FIELD">
+
+        <table name="service"/>
+
+        <attributes>
+            <id name="id">
+                <generated-value strategy="IDENTITY"/>
+            </id>
+
+            <basic name="name">
+                <column name="name" nullable="false"/>
+            </basic>
+
+            <basic name="price">
+                <column name="price" nullable="false"/>
+            </basic>
+        </attributes>
+    </entity>
+
+    <entity class="com.really.good.sir.entity.SpecializationEntity" access="FIELD">
+        <table name="specializations"/>
+
+        <!-- Named Query -->
+        <named-query name="Specialization.findAll">
+            <query>
+                SELECT s FROM SpecializationEntity s
+            </query>
+        </named-query>
+
+        <attributes>
+            <id name="id">
+                <generated-value strategy="IDENTITY"/>
+            </id>
+
+            <basic name="name">
+                <column name="name" nullable="false"/>
+            </basic>
+        </attributes>
+    </entity>
+
+    <entity class="com.really.good.sir.entity.AppointmentEntity" access="FIELD">
+        <table name="appointments"/>
+
+        <!-- Named Query -->
+        <named-query name="Appointment.updateStatus">
+            <query>
+                UPDATE AppointmentEntity a
+                SET a.status = :status
+                WHERE a.appointmentId = :id
+            </query>
+        </named-query>
+
+        <attributes>
+            <id name="appointmentId">
+                <column name="appointment_id"/>
+                <generated-value strategy="IDENTITY"/>
+            </id>
+
+            <basic name="patientId">
+                <column name="patient_id" nullable="false"/>
+            </basic>
+
+            <basic name="doctorId">
+                <column name="doctor_id" nullable="false"/>
+            </basic>
+
+            <basic name="scheduleId">
+                <column name="schedule_id" nullable="false"/>
+            </basic>
+
+            <basic name="status">
+                <column name="status" nullable="false"/>
+            </basic>
+        </attributes>
+    </entity>
+
+    <entity class="com.really.good.sir.entity.AppointmentOutcomeEntity"
+            access="FIELD">
+
+        <table name="appointment_outcomes"/>
+
+        <named-query name="AppointmentOutcome.findByAppointmentId">
+            <query>
+                SELECT a FROM AppointmentOutcomeEntity a
+                WHERE a.appointmentId = :appointmentId
+            </query>
+        </named-query>
+
+        <attributes>
+            <id name="appointmentId">
+                <column name="appointment_id"/>
+            </id>
+
+            <basic name="diagnosis">
+                <column name="diagnosis"/>
+            </basic>
+
+            <basic name="recommendations">
+                <column name="recommendations"/>
+            </basic>
+
+            <basic name="createdAt">
+                <column name="created_at"/>
+            </basic>
+
+            <basic name="updatedAt">
+                <column name="updated_at"/>
+            </basic>
+        </attributes>
+    </entity>
+
+    <!-- Mapping for CredentialEntity -->
+    <entity class="com.really.good.sir.entity.CredentialEntity" access="PROPERTY">
+        <table name="credentials"/>
+        <attributes>
+            <id name="credentialId">
+                <column name="credential_id"/>
+                <generated-value strategy="IDENTITY"/>
+            </id>
+            <basic name="phone">
+                <column name="phone"/>
+            </basic>
+            <basic name="email">
+                <column name="email"/>
+            </basic>
+            <basic name="passwordHash">
+                <column name="password_hash"/>
+            </basic>
+            <basic name="role">
+                <column name="role"/>
+            </basic>
+        </attributes>
+    </entity>
+
+    <!-- Mapping for DoctorEntity -->
+    <entity class="com.really.good.sir.entity.DoctorEntity" access="PROPERTY">
+        <table name="doctors"/>
+        <attributes>
+            <id name="id">
+                <column name="doctor_id"/>
+                <generated-value strategy="IDENTITY"/>
+            </id>
+            <basic name="firstName">
+                <column name="first_name"/>
+            </basic>
+            <basic name="lastName">
+                <column name="last_name"/>
+            </basic>
+            <basic name="specializationId">
+                <column name="specialization_id"/>
+            </basic>
+            <basic name="photo">
+                <column name="photo"/>
+                <lob/>
+            </basic>
+            <one-to-one name="credentialEntity" target-entity="com.really.good.sir.entity.CredentialEntity"
+                        fetch="LAZY">
+                <join-column name="credential_id" referenced-column-name="credential_id"/>
+            </one-to-one>
+        </attributes>
+    </entity>
+</entity-mappings>
