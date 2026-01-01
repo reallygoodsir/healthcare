@@ -1,6 +1,5 @@
 package com.really.good.sir.dao;
 
-import com.really.good.sir.entity.CredentialEntity;
 import com.really.good.sir.entity.DoctorEntity;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -9,91 +8,20 @@ import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
 import javax.persistence.TypedQuery;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.List;
-import java.util.Random;
 
 public class DoctorDAO {
     private static final Logger LOGGER = LogManager.getLogger(DoctorDAO.class);
 
     private final EntityManagerFactory emf = Persistence.createEntityManagerFactory("myPU");
 
-    // --- CREATE DOCTOR ---
-// --- CREATE DOCTOR ---
-//    public DoctorEntity createDoctor(DoctorEntity doctorEntity) {
-//        EntityManager em = emf.createEntityManager();
-//        try {
-//            em.getTransaction().begin();
-//
-//            // Ensure credential exists
-//            CredentialEntity credential = doctorEntity.getCredentialEntity();
-//            if (credential == null) {
-//                credential = new CredentialEntity();
-//                credential.setRole("DOCTOR"); // enforce role
-//                doctorEntity.setCredentialEntity(credential);
-//            }
-//
-//            // Hash password if not set
-//            if (credential.getPasswordHash() == null) {
-//                String rawPassword = generateRandomPassword();
-//                try {
-//                    credential.setPasswordHash(hashPassword(rawPassword));
-//                } catch (NoSuchAlgorithmException e) {
-//                    LOGGER.error("Password hashing failed", e);
-//                    em.getTransaction().rollback();
-//                    return null;
-//                }
-//            }
-//
-//            // Persist doctor; cascade should save credential automatically
-//            em.persist(doctorEntity);
-//
-//            em.getTransaction().commit();
-//            return doctorEntity;
-//        } catch (Exception e) {
-//            if (em.getTransaction().isActive()) em.getTransaction().rollback();
-//            LOGGER.error("Error creating doctor", e);
-//            return null;
-//        } finally {
-//            em.close();
-//        }
-//    }
-
-
-    public DoctorEntity createDoctor(DoctorEntity doctorEntity) {
+    public DoctorEntity createDoctor(final DoctorEntity doctorEntity) {
         EntityManager em = emf.createEntityManager();
         try {
             em.getTransaction().begin();
-
-            // --- Step 1: Persist credential first ---
-            CredentialEntity credential = doctorEntity.getCredentialEntity();
-            if (credential == null) {
-                credential = new CredentialEntity();
-                credential.setRole("DOCTOR"); // enforce role
-            }
-
-            // Hash password if not set
-            if (credential.getPasswordHash() == null) {
-                String rawPassword = generateRandomPassword();
-                try {
-                    credential.setPasswordHash(hashPassword(rawPassword));
-                } catch (NoSuchAlgorithmException e) {
-                    LOGGER.error("Password hashing failed", e);
-                    em.getTransaction().rollback();
-                    return null;
-                }
-            }
-
-            em.persist(credential); // persist credential first
+            em.persist(doctorEntity.getCredentialEntity());
             em.flush(); // ensure ID is generated
-
-            // --- Step 2: Set the persisted credential into doctor ---
-            doctorEntity.setCredentialEntity(credential);
-
-            // --- Step 3: Persist doctor ---
             em.persist(doctorEntity);
-
             em.getTransaction().commit();
             return doctorEntity;
         } catch (Exception e) {
@@ -104,7 +32,6 @@ public class DoctorDAO {
             em.close();
         }
     }
-
 
 
     // --- GET ALL DOCTORS ---
@@ -213,22 +140,5 @@ public class DoctorDAO {
         } finally {
             em.close();
         }
-    }
-
-    // --- UTILS ---
-    private String generateRandomPassword() {
-        Random random = new Random();
-        int number = 10000000 + random.nextInt(90000000);
-        return String.valueOf(number);
-    }
-
-    private String hashPassword(String password) throws NoSuchAlgorithmException {
-        MessageDigest md = MessageDigest.getInstance("SHA-256");
-        byte[] hash = md.digest(password.getBytes());
-        StringBuilder sb = new StringBuilder();
-        for (byte b : hash) {
-            sb.append(String.format("%02x", b));
-        }
-        return sb.toString();
     }
 }
