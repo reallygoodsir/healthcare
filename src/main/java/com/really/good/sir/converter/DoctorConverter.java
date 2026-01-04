@@ -3,6 +3,7 @@ package com.really.good.sir.converter;
 import com.really.good.sir.dto.DoctorDTO;
 import com.really.good.sir.entity.CredentialEntity;
 import com.really.good.sir.entity.DoctorEntity;
+import com.really.good.sir.entity.Role;
 import com.really.good.sir.service.PasswordGenerator;
 
 import java.util.ArrayList;
@@ -20,7 +21,7 @@ public class DoctorConverter {
         CredentialEntity credentialEntity = new CredentialEntity();
         credentialEntity.setEmail(doctorDTO.getEmail());
         credentialEntity.setPhone(doctorDTO.getPhone());
-        credentialEntity.setRole("DOCTOR");
+        credentialEntity.setRole(Role.valueOf("DOCTOR"));
         credentialEntity.setPasswordHash(passwordGenerator.hashPassword());
         doctorEntity.setCredentialEntity(credentialEntity);
         doctorEntity.setSpecializationId(doctorDTO.getSpecializationId());

@@ -4,8 +4,18 @@
     <persistence-unit name="myPU">
         <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
 
-        <!-- XML mappings -->
-        <mapping-file>META-INF/orm.xml</mapping-file>
+
+        <class>com.really.good.sir.entity.CredentialEntity</class>
+        <class>com.really.good.sir.entity.UserSessionEntity</class>
+        <class>com.really.good.sir.entity.DoctorEntity</class>
+        <class>com.really.good.sir.entity.PatientEntity</class>
+        <class>com.really.good.sir.entity.AppointmentEntity</class>
+        <class>com.really.good.sir.entity.AppointmentOutcomeEntity</class>
+        <class>com.really.good.sir.entity.DoctorScheduleEntity</class>
+        <class>com.really.good.sir.entity.PatientAppointmentEntity</class>
+        <class>com.really.good.sir.entity.PatientAppointmentOutcomeEntity</class>
+        <class>com.really.good.sir.entity.ServiceEntity</class>
+        <class>com.really.good.sir.entity.SpecializationEntity</class>
 
         <properties>
             <!-- JDBC -->

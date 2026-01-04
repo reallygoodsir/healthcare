@@ -49,7 +49,7 @@ public class UserSessionDAO {
             em.getTransaction().commit();
 
             // Set transient role manually
-            session.setRole(credential.getRole() != null ? credential.getRole() : "UNKNOWN");
+            session.setRole(credential.getRole() != null ? String.valueOf(credential.getRole()) : "UNKNOWN");
 
             return session;
 
@@ -70,7 +70,7 @@ public class UserSessionDAO {
             if (session != null) {
                 CredentialEntity credential = em.find(CredentialEntity.class, session.getCredentialId());
                 session.setRole(credential != null && credential.getRole() != null
-                        ? credential.getRole()
+                        ? String.valueOf(credential.getRole())
                         : "UNKNOWN");
             }
             return session;

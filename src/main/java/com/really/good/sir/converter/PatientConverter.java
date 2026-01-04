@@ -3,6 +3,7 @@ package com.really.good.sir.converter;
 import com.really.good.sir.dto.PatientDTO;
 import com.really.good.sir.entity.PatientEntity;
 import com.really.good.sir.entity.CredentialEntity;
+import com.really.good.sir.entity.Role;
 import com.really.good.sir.service.PasswordGenerator;
 
 import java.sql.Date;
@@ -28,7 +29,7 @@ public class PatientConverter {
         CredentialEntity credential = new CredentialEntity();
         credential.setEmail(dto.getEmail());
         credential.setPhone(dto.getPhone());
-        credential.setRole("PATIENT");
+        credential.setRole(Role.valueOf("PATIENT"));
         credential.setPasswordHash(passwordGenerator.hashPassword());
 
         entity.setCredentialEntity(credential);

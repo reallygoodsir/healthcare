@@ -24,6 +24,7 @@ public class AuthorizationResource {
 
     @POST
     public Response authorize(LoginRequestDTO request) {
+        LOGGER.info(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
         try {
             if (request == null) {
                 final ErrorDTO errorDTO = new ErrorDTO();
