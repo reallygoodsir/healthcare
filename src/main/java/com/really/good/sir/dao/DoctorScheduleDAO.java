@@ -4,161 +4,205 @@ import com.really.good.sir.entity.DoctorScheduleEntity;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.sql.*;
-import java.util.ArrayList;
+import javax.persistence.EntityManager;
+import javax.persistence.Query;
+import javax.persistence.TypedQuery;
+import java.sql.Date;
 import java.util.List;
 
-public class DoctorScheduleDAO extends BaseDao {
+public class DoctorScheduleDAO {
+
     private static final Logger LOGGER = LogManager.getLogger(DoctorScheduleDAO.class);
 
-    private static final String GET_SCHEDULES_BY_DOCTOR =
-            "SELECT * FROM doctor_schedules WHERE doctor_id = ? ORDER BY schedule_date, start_time";
-
-    private static final String CREATE_SCHEDULE =
-            "INSERT INTO doctor_schedules (doctor_id, schedule_date, start_time, end_time) VALUES (?, ?, ?, ?)";
-
-    private static final String UPDATE_SCHEDULE =
-            "UPDATE doctor_schedules SET schedule_date = ?, start_time = ?, end_time = ? WHERE id = ?";
-
-    private static final String DELETE_SCHEDULE =
-            "DELETE FROM doctor_schedules WHERE id = ?";
-
-    private static final String GET_TODAY_SCHEDULES_WITH_APPOINTMENTS =
-            "SELECT ds.id, ds.doctor_id, ds.schedule_date, ds.start_time, ds.end_time " +
-                    "FROM doctor_schedules ds " +
-                    "INNER JOIN appointments a ON ds.id = a.schedule_id " +
-                    "WHERE ds.doctor_id = ? " +
-                    "AND a.status <> 'CANCELLED' " +
-                    "AND ds.schedule_date = CURRENT_DATE " +
-                    "ORDER BY ds.start_time";
-
-    private static final String GET_SCHEDULES_BY_DOCTOR_AND_DATE = "SELECT * FROM doctor_schedules " +
-            "WHERE doctor_id = ? " +
-            "AND schedule_date = ? " +
-            "ORDER BY start_time";
-
-    private static final String GET_SCHEDULE_ID_COUNTS = "SELECT COUNT(*) FROM doctor_schedules WHERE id = ?";
-
+    // =====================================================
+    // GET schedules by doctor
+    // =====================================================
     public List<DoctorScheduleEntity> getSchedulesByDoctor(final int doctorId) {
-        final List<DoctorScheduleEntity> schedules = new ArrayList<>();
-        try (final Connection connection = getConnection();
-             final PreparedStatement ps = connection.prepareStatement(GET_SCHEDULES_BY_DOCTOR)) {
-            ps.setInt(1, doctorId);
-            try (final ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    schedules.add(mapResultSetToSchedule(rs));
-                }
-            }
-        } catch (final SQLException exception) {
-            LOGGER.error("Error getting schedules for doctor {}", doctorId, exception);
+        EntityManager em = EntityManagerProvider.getEntityManager();
+        try {
+            TypedQuery<DoctorScheduleEntity> query =
+                    em.createQuery(
+                            "SELECT ds FROM DoctorScheduleEntity ds " +
+                                    "WHERE ds.doctorId = :doctorId " +
+                                    "ORDER BY ds.scheduleDate, ds.startTime",
+                            DoctorScheduleEntity.class);
+
+            query.setParameter("doctorId", doctorId);
+            return query.getResultList();
+
+        } catch (Exception e) {
+            LOGGER.error("Error getting schedules for doctor {}", doctorId, e);
+            return List.of();
+        } finally {
+            em.close();
         }
-        return schedules;
     }
 
+    // =====================================================
+    // EXISTS check
+    // =====================================================
     public boolean scheduleExists(int scheduleId) {
+        EntityManager em = EntityManagerProvider.getEntityManager();
+        try {
+            Query query = em.createQuery(
+                    "SELECT COUNT(ds.id) FROM DoctorScheduleEntity ds WHERE ds.id = :id");
+            query.setParameter("id", scheduleId);
 
-        try (Connection connection = getConnection();
-             PreparedStatement ps = connection.prepareStatement(GET_SCHEDULE_ID_COUNTS)) {
+            Long count = (Long) query.getSingleResult();
+            return count > 0;
 
-            ps.setInt(1, scheduleId);
-
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    return rs.getInt(1) > 0;
-                }
-            }
-
-        } catch (SQLException e) {
+        } catch (Exception e) {
             LOGGER.error("Error checking schedule existence", e);
+            return false;
+        } finally {
+            em.close();
         }
-
-        return false;
     }
 
+    // =====================================================
+    // CREATE
+    // =====================================================
     public DoctorScheduleEntity createSchedule(final DoctorScheduleEntity schedule) {
-        try (final Connection connection = getConnection();
-             final PreparedStatement ps = connection.prepareStatement(CREATE_SCHEDULE, Statement.RETURN_GENERATED_KEYS)) {
-            ps.setInt(1, schedule.getDoctorId());
-            ps.setDate(2, schedule.getScheduleDate());
-            ps.setTime(3, schedule.getStartTime());
-            ps.setTime(4, schedule.getEndTime());
-            ps.executeUpdate();
-            try (final ResultSet rs = ps.getGeneratedKeys()) {
-                if (rs.next()) schedule.setId(rs.getInt(1));
+        EntityManager em = EntityManagerProvider.getEntityManager();
+        try {
+            em.getTransaction().begin();
+            em.persist(schedule);
+            em.getTransaction().commit();
+            return schedule;
+
+        } catch (Exception e) {
+            LOGGER.error("Error creating schedule", e);
+            if (em.getTransaction().isActive()) {
+                em.getTransaction().rollback();
             }
-        } catch (final SQLException exception) {
-            LOGGER.error("Error creating schedule", exception);
+            return schedule; // same behavior as JDBC version
+        } finally {
+            em.close();
         }
-        return schedule;
     }
 
+    // =====================================================
+    // UPDATE
+    // =====================================================
     public boolean updateSchedule(final DoctorScheduleEntity schedule) {
-        try (final Connection connection = getConnection();
-             final PreparedStatement ps = connection.prepareStatement(UPDATE_SCHEDULE)) {
-            ps.setDate(1, schedule.getScheduleDate());
-            ps.setTime(2, schedule.getStartTime());
-            ps.setTime(3, schedule.getEndTime());
-            ps.setInt(4, schedule.getId());
-            return ps.executeUpdate() > 0;
-        } catch (SQLException exception) {
-            LOGGER.error("Error updating schedule {}", schedule.getId(), exception);
+        EntityManager em = EntityManagerProvider.getEntityManager();
+        try {
+            em.getTransaction().begin();
+
+            Query query = em.createQuery(
+                    "UPDATE DoctorScheduleEntity ds " +
+                            "SET ds.scheduleDate = :date, " +
+                            "    ds.startTime = :start, " +
+                            "    ds.endTime = :end " +
+                            "WHERE ds.id = :id");
+
+            query.setParameter("date", schedule.getScheduleDate());
+            query.setParameter("start", schedule.getStartTime());
+            query.setParameter("end", schedule.getEndTime());
+            query.setParameter("id", schedule.getId());
+
+            int updated = query.executeUpdate();
+            em.getTransaction().commit();
+
+            return updated > 0;
+
+        } catch (Exception e) {
+            LOGGER.error("Error updating schedule {}", schedule.getId(), e);
+            if (em.getTransaction().isActive()) {
+                em.getTransaction().rollback();
+            }
+            return false;
+        } finally {
+            em.close();
         }
-        return false;
     }
 
+    // =====================================================
+    // DELETE
+    // =====================================================
     public boolean deleteSchedule(final int id) {
-        try (final Connection connection = getConnection();
-             final PreparedStatement ps = connection.prepareStatement(DELETE_SCHEDULE)) {
-            ps.setInt(1, id);
-            return ps.executeUpdate() > 0;
-        } catch (final SQLException exception) {
-            LOGGER.error("Error deleting schedule {}", id, exception);
+        EntityManager em = EntityManagerProvider.getEntityManager();
+        try {
+            em.getTransaction().begin();
+
+            Query query = em.createQuery(
+                    "DELETE FROM DoctorScheduleEntity ds WHERE ds.id = :id");
+            query.setParameter("id", id);
+
+            int deleted = query.executeUpdate();
+            em.getTransaction().commit();
+
+            return deleted > 0;
+
+        } catch (Exception e) {
+            LOGGER.error("Error deleting schedule {}", id, e);
+            if (em.getTransaction().isActive()) {
+                em.getTransaction().rollback();
+            }
+            return false;
+        } finally {
+            em.close();
         }
-        return false;
     }
 
+    // =====================================================
+    // TODAY schedules WITH appointments (native SQL, unchanged semantics)
+    // =====================================================
     public List<DoctorScheduleEntity> getSchedulesForTodayWithAppointments(final int doctorId) {
-        final List<DoctorScheduleEntity> schedules = new ArrayList<>();
-        try (final Connection connection = getConnection();
-             final PreparedStatement ps = connection.prepareStatement(GET_TODAY_SCHEDULES_WITH_APPOINTMENTS)) {
-            ps.setInt(1, doctorId);
-            try (final ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    schedules.add(mapResultSetToSchedule(rs));
-                }
-            }
-        } catch (final SQLException exception) {
-            LOGGER.error("Error getting today's schedules with appointments for doctor {}", doctorId, exception);
+        EntityManager em = EntityManagerProvider.getEntityManager();
+        try {
+            String sql =
+                    "SELECT ds.* " +
+                            "FROM doctor_schedules ds " +
+                            "INNER JOIN appointments a ON ds.id = a.schedule_id " +
+                            "WHERE ds.doctor_id = ? " +
+                            "AND a.status <> 'CANCELLED' " +
+                            "AND ds.schedule_date = CURRENT_DATE " +
+                            "ORDER BY ds.start_time";
+
+            @SuppressWarnings("unchecked")
+            List<DoctorScheduleEntity> result =
+                    em.createNativeQuery(sql, DoctorScheduleEntity.class)
+                            .setParameter(1, doctorId)
+                            .getResultList();
+
+            return result;
+
+        } catch (Exception e) {
+            LOGGER.error("Error getting today's schedules with appointments for doctor {}", doctorId, e);
+            return List.of();
+        } finally {
+            em.close();
         }
-        return schedules;
     }
 
-    public List<DoctorScheduleEntity> getSchedulesByDoctorAndDate(final int doctorId, final String scheduleDate) {
-        final List<DoctorScheduleEntity> schedules = new ArrayList<>();
+    // =====================================================
+    // BY doctor AND date
+    // =====================================================
+    public List<DoctorScheduleEntity> getSchedulesByDoctorAndDate(
+            final int doctorId,
+            final String scheduleDate) {
 
-        try (final Connection connection = getConnection();
-             final PreparedStatement ps = connection.prepareStatement(GET_SCHEDULES_BY_DOCTOR_AND_DATE)) {
-            ps.setInt(1, doctorId);
-            ps.setDate(2, Date.valueOf(scheduleDate));
-            try (final ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    schedules.add(mapResultSetToSchedule(rs));
-                }
-            }
-        } catch (final SQLException exception) {
-            LOGGER.error("Error getting schedules for doctor {} on date {}", doctorId, scheduleDate, exception);
+        EntityManager em = EntityManagerProvider.getEntityManager();
+        try {
+            TypedQuery<DoctorScheduleEntity> query =
+                    em.createQuery(
+                            "SELECT ds FROM DoctorScheduleEntity ds " +
+                                    "WHERE ds.doctorId = :doctorId " +
+                                    "AND ds.scheduleDate = :date " +
+                                    "ORDER BY ds.startTime",
+                            DoctorScheduleEntity.class);
+
+            query.setParameter("doctorId", doctorId);
+            query.setParameter("date", Date.valueOf(scheduleDate));
+
+            return query.getResultList();
+
+        } catch (Exception e) {
+            LOGGER.error("Error getting schedules for doctor {} on date {}", doctorId, scheduleDate, e);
+            return List.of();
+        } finally {
+            em.close();
         }
-        return schedules;
-    }
-
-
-    private DoctorScheduleEntity mapResultSetToSchedule(final ResultSet rs) throws SQLException {
-        final DoctorScheduleEntity entity = new DoctorScheduleEntity();
-        entity.setId(rs.getInt("id"));
-        entity.setDoctorId(rs.getInt("doctor_id"));
-        entity.setScheduleDate(rs.getDate("schedule_date"));
-        entity.setStartTime(rs.getTime("start_time"));
-        entity.setEndTime(rs.getTime("end_time"));
-        return entity;
     }
 }

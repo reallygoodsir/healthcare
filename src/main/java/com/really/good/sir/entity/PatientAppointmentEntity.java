@@ -7,7 +7,7 @@ public class PatientAppointmentEntity {
     private Integer appointmentId;
     private Integer patientId;
     private Integer serviceId;
-    private Integer doctorId; // <-- Added this
+    private Integer doctorId;
     private Date date;
     private Time startTime;
     private Time endTime;

@@ -1,5 +1,8 @@
 package com.really.good.sir.dao;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -12,6 +15,8 @@ public class BaseDao {
     private static final String URL;
     private static final String USER;
     private static final String PASSWORD;
+
+    private static final Logger LOGGER = LogManager.getLogger(BaseDao.class);
 
     static {
         try (final InputStream input = BaseDao.class.getClassLoader()
@@ -43,5 +48,16 @@ public class BaseDao {
 
     public static Connection getConnection() throws SQLException {
         return DriverManager.getConnection(URL, USER, PASSWORD);
+    }
+
+    public void closeConnection(Connection connection) {
+        if (connection != null) {
+            try {
+                connection.setAutoCommit(true);
+                connection.close();
+            } catch (SQLException e) {
+                LOGGER.error("Failed to close connection", e);
+            }
+        }
     }
 }

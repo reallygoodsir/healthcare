@@ -15,7 +15,8 @@ public class PatientAppointmentOutcomeService {
     }
 
     public PatientAppointmentOutcomeDTO saveOrUpdateOutcome(PatientAppointmentOutcomeDTO patientAppointmentOutcomeDTO) throws Exception {
-        PatientAppointmentOutcomeEntity entity = patientAppointmentOutcomeDAO.saveOrUpdateOutcome(patientAppointmentOutcomeDTO);
-        return patientAppointmentOutcomeConverter.convert(entity);
+        PatientAppointmentOutcomeEntity entity = patientAppointmentOutcomeConverter.convert(patientAppointmentOutcomeDTO);
+        PatientAppointmentOutcomeEntity result = patientAppointmentOutcomeDAO.saveOrUpdateOutcome(entity);
+        return patientAppointmentOutcomeConverter.convert(result);
     }
 }

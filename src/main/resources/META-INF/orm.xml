@@ -169,4 +169,173 @@
             </one-to-one>
         </attributes>
     </entity>
+
+    <entity class="com.really.good.sir.entity.PatientEntity" access="PROPERTY">
+        <table name="patients"/>
+
+        <attributes>
+            <id name="id">
+                <column name="patient_id"/>
+                <generated-value strategy="IDENTITY"/>
+            </id>
+
+            <basic name="firstName">
+                <column name="first_name"/>
+            </basic>
+
+            <basic name="lastName">
+                <column name="last_name"/>
+            </basic>
+
+            <basic name="dateOfBirth">
+                <column name="date_of_birth"/>
+            </basic>
+
+            <basic name="address">
+                <column name="address"/>
+            </basic>
+
+            <one-to-one name="credentialEntity" fetch="LAZY" optional="false">
+                <join-column name="credential_id" unique="true"/>
+                <cascade>
+                    <cascade-persist/>
+                    <cascade-merge/>
+                    <cascade-remove/>
+                </cascade>
+            </one-to-one>
+        </attributes>
+    </entity>
+
+    <entity class="com.really.good.sir.entity.DoctorScheduleEntity" access="PROPERTY">
+        <table name="doctor_schedules"/>
+
+        <attributes>
+            <!-- Primary Key -->
+            <id name="id">
+                <column name="id"/>
+                <generated-value strategy="IDENTITY"/>
+            </id>
+
+            <!-- Foreign Key to doctor -->
+            <basic name="doctorId">
+                <column name="doctor_id" nullable="false"/>
+            </basic>
+
+            <basic name="scheduleDate">
+                <column name="schedule_date" nullable="false"/>
+            </basic>
+
+            <basic name="startTime">
+                <column name="start_time" nullable="false"/>
+            </basic>
+
+            <basic name="endTime">
+                <column name="end_time" nullable="false"/>
+            </basic>
+        </attributes>
+    </entity>
+
+    <entity class="com.really.good.sir.entity.PatientAppointmentEntity">
+        <table name="patient_appointments"/>
+
+        <attributes>
+            <id name="appointmentId">
+                <column name="appointment_id"/>
+                <generated-value strategy="IDENTITY"/>
+            </id>
+
+            <basic name="patientId">
+                <column name="patient_id" nullable="false"/>
+            </basic>
+
+            <basic name="serviceId">
+                <column name="service_id" nullable="false"/>
+            </basic>
+
+            <basic name="doctorId">
+                <column name="doctor_id" nullable="false"/>
+            </basic>
+
+            <basic name="date">
+                <column name="date"/>
+            </basic>
+
+            <basic name="startTime">
+                <column name="start_time"/>
+            </basic>
+
+            <basic name="endTime">
+                <column name="end_time"/>
+            </basic>
+
+            <basic name="status">
+                <column name="status"/>
+            </basic>
+
+            <!-- FRONTEND-ONLY FIELDS -->
+            <transient name="patientFirstName"/>
+            <transient name="patientLastName"/>
+            <transient name="serviceName"/>
+        </attributes>
+    </entity>
+
+
+    <entity class="com.really.good.sir.entity.PatientAppointmentOutcomeEntity" access="PROPERTY">
+        <table name="service_appointment_outcomes"/>
+        <named-query name="PatientAppointmentOutcomeEntity.getByAppointmentId">
+            <query>
+                SELECT p FROM com.really.good.sir.entity.PatientAppointmentOutcomeEntity p
+                WHERE p.appointmentId = :appointmentId
+            </query>
+        </named-query>
+        <attributes>
+            <id name="id">
+                <column name="id"/>
+                <generated-value strategy="IDENTITY"/>
+            </id>
+            <basic name="appointmentId">
+                <column name="appointment_id" nullable="false" unique="true"/>
+            </basic>
+            <basic name="result">
+                <column name="result" length="45"/>
+            </basic>
+        </attributes>
+    </entity>
+
+    <entity class="com.really.good.sir.entity.UserSessionEntity" access="PROPERTY">
+        <table name="user_sessions"/>
+        <named-query name="UserSessionEntity.getSessionById">
+            <query>
+                SELECT us FROM UserSessionEntity us
+                WHERE us.id = :sessionId
+            </query>
+        </named-query>
+        <named-query name="UserSessionEntity.deleteById">
+            <query>
+                DELETE FROM UserSessionEntity us
+                WHERE us.id = :sessionId
+            </query>
+        </named-query>
+        <named-query name="CredentialEntity.getCredentialByEmail">
+            <query>
+                SELECT c.credentialId, c.passwordHash, c.role
+                FROM CredentialEntity c
+                WHERE c.email = :email
+            </query>
+        </named-query>
+        <attributes>
+            <id name="id">
+                <column name="id"/>
+                <generated-value strategy="IDENTITY"/>
+            </id>
+            <basic name="credentialId">
+                <column name="credential_id"/>
+            </basic>
+            <basic name="loginDateTime">
+                <column name="login_date_time"/>
+            </basic>
+            <transient name="role"/>
+        </attributes>
+
+    </entity>
 </entity-mappings>

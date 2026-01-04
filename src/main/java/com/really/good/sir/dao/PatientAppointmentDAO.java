@@ -5,84 +5,103 @@ import com.really.good.sir.entity.PatientAppointmentEntity;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import javax.persistence.EntityManager;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
-public class PatientAppointmentDAO extends BaseDao {
+import static com.really.good.sir.dao.BaseDao.getConnection;
+
+public class PatientAppointmentDAO {
     private static final Logger LOGGER = LogManager.getLogger(PatientAppointmentDAO.class);
 
-    private static final String CREATE_APPOINTMENT =
-            "INSERT INTO patient_appointments (patient_id, service_id, doctor_id, date, start_time, end_time, status) " +
-                    "VALUES (?, ?, ?, ?, ?, ?, ?)";
 
-    private static final String DELETE_APPOINTMENT =
-            "DELETE FROM patient_appointments WHERE appointment_id = ?";
+    public PatientAppointmentEntity createAppointment(PatientAppointmentEntity entity) {
+        EntityManager em = EntityManagerProvider.getEntityManager();
+        try {
+            em.getTransaction().begin();
+            em.persist(entity);
+            em.getTransaction().commit();
+            return entity;
+        } catch (Exception exception) {
+            if (em.getTransaction().isActive()) em.getTransaction().rollback();
+            LOGGER.error("Error while creating appointment", exception);
+            return null;
+        } finally {
+            em.close();
+        }
+    }
 
-    private static final String GET_ALL_APPOINTMENTS =
-            "SELECT pa.*, p.first_name AS patient_first_name, p.last_name AS patient_last_name, s.name AS service_name " +
-                    "FROM patient_appointments pa " +
-                    "JOIN patients p ON pa.patient_id = p.patient_id " +
-                    "JOIN service s ON pa.service_id = s.id";
+    public List<PatientAppointmentEntity> getAllAppointments() {
+        EntityManager em = EntityManagerProvider.getEntityManager();
+        try {
+            return em.createQuery(
+                    "SELECT p FROM PatientAppointmentEntity p",
+                    PatientAppointmentEntity.class
+            ).getResultList();
+        } finally {
+            em.close();
+        }
+    }
 
-    private static final String GET_APPOINTMENTS_BY_DOCTOR =
-            "SELECT pa.*, p.first_name AS patient_first_name, p.last_name AS patient_last_name, s.name AS service_name " +
-                    "FROM patient_appointments pa " +
-                    "JOIN patients p ON pa.patient_id = p.patient_id " +
-                    "JOIN service s ON pa.service_id = s.id " +
-                    "WHERE pa.doctor_id = ?";
-
-    private static final String GET_TODAYS_APPOINTMENTS_BY_DOCTOR =
-            "SELECT pa.*, p.first_name AS patient_first_name, p.last_name AS patient_last_name, s.name AS service_name " +
-                    "FROM patient_appointments pa " +
-                    "JOIN patients p ON pa.patient_id = p.patient_id " +
-                    "JOIN service s ON pa.service_id = s.id " +
-                    "WHERE pa.doctor_id = ? AND pa.date = CURRENT_DATE";
-
-    private static final String UPDATE_STATUS =
-            "UPDATE patient_appointments SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE appointment_id = ?";
-
-    private static final String GET_STATUS_BY_APPOINTMENT_ID =
-            "SELECT status FROM patient_appointments WHERE appointment_id = ?";
-
-    private static final String CHECK_OVERLAPPING_APPOINTMENTS = "SELECT COUNT(*) FROM patient_appointments " +
-            "WHERE doctor_id = ? AND date = ? " +
-            "AND ((start_time < ? AND end_time > ?) OR " +
-            "     (start_time >= ? AND start_time < ?))";
-
-    private static final String GET_APPOINTMENT_DETAILS_BY_PATIENT =
-            "SELECT pa.appointment_id, pa.date, pa.start_time, pa.end_time, pa.status, " +
-                    "       d.doctor_id, d.first_name AS doctor_first_name, d.last_name AS doctor_last_name, " +
-                    "       s.id AS service_id, s.name AS service_name " +
-                    "FROM patient_appointments pa " +
-                    "JOIN doctors d ON pa.doctor_id = d.doctor_id " +
-                    "JOIN service s ON pa.service_id = s.id " +
-                    "WHERE pa.patient_id = ? " +
-                    "ORDER BY pa.date DESC, pa.start_time DESC";
-
-
+    public List<PatientAppointmentEntity> getAppointmentsByDoctorId(int doctorId) {
+        EntityManager em = EntityManagerProvider.getEntityManager();
+        try {
+            return em.createQuery(
+                            "SELECT p FROM PatientAppointmentEntity p WHERE p.doctorId = :doctorId",
+                            PatientAppointmentEntity.class
+                    ).setParameter("doctorId", doctorId)
+                    .getResultList();
+        } finally {
+            em.close();
+        }
+    }
 
     public List<PatientAppointmentEntity> getTodaysAppointmentsByDoctor(int doctorId) {
-        List<PatientAppointmentEntity> list = new ArrayList<>();
-        try (Connection conn = getConnection();
-             PreparedStatement ps = conn.prepareStatement(GET_TODAYS_APPOINTMENTS_BY_DOCTOR)) {
-            ps.setInt(1, doctorId);
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    list.add(mapEntity(rs));
-                }
-            }
-        } catch (SQLException e) {
-            LOGGER.error("Error fetching today's appointments by doctor", e);
+        EntityManager em = EntityManagerProvider.getEntityManager();
+        try {
+            return em.createQuery(
+                            "SELECT p FROM PatientAppointmentEntity p " +
+                                    "WHERE p.doctorId = :doctorId AND p.date = CURRENT_DATE",
+                            PatientAppointmentEntity.class
+                    ).setParameter("doctorId", doctorId)
+                    .getResultList();
+        } finally {
+            em.close();
         }
-        return list;
+    }
+
+    public String getAppointmentStatusById(int appointmentId) {
+        EntityManager em = EntityManagerProvider.getEntityManager();
+        try {
+            return em.createQuery(
+                            "SELECT p.status FROM PatientAppointmentEntity p WHERE p.appointmentId = :id",
+                            String.class
+                    ).setParameter("id", appointmentId)
+                    .getSingleResult();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        } finally {
+            em.close();
+        }
     }
 
     public List<PatientAppointmentDetailsDTO> getAppointmentDetailsByPatientId(int patientId) {
         List<PatientAppointmentDetailsDTO> list = new ArrayList<>();
 
+        String sql = "SELECT pa.appointment_id, pa.date, pa.start_time, pa.end_time, pa.status, " +
+                "       d.doctor_id, d.first_name AS doctor_first_name, d.last_name AS doctor_last_name, " +
+                "       s.id AS service_id, s.name AS service_name " +
+                "FROM patient_appointments pa " +
+                "JOIN doctors d ON pa.doctor_id = d.doctor_id " +
+                "JOIN service s ON pa.service_id = s.id " +
+                "WHERE pa.patient_id = ? " +
+                "ORDER BY pa.date DESC, pa.start_time DESC";
+
         try (Connection conn = getConnection();
-             PreparedStatement ps = conn.prepareStatement(GET_APPOINTMENT_DETAILS_BY_PATIENT)) {
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
             ps.setInt(1, patientId);
 
             try (ResultSet rs = ps.executeQuery()) {
@@ -102,145 +121,78 @@ public class PatientAppointmentDAO extends BaseDao {
                 }
             }
         } catch (SQLException e) {
-            LOGGER.error("Error fetching appointment details by patient id {}", patientId, e);
+            LOGGER.error("Error fetching appointment details for patientId={}", patientId, e);
         }
-
-
         return list;
     }
 
 
+    /* -------------------- UPDATE -------------------- */
 
     public boolean updateStatus(int appointmentId, String status) {
-        try (Connection conn = getConnection();
-             PreparedStatement ps = conn.prepareStatement(UPDATE_STATUS)) {
-            ps.setString(1, status);
-            ps.setInt(2, appointmentId);
-            return ps.executeUpdate() > 0;
-        } catch (SQLException e) {
-            LOGGER.error("Failed to update appointment status", e);
+        EntityManager em = EntityManagerProvider.getEntityManager();
+        try {
+            em.getTransaction().begin();
+            int updated = em.createQuery(
+                            "UPDATE PatientAppointmentEntity p " +
+                                    "SET p.status = :status WHERE p.appointmentId = :id"
+                    ).setParameter("status", status)
+                    .setParameter("id", appointmentId)
+                    .executeUpdate();
+            em.getTransaction().commit();
+            return updated > 0;
+        } catch (Exception e) {
+            if (em.getTransaction().isActive()) em.getTransaction().rollback();
+            e.printStackTrace();
             return false;
+        } finally {
+            em.close();
         }
     }
 
-    public PatientAppointmentEntity createAppointment(PatientAppointmentEntity entity) {
-        try (Connection conn = getConnection();
-             PreparedStatement ps = conn.prepareStatement(CREATE_APPOINTMENT, Statement.RETURN_GENERATED_KEYS)) {
-
-            ps.setInt(1, entity.getPatientId());
-            ps.setInt(2, entity.getServiceId());
-            ps.setInt(3, entity.getDoctorId());
-            ps.setDate(4, entity.getDate());
-            ps.setTime(5, entity.getStartTime());
-            ps.setTime(6, entity.getEndTime());
-            ps.setString(7, entity.getStatus());
-
-            ps.executeUpdate();
-            try (ResultSet rs = ps.getGeneratedKeys()) {
-                if (rs.next()) {
-                    entity.setAppointmentId(rs.getInt(1));
-                }
-            }
-        } catch (SQLException e) {
-            LOGGER.error("Error creating appointment", e);
-        }
-        return entity;
-    }
+    /* -------------------- DELETE -------------------- */
 
     public boolean deleteAppointment(int appointmentId) {
-        try (Connection conn = getConnection();
-             PreparedStatement ps = conn.prepareStatement(DELETE_APPOINTMENT)) {
-            ps.setInt(1, appointmentId);
-            return ps.executeUpdate() > 0;
-        } catch (SQLException e) {
-            LOGGER.error("Error deleting appointment", e);
+        EntityManager em = EntityManagerProvider.getEntityManager();
+        try {
+            em.getTransaction().begin();
+            PatientAppointmentEntity entity =
+                    em.find(PatientAppointmentEntity.class, appointmentId);
+            if (entity == null) return false;
+            em.remove(entity);
+            em.getTransaction().commit();
+            return true;
+        } catch (Exception e) {
+            if (em.getTransaction().isActive()) em.getTransaction().rollback();
+            e.printStackTrace();
             return false;
+        } finally {
+            em.close();
         }
     }
 
-    public List<PatientAppointmentEntity> getAllAppointments() {
-        List<PatientAppointmentEntity> list = new ArrayList<>();
-        try (Connection conn = getConnection();
-             PreparedStatement ps = conn.prepareStatement(GET_ALL_APPOINTMENTS);
-             ResultSet rs = ps.executeQuery()) {
-            while (rs.next()) {
-                list.add(mapEntity(rs));
-            }
-        } catch (SQLException e) {
-            LOGGER.error("Error fetching appointments", e);
+    /* -------------------- BUSINESS CHECK -------------------- */
+
+    public boolean hasOverlappingAppointment(
+            int doctorId, Date date, Time startTime, Time endTime) {
+
+        EntityManager em = EntityManagerProvider.getEntityManager();
+        try {
+            Long count = em.createQuery(
+                            "SELECT COUNT(p) FROM PatientAppointmentEntity p " +
+                                    "WHERE p.doctorId = :doctorId AND p.date = :date " +
+                                    "AND ((p.startTime < :endTime AND p.endTime > :startTime) " +
+                                    "OR (p.startTime >= :startTime AND p.startTime < :endTime))",
+                            Long.class
+                    ).setParameter("doctorId", doctorId)
+                    .setParameter("date", date)
+                    .setParameter("startTime", startTime)
+                    .setParameter("endTime", endTime)
+                    .getSingleResult();
+
+            return count > 0;
+        } finally {
+            em.close();
         }
-        return list;
     }
-
-    public List<PatientAppointmentEntity> getAppointmentsByDoctorId(int doctorId) {
-        List<PatientAppointmentEntity> list = new ArrayList<>();
-        try (Connection conn = getConnection();
-             PreparedStatement ps = conn.prepareStatement(GET_APPOINTMENTS_BY_DOCTOR)) {
-            ps.setInt(1, doctorId);
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    list.add(mapEntity(rs));
-                }
-            }
-        } catch (SQLException e) {
-            LOGGER.error("Error fetching appointments by doctor", e);
-        }
-        return list;
-    }
-
-    public String getAppointmentStatusById(int appointmentId) {
-        try (Connection conn = getConnection();
-             PreparedStatement ps = conn.prepareStatement(GET_STATUS_BY_APPOINTMENT_ID)) {
-            ps.setInt(1, appointmentId);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    return rs.getString("status");
-                }
-            }
-        } catch (SQLException e) {
-            LOGGER.error("Error fetching appointment status", e);
-        }
-        return null;
-    }
-
-    public boolean hasOverlappingAppointment(int doctorId, Date date, Time startTime, Time endTime) {
-
-        try (Connection conn = getConnection();
-             PreparedStatement ps = conn.prepareStatement(CHECK_OVERLAPPING_APPOINTMENTS)) {
-
-            ps.setInt(1, doctorId);
-            ps.setDate(2, date);
-            ps.setTime(3, endTime);
-            ps.setTime(4, startTime);
-            ps.setTime(5, startTime);
-            ps.setTime(6, endTime);
-
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    return rs.getInt(1) > 0;
-                }
-            }
-        } catch (SQLException e) {
-            LOGGER.error("Error checking overlapping appointments for doctorId=" + doctorId, e);
-        }
-        return false;
-    }
-
-    
-    private PatientAppointmentEntity mapEntity(ResultSet rs) throws SQLException {
-        PatientAppointmentEntity entity = new PatientAppointmentEntity();
-        entity.setAppointmentId(rs.getInt("appointment_id"));
-        entity.setPatientId(rs.getInt("patient_id"));
-        entity.setServiceId(rs.getInt("service_id"));
-        entity.setDoctorId(rs.getInt("doctor_id"));
-        entity.setDate(rs.getDate("date"));
-        entity.setStartTime(rs.getTime("start_time"));
-        entity.setEndTime(rs.getTime("end_time"));
-        entity.setStatus(rs.getString("status"));
-        entity.setPatientFirstName(rs.getString("patient_first_name"));
-        entity.setPatientLastName(rs.getString("patient_last_name"));
-        entity.setServiceName(rs.getString("service_name"));
-        return entity;
-    }
-
 }

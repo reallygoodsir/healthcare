@@ -1,114 +1,104 @@
 package com.really.good.sir.dao;
 
 import com.really.good.sir.entity.UserSessionEntity;
+import com.really.good.sir.entity.CredentialEntity;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import javax.persistence.EntityManager;
+import javax.persistence.NoResultException;
+import javax.persistence.TypedQuery;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.sql.*;
+import java.sql.Timestamp;
 
-public class UserSessionDAO extends BaseDao {
+public class UserSessionDAO {
     private static final Logger LOGGER = LogManager.getLogger(UserSessionDAO.class);
 
-    // now selects role as well
-    private static final String GET_CREDENTIAL =
-            "SELECT credential_id, password_hash, role FROM credentials WHERE email = ?";
-
-    private static final String CREATE_SESSION =
-            "INSERT INTO user_sessions (credential_id, login_date_time) VALUES (?, NOW())";
-
-    // Updated to join credentials to get role
-    private static final String GET_SESSION =
-            "SELECT us.id, us.credential_id, us.login_date_time, c.role " +
-                    "FROM user_sessions us " +
-                    "JOIN credentials c ON us.credential_id = c.credential_id " +
-                    "WHERE us.id = ?";
-
-    private static final String DELETE_SESSION =
-            "DELETE FROM user_sessions WHERE id = ?";
-
     public UserSessionEntity authorize(String email, String password) {
-        try (Connection conn = getConnection()) {
+        EntityManager em = EntityManagerProvider.getEntityManager();
 
-            Integer credentialId = null;
-            String role = null;
-            try (PreparedStatement ps = conn.prepareStatement(GET_CREDENTIAL)) {
-                ps.setString(1, email);
-                try (ResultSet rs = ps.executeQuery()) {
-                    if (rs.next()) {
-                        String storedHash = rs.getString("password_hash");
-                        String inputHash = hashPassword(password);
-                        if (storedHash != null && storedHash.equals(inputHash)) {
-                            credentialId = rs.getInt("credential_id");
-                            role = rs.getString("role");
-                        } else {
-                            LOGGER.warn("Password mismatch for email [{}]", email);
-                        }
-                    } else {
-                        LOGGER.warn("No credential found for email [{}]", email);
-                    }
-                }
-            }
+        try {
+            TypedQuery<CredentialEntity> query = em.createQuery(
+                    "SELECT c FROM CredentialEntity c WHERE c.email = :email",
+                    CredentialEntity.class
+            );
+            query.setParameter("email", email);
 
-            if (credentialId == null) {
+            CredentialEntity credential;
+            try {
+                credential = query.getSingleResult();
+            } catch (NoResultException e) {
+                LOGGER.warn("No credential found for email [{}]", email);
                 return null;
             }
 
-            try (PreparedStatement ps = conn.prepareStatement(CREATE_SESSION, Statement.RETURN_GENERATED_KEYS)) {
-                ps.setInt(1, credentialId);
-                ps.executeUpdate();
-
-                try (ResultSet rs = ps.getGeneratedKeys()) {
-                    if (rs.next()) {
-                        UserSessionEntity session = new UserSessionEntity();
-                        session.setId(rs.getInt(1));
-                        session.setCredentialId(credentialId);
-                        session.setLoginDateTime(new Timestamp(System.currentTimeMillis()));
-                        session.setRole(role != null ? role : "UNKNOWN");
-                        return session;
-                    }
-                }
+            String inputHash = hashPassword(password);
+            if (!inputHash.equals(credential.getPasswordHash())) {
+                LOGGER.warn("Password mismatch for email [{}]", email);
+                return null;
             }
+
+            // Valid credential — create session
+            UserSessionEntity session = new UserSessionEntity();
+            session.setCredentialId(credential.getCredentialId());
+            session.setLoginDateTime(new Timestamp(System.currentTimeMillis()));
+
+            em.getTransaction().begin();
+            em.persist(session);
+            em.getTransaction().commit();
+
+            // Set transient role manually
+            session.setRole(credential.getRole() != null ? credential.getRole() : "UNKNOWN");
+
+            return session;
 
         } catch (Exception e) {
             LOGGER.error("Authorization failed", e);
+            if (em.getTransaction().isActive()) em.getTransaction().rollback();
+            return null;
+        } finally {
+            em.close();
         }
-        return null;
     }
 
-    public UserSessionEntity getSessionById(int sessionId) {
-        try (Connection conn = getConnection();
-             PreparedStatement ps = conn.prepareStatement(GET_SESSION)) {
 
-            ps.setInt(1, sessionId);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    UserSessionEntity session = new UserSessionEntity();
-                    session.setId(rs.getInt("id"));
-                    session.setCredentialId(rs.getInt("credential_id"));
-                    session.setLoginDateTime(rs.getTimestamp("login_date_time"));
-                    session.setRole(rs.getString("role")); // <-- now includes role
-                    return session;
-                }
+    public UserSessionEntity getSessionById(int sessionId) {
+        EntityManager em = EntityManagerProvider.getEntityManager();
+        try {
+            UserSessionEntity session = em.find(UserSessionEntity.class, sessionId);
+            if (session != null) {
+                CredentialEntity credential = em.find(CredentialEntity.class, session.getCredentialId());
+                session.setRole(credential != null && credential.getRole() != null
+                        ? credential.getRole()
+                        : "UNKNOWN");
             }
-        } catch (SQLException e) {
+            return session;
+        } catch (Exception e) {
             LOGGER.error("Error fetching session by ID {}", sessionId, e);
+            return null;
+        } finally {
+            em.close();
         }
-        return null;
     }
 
     public boolean deleteSessionById(int sessionId) {
-        try (Connection conn = getConnection();
-             PreparedStatement ps = conn.prepareStatement(DELETE_SESSION)) {
+        EntityManager em = EntityManagerProvider.getEntityManager();
+        try {
+            UserSessionEntity session = em.find(UserSessionEntity.class, sessionId);
+            if (session == null) return false;
 
-            ps.setInt(1, sessionId);
-            int affected = ps.executeUpdate();
-            return affected > 0;
+            em.getTransaction().begin();
+            em.remove(session);
+            em.getTransaction().commit();
 
-        } catch (SQLException e) {
+            return true;
+        } catch (Exception e) {
             LOGGER.error("Error deleting session with ID {}", sessionId, e);
+            if (em.getTransaction().isActive()) em.getTransaction().rollback();
             return false;
+        } finally {
+            em.close();
         }
     }
 
