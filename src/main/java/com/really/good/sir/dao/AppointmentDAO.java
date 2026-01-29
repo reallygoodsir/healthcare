@@ -1,5 +1,6 @@
 package com.really.good.sir.dao;
 
+import com.really.good.sir.config.EntityManagerConfiguration;
 import com.really.good.sir.entity.AppointmentEntity;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -21,7 +22,7 @@ public class AppointmentDAO {
     public AppointmentEntity createAppointment(AppointmentEntity entity) {
         EntityManager em = null;
         try {
-            em = EntityManagerProvider.getEntityManager();
+            em = EntityManagerConfiguration.getEntityManager();
             em.getTransaction().begin();
             em.persist(entity);
             em.getTransaction().commit();
@@ -43,7 +44,7 @@ public class AppointmentDAO {
     public AppointmentEntity getAppointmentById(int appointmentId) {
         EntityManager em = null;
         try {
-            em = EntityManagerProvider.getEntityManager();
+            em = EntityManagerConfiguration.getEntityManager();
             return em.find(AppointmentEntity.class, appointmentId);
         } catch (Exception e) {
             LOGGER.error("Error fetching appointment with id {}", appointmentId, e);
@@ -59,7 +60,7 @@ public class AppointmentDAO {
     public List<AppointmentEntity> getAllAppointments() {
         EntityManager em = null;
         try {
-            em = EntityManagerProvider.getEntityManager();
+            em = EntityManagerConfiguration.getEntityManager();
 
             CriteriaBuilder cb = em.getCriteriaBuilder();
             CriteriaQuery<AppointmentEntity> cq = cb.createQuery(AppointmentEntity.class);
@@ -84,7 +85,7 @@ public class AppointmentDAO {
     public boolean updateAppointmentStatus(int appointmentId, String status) {
         EntityManager em = null;
         try {
-            em = EntityManagerProvider.getEntityManager();
+            em = EntityManagerConfiguration.getEntityManager();
             em.getTransaction().begin();
 
             int updated = em.createNamedQuery("Appointment.updateStatus")
@@ -112,7 +113,7 @@ public class AppointmentDAO {
     public boolean deleteAppointment(int appointmentId) {
         EntityManager em = null;
         try {
-            em = EntityManagerProvider.getEntityManager();
+            em = EntityManagerConfiguration.getEntityManager();
             em.getTransaction().begin();
 
             int deleted = em.createNativeQuery(

@@ -1,7 +1,5 @@
 package com.really.good.sir.dto;
 
-import java.util.List;
-
 public class PatientAppointmentDetailsDTO {
 
     private int appointmentId;

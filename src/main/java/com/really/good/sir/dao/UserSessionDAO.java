@@ -1,5 +1,6 @@
 package com.really.good.sir.dao;
 
+import com.really.good.sir.config.EntityManagerConfiguration;
 import com.really.good.sir.entity.UserSessionEntity;
 import com.really.good.sir.entity.CredentialEntity;
 import org.apache.logging.log4j.LogManager;
@@ -16,7 +17,7 @@ public class UserSessionDAO {
     private static final Logger LOGGER = LogManager.getLogger(UserSessionDAO.class);
 
     public UserSessionEntity authorize(String email, String password) {
-        EntityManager em = EntityManagerProvider.getEntityManager();
+        EntityManager em = EntityManagerConfiguration.getEntityManager();
 
         try {
             TypedQuery<CredentialEntity> query = em.createQuery(
@@ -64,7 +65,7 @@ public class UserSessionDAO {
 
 
     public UserSessionEntity getSessionById(int sessionId) {
-        EntityManager em = EntityManagerProvider.getEntityManager();
+        EntityManager em = EntityManagerConfiguration.getEntityManager();
         try {
             UserSessionEntity session = em.find(UserSessionEntity.class, sessionId);
             if (session != null) {
@@ -83,7 +84,7 @@ public class UserSessionDAO {
     }
 
     public boolean deleteSessionById(int sessionId) {
-        EntityManager em = EntityManagerProvider.getEntityManager();
+        EntityManager em = EntityManagerConfiguration.getEntityManager();
         try {
             UserSessionEntity session = em.find(UserSessionEntity.class, sessionId);
             if (session == null) return false;

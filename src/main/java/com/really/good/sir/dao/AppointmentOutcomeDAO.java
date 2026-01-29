@@ -1,5 +1,6 @@
 package com.really.good.sir.dao;
 
+import com.really.good.sir.config.EntityManagerConfiguration;
 import com.really.good.sir.entity.AppointmentOutcomeEntity;
 
 import javax.persistence.*;
@@ -10,7 +11,7 @@ import javax.persistence.criteria.Root;
 public class AppointmentOutcomeDAO {
 
     public AppointmentOutcomeEntity saveOrUpdateOutcome(AppointmentOutcomeEntity entity) {
-        EntityManager em = EntityManagerProvider.getEntityManager();
+        EntityManager em = EntityManagerConfiguration.getEntityManager();
         try {
             em.getTransaction().begin();
 
@@ -35,7 +36,7 @@ public class AppointmentOutcomeDAO {
     }
 
     public AppointmentOutcomeEntity getOutcomeByAppointmentId(int appointmentId) {
-        EntityManager em = EntityManagerProvider.getEntityManager();
+        EntityManager em = EntityManagerConfiguration.getEntityManager();
         try {
             TypedQuery<AppointmentOutcomeEntity> query =
                     em.createNamedQuery(
@@ -51,7 +52,7 @@ public class AppointmentOutcomeDAO {
     }
 
     public AppointmentOutcomeEntity getOutcomeByAppointmentIdCriteria(int appointmentId) {
-        EntityManager em = EntityManagerProvider.getEntityManager();
+        EntityManager em = EntityManagerConfiguration.getEntityManager();
         try {
             CriteriaBuilder cb = em.getCriteriaBuilder();
             CriteriaQuery<AppointmentOutcomeEntity> cq =
@@ -72,7 +73,7 @@ public class AppointmentOutcomeDAO {
     }
 
     public AppointmentOutcomeEntity getOutcomeByAppointmentIdNative(int appointmentId) {
-        EntityManager em = EntityManagerProvider.getEntityManager();
+        EntityManager em = EntityManagerConfiguration.getEntityManager();
         try {
             return (AppointmentOutcomeEntity) em.createNativeQuery(
                             "SELECT * FROM appointment_outcomes WHERE appointment_id = ?",

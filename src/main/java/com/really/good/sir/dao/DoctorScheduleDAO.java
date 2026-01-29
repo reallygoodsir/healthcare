@@ -1,5 +1,6 @@
 package com.really.good.sir.dao;
 
+import com.really.good.sir.config.EntityManagerConfiguration;
 import com.really.good.sir.entity.DoctorScheduleEntity;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -18,7 +19,7 @@ public class DoctorScheduleDAO {
     // GET schedules by doctor
     // =====================================================
     public List<DoctorScheduleEntity> getSchedulesByDoctor(final int doctorId) {
-        EntityManager em = EntityManagerProvider.getEntityManager();
+        EntityManager em = EntityManagerConfiguration.getEntityManager();
         try {
             TypedQuery<DoctorScheduleEntity> query =
                     em.createQuery(
@@ -42,7 +43,7 @@ public class DoctorScheduleDAO {
     // EXISTS check
     // =====================================================
     public boolean scheduleExists(int scheduleId) {
-        EntityManager em = EntityManagerProvider.getEntityManager();
+        EntityManager em = EntityManagerConfiguration.getEntityManager();
         try {
             Query query = em.createQuery(
                     "SELECT COUNT(ds.id) FROM DoctorScheduleEntity ds WHERE ds.id = :id");
@@ -63,7 +64,7 @@ public class DoctorScheduleDAO {
     // CREATE
     // =====================================================
     public DoctorScheduleEntity createSchedule(final DoctorScheduleEntity schedule) {
-        EntityManager em = EntityManagerProvider.getEntityManager();
+        EntityManager em = EntityManagerConfiguration.getEntityManager();
         try {
             em.getTransaction().begin();
             em.persist(schedule);
@@ -85,7 +86,7 @@ public class DoctorScheduleDAO {
     // UPDATE
     // =====================================================
     public boolean updateSchedule(final DoctorScheduleEntity schedule) {
-        EntityManager em = EntityManagerProvider.getEntityManager();
+        EntityManager em = EntityManagerConfiguration.getEntityManager();
         try {
             em.getTransaction().begin();
 
@@ -121,7 +122,7 @@ public class DoctorScheduleDAO {
     // DELETE
     // =====================================================
     public boolean deleteSchedule(final int id) {
-        EntityManager em = EntityManagerProvider.getEntityManager();
+        EntityManager em = EntityManagerConfiguration.getEntityManager();
         try {
             em.getTransaction().begin();
 
@@ -149,7 +150,7 @@ public class DoctorScheduleDAO {
     // TODAY schedules WITH appointments (native SQL, unchanged semantics)
     // =====================================================
     public List<DoctorScheduleEntity> getSchedulesForTodayWithAppointments(final int doctorId) {
-        EntityManager em = EntityManagerProvider.getEntityManager();
+        EntityManager em = EntityManagerConfiguration.getEntityManager();
         try {
             String sql =
                     "SELECT ds.* " +
@@ -183,7 +184,7 @@ public class DoctorScheduleDAO {
             final int doctorId,
             final String scheduleDate) {
 
-        EntityManager em = EntityManagerProvider.getEntityManager();
+        EntityManager em = EntityManagerConfiguration.getEntityManager();
         try {
             TypedQuery<DoctorScheduleEntity> query =
                     em.createQuery(

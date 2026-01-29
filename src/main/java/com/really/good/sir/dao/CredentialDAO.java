@@ -1,5 +1,6 @@
 package com.really.good.sir.dao;
 
+import com.really.good.sir.config.EntityManagerConfiguration;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -26,7 +27,7 @@ public class CredentialDAO {
     public int getCredentialIdByEmail(String email) {
         EntityManager em = null;
         try {
-            em = EntityManagerProvider.getEntityManager();
+            em = EntityManagerConfiguration.getEntityManager();
             Object result = em.createNativeQuery(GET_ID_BY_EMAIL)
                     .setParameter(1, email)
                     .getResultStream()
@@ -45,7 +46,7 @@ public class CredentialDAO {
     public int getCredentialIdByPhone(String phone) {
         EntityManager em = null;
         try {
-            em = EntityManagerProvider.getEntityManager();
+            em = EntityManagerConfiguration.getEntityManager();
             Object result = em.createNativeQuery(GET_ID_BY_PHONE)
                     .setParameter(1, phone)
                     .getResultStream()
@@ -64,7 +65,7 @@ public class CredentialDAO {
     public int getCredentialIdById(Integer id) {
         EntityManager em = null;
         try {
-            em = EntityManagerProvider.getEntityManager();
+            em = EntityManagerConfiguration.getEntityManager();
             Object result = em.createNativeQuery(GET_ID_BY_ID)
                     .setParameter(1, id)
                     .getResultStream()
@@ -83,7 +84,7 @@ public class CredentialDAO {
     public boolean isEmailUnique(String email) {
         EntityManager em = null;
         try {
-            em = EntityManagerProvider.getEntityManager();
+            em = EntityManagerConfiguration.getEntityManager();
             return em.createNativeQuery(VERIFY_EMAIL)
                     .setParameter(1, email)
                     .getResultList()
@@ -99,7 +100,7 @@ public class CredentialDAO {
     public boolean isPhoneUnique(String phone) {
         EntityManager em = null;
         try {
-            em = EntityManagerProvider.getEntityManager();
+            em = EntityManagerConfiguration.getEntityManager();
             return em.createNativeQuery(VERIFY_PHONE)
                     .setParameter(1, phone)
                     .getResultList()

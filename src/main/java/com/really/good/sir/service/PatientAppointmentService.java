@@ -1,6 +1,7 @@
 package com.really.good.sir.service;
 
 import com.really.good.sir.converter.PatientAppointmentConverter;
+import com.really.good.sir.converter.PatientAppointmentDetailsConverter;
 import com.really.good.sir.dao.PatientAppointmentDAO;
 import com.really.good.sir.dto.PatientAppointmentDTO;
 import com.really.good.sir.dto.PatientAppointmentDetailsDTO;
@@ -11,6 +12,7 @@ import java.util.List;
 public class PatientAppointmentService {
     private final PatientAppointmentDAO dao = new PatientAppointmentDAO();
     private final PatientAppointmentConverter converter = new PatientAppointmentConverter();
+    private final PatientAppointmentDetailsConverter detailsConverter = new PatientAppointmentDetailsConverter();
 
     public List<PatientAppointmentDTO> getAllAppointments() {
         List<PatientAppointmentEntity> list = dao.getAllAppointments();
@@ -22,7 +24,8 @@ public class PatientAppointmentService {
     }
 
     public List<PatientAppointmentDetailsDTO> getAppointmentDetailsByPatientId(Integer patientId) {
-        return dao.getAppointmentDetailsByPatientId(patientId);
+        List<List<Object>> appointmentDetailsByPatientId = dao.getAppointmentDetailsByPatientId(patientId);
+        return detailsConverter.convert(appointmentDetailsByPatientId);
     }
 
     public List<PatientAppointmentDTO> getAppointmentsByDoctorId(int doctorId) {

@@ -1,5 +1,6 @@
 package com.really.good.sir.dao;
 
+import com.really.good.sir.config.EntityManagerConfiguration;
 import com.really.good.sir.entity.PatientEntity;
 import com.really.good.sir.entity.CredentialEntity;
 import org.apache.logging.log4j.LogManager;
@@ -14,7 +15,7 @@ public class PatientDAO {
     private static final Logger LOGGER = LogManager.getLogger(PatientDAO.class);
 
     public PatientEntity createPatient(PatientEntity patientEntity) {
-        EntityManager entityManager = EntityManagerProvider.getEntityManager();
+        EntityManager entityManager = EntityManagerConfiguration.getEntityManager();
         try {
             entityManager.getTransaction().begin();
 
@@ -35,7 +36,7 @@ public class PatientDAO {
     }
 
     public List<PatientEntity> getAllPatients() {
-        EntityManager entityManager = EntityManagerProvider.getEntityManager();
+        EntityManager entityManager = EntityManagerConfiguration.getEntityManager();
         try {
             return entityManager.createQuery(
                     "SELECT DISTINCT p FROM PatientEntity p " +
@@ -48,7 +49,7 @@ public class PatientDAO {
     }
 
     public PatientEntity getPatientById(int patientId) {
-        EntityManager entityManager = EntityManagerProvider.getEntityManager();
+        EntityManager entityManager = EntityManagerConfiguration.getEntityManager();
         try {
             List<PatientEntity> results = entityManager.createQuery(
                             "SELECT p FROM PatientEntity p " +
@@ -66,7 +67,7 @@ public class PatientDAO {
     }
 
     public PatientEntity getPatientByPhone(String phone) {
-        EntityManager entityManager = EntityManagerProvider.getEntityManager();
+        EntityManager entityManager = EntityManagerConfiguration.getEntityManager();
         try {
             List<PatientEntity> results = entityManager.createQuery(
                             "SELECT p FROM PatientEntity p " +
@@ -84,7 +85,7 @@ public class PatientDAO {
     }
 
     public boolean updatePatient(PatientEntity patientEntity) {
-        EntityManager entityManager = EntityManagerProvider.getEntityManager();
+        EntityManager entityManager = EntityManagerConfiguration.getEntityManager();
         try {
             entityManager.getTransaction().begin();
 
@@ -128,7 +129,7 @@ public class PatientDAO {
 
     // DELETE
     public boolean deletePatient(int patientId) {
-        EntityManager entityManager = EntityManagerProvider.getEntityManager();
+        EntityManager entityManager = EntityManagerConfiguration.getEntityManager();
         try {
             entityManager.getTransaction().begin();
             PatientEntity patient = entityManager.find(PatientEntity.class, patientId);
@@ -148,7 +149,7 @@ public class PatientDAO {
 
     // LOOKUP
     public int getPatientIdByCredentialId(int credentialId) {
-        EntityManager entityManager = EntityManagerProvider.getEntityManager();
+        EntityManager entityManager = EntityManagerConfiguration.getEntityManager();
         try {
             TypedQuery<Integer> query = entityManager.createQuery(
                     "SELECT p.id FROM PatientEntity p WHERE p.credentialEntity.credentialId = :cid",

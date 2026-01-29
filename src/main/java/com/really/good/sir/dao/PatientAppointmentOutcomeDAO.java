@@ -1,5 +1,6 @@
 package com.really.good.sir.dao;
 
+import com.really.good.sir.config.EntityManagerConfiguration;
 import com.really.good.sir.entity.PatientAppointmentOutcomeEntity;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -12,7 +13,7 @@ public class PatientAppointmentOutcomeDAO {
     private static final Logger LOGGER = LogManager.getLogger(PatientAppointmentOutcomeDAO.class);
 
     public PatientAppointmentOutcomeEntity getOutcomeByAppointmentId(int appointmentId) {
-        EntityManager em = EntityManagerProvider.getEntityManager();;
+        EntityManager em = EntityManagerConfiguration.getEntityManager();;
         try {
             return em.createNamedQuery("PatientAppointmentOutcomeEntity.getByAppointmentId", PatientAppointmentOutcomeEntity.class)
                     .setParameter("appointmentId", appointmentId)
@@ -29,7 +30,7 @@ public class PatientAppointmentOutcomeDAO {
 
 
     public PatientAppointmentOutcomeEntity saveOrUpdateOutcome(PatientAppointmentOutcomeEntity entity) throws Exception {
-        EntityManager em = EntityManagerProvider.getEntityManager();;
+        EntityManager em = EntityManagerConfiguration.getEntityManager();;
         try {
             em.getTransaction().begin();
 

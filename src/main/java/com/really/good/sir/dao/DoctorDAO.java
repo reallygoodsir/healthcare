@@ -1,5 +1,6 @@
 package com.really.good.sir.dao;
 
+import com.really.good.sir.config.EntityManagerConfiguration;
 import com.really.good.sir.entity.CredentialEntity;
 import com.really.good.sir.entity.DoctorEntity;
 import org.apache.logging.log4j.LogManager;
@@ -13,7 +14,7 @@ public class DoctorDAO {
     private static final Logger LOGGER = LogManager.getLogger(DoctorDAO.class);
 
     public DoctorEntity createDoctor(final DoctorEntity doctorEntity) {
-        EntityManager em = EntityManagerProvider.getEntityManager();
+        EntityManager em = EntityManagerConfiguration.getEntityManager();
         try {
             em.getTransaction().begin();
             em.persist(doctorEntity.getCredentialEntity());
@@ -33,7 +34,7 @@ public class DoctorDAO {
 
     // --- GET ALL DOCTORS ---
     public List<DoctorEntity> getAllDoctors() {
-        EntityManager em = EntityManagerProvider.getEntityManager();
+        EntityManager em = EntityManagerConfiguration.getEntityManager();
         try {
             TypedQuery<DoctorEntity> query = em.createQuery(
                     "SELECT d FROM DoctorEntity d " +
@@ -49,7 +50,7 @@ public class DoctorDAO {
 
     // --- GET DOCTOR BY ID ---
     public DoctorEntity getDoctorById(Integer doctorId) {
-        EntityManager em = EntityManagerProvider.getEntityManager();
+        EntityManager em = EntityManagerConfiguration.getEntityManager();
         try {
             TypedQuery<DoctorEntity> query = em.createQuery(
                     "SELECT d FROM DoctorEntity d " +
@@ -71,7 +72,7 @@ public class DoctorDAO {
 
     // --- GET DOCTORS BY SPECIALIZATION (or service, adapt JPQL as needed) ---
     public List<DoctorEntity> getDoctorsBySpecializationId(int specializationId) {
-        EntityManager em = EntityManagerProvider.getEntityManager();
+        EntityManager em = EntityManagerConfiguration.getEntityManager();
         try {
             TypedQuery<DoctorEntity> query = em.createQuery(
                     "SELECT d FROM DoctorEntity d WHERE d.specializationId = :specId", DoctorEntity.class);
@@ -84,7 +85,7 @@ public class DoctorDAO {
 
     // --- UPDATE DOCTOR ---
     public DoctorEntity updateDoctor(DoctorEntity incoming) {
-        EntityManager em = EntityManagerProvider.getEntityManager();
+        EntityManager em = EntityManagerConfiguration.getEntityManager();
         try {
             em.getTransaction().begin();
 
@@ -115,7 +116,7 @@ public class DoctorDAO {
 
     // --- DELETE DOCTOR ---
     public boolean deleteDoctor(Integer doctorId) {
-        EntityManager em = EntityManagerProvider.getEntityManager();
+        EntityManager em = EntityManagerConfiguration.getEntityManager();
         try {
             em.getTransaction().begin();
 
@@ -139,7 +140,7 @@ public class DoctorDAO {
 
     // --- GET DOCTOR ID BY CREDENTIAL ID ---
     public Integer getDoctorIdByCredentialId(Integer credentialId) {
-        EntityManager em = EntityManagerProvider.getEntityManager();
+        EntityManager em = EntityManagerConfiguration.getEntityManager();
         try {
             TypedQuery<Integer> query = em.createQuery(
                     "SELECT d.id FROM DoctorEntity d WHERE d.credentialEntity.credentialId = :credId", Integer.class);
@@ -152,7 +153,7 @@ public class DoctorDAO {
     }
 
     public List<DoctorEntity> getDoctorsByServiceId(final int serviceId) {
-        EntityManager em = EntityManagerProvider.getEntityManager();
+        EntityManager em = EntityManagerConfiguration.getEntityManager();
         try {
             String sql = "SELECT d.* FROM doctors d " +
                     "WHERE d.specialization_id IN " +

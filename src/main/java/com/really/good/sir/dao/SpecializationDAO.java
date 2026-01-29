@@ -1,5 +1,6 @@
 package com.really.good.sir.dao;
 
+import com.really.good.sir.config.EntityManagerConfiguration;
 import com.really.good.sir.entity.SpecializationEntity;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -16,7 +17,7 @@ public class SpecializationDAO {
     public List<SpecializationEntity> getAllSpecializations() {
         EntityManager em = null;
         try {
-            em = EntityManagerProvider.getEntityManager();
+            em = EntityManagerConfiguration.getEntityManager();
 
             // Named query defined in orm.xml
             TypedQuery<SpecializationEntity> query = em.createNamedQuery("Specialization.findAll", SpecializationEntity.class);
@@ -34,7 +35,7 @@ public class SpecializationDAO {
     public SpecializationEntity getSpecializationById(int id) {
         EntityManager em = null;
         try {
-            em = EntityManagerProvider.getEntityManager();
+            em = EntityManagerConfiguration.getEntityManager();
 
             // Using native SQL query
             return (SpecializationEntity) em.createNativeQuery(
