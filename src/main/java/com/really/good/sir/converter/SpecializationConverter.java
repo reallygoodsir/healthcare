@@ -2,9 +2,11 @@ package com.really.good.sir.converter;
 
 import com.really.good.sir.dto.SpecializationDTO;
 import com.really.good.sir.entity.SpecializationEntity;
+import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
+@Component
 
 public class SpecializationConverter {
     public SpecializationEntity convert(final SpecializationDTO specializationDTO) {

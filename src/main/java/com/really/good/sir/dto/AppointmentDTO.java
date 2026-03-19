@@ -14,6 +14,11 @@ public class AppointmentDTO {
     public AppointmentDTO() {
     }
 
+    public AppointmentDTO(Integer appointmentId, String status) {
+        this.appointmentId = appointmentId;
+        this.status = status;
+    }
+
     public Integer getAppointmentId() {
         return appointmentId;
     }

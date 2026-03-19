@@ -4,13 +4,14 @@ import com.really.good.sir.config.EntityManagerConfiguration;
 import com.really.good.sir.entity.DoctorScheduleEntity;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.stereotype.Repository;
 
 import javax.persistence.EntityManager;
 import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 import java.sql.Date;
 import java.util.List;
-
+@Repository
 public class DoctorScheduleDAO {
 
     private static final Logger LOGGER = LogManager.getLogger(DoctorScheduleDAO.class);

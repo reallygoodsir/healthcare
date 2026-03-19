@@ -4,12 +4,13 @@ import com.really.good.sir.config.EntityManagerConfiguration;
 import com.really.good.sir.entity.SpecializationEntity;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
-
+@Repository
 public class SpecializationDAO {
     private static final Logger LOGGER = LogManager.getLogger(SpecializationDAO.class);
 

@@ -2,6 +2,9 @@ package com.really.good.sir.converter;
 
 import com.really.good.sir.dto.PatientAppointmentOutcomeDTO;
 import com.really.good.sir.entity.PatientAppointmentOutcomeEntity;
+import org.springframework.stereotype.Component;
+
+@Component
 
 public class PatientAppointmentOutcomeConverter {
 

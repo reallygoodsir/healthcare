@@ -6,13 +6,14 @@ import com.really.good.sir.entity.PatientAppointmentEntity;
 import com.really.good.sir.entity.ServiceEntity;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.stereotype.Repository;
 
 import javax.persistence.EntityManager;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-
+@Repository
 public class PatientAppointmentDAO {
     private static final Logger LOGGER = LogManager.getLogger(PatientAppointmentDAO.class);
 

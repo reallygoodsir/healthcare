@@ -2,6 +2,7 @@ package com.really.good.sir.converter;
 
 import com.really.good.sir.dto.DoctorScheduleDTO;
 import com.really.good.sir.entity.DoctorScheduleEntity;
+import org.springframework.stereotype.Component;
 
 import java.sql.Date;
 import java.sql.Time;
@@ -9,6 +10,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
+@Component
 
 public class DoctorScheduleConverter {
     private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");

@@ -3,25 +3,27 @@ package com.really.good.sir.service;
 import com.really.good.sir.converter.SpecializationConverter;
 import com.really.good.sir.dao.SpecializationDAO;
 import com.really.good.sir.dto.SpecializationDTO;
-import com.really.good.sir.entity.SpecializationEntity;
-import com.really.good.sir.resources.DoctorResource;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 import java.util.List;
 
+@Service
 public class SpecializationService {
-    private static final Logger LOGGER = LogManager.getLogger(DoctorResource.class);
-    private final SpecializationConverter specializationConverter = new SpecializationConverter();
-    private final SpecializationDAO specializationDAO = new SpecializationDAO();
+
+    private final SpecializationDAO dao;
+    private final SpecializationConverter converter;
+
+    @Autowired
+    public SpecializationService(SpecializationDAO dao, SpecializationConverter converter) {
+        this.dao = dao;
+        this.converter = converter;
+    }
 
     public List<SpecializationDTO> getAllSpecializations(){
-        final List<SpecializationEntity> specializationEntities = specializationDAO.getAllSpecializations();
-        return specializationConverter.convert(specializationEntities);
+        return converter.convert(dao.getAllSpecializations());
     }
 
     public SpecializationDTO getSpecializationById(int specializationId){
-        SpecializationEntity entity = specializationDAO.getSpecializationById(specializationId);
-        return specializationConverter.convert(entity);
+        return converter.convert(dao.getSpecializationById(specializationId));
     }
 }

@@ -2,6 +2,8 @@ package com.really.good.sir.validator;
 
 import com.really.good.sir.dao.PatientAppointmentDAO;
 import com.really.good.sir.dto.PatientAppointmentDTO;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import java.sql.Date;
 import java.sql.Time;
@@ -10,12 +12,18 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 
+@Component
 public class PatientAppointmentValidator {
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
 
-    private final PatientAppointmentDAO patientAppointmentDAO = new PatientAppointmentDAO();
+    private final PatientAppointmentDAO patientAppointmentDAO;
+
+    @Autowired
+    public PatientAppointmentValidator(PatientAppointmentDAO patientAppointmentDAO) {
+        this.patientAppointmentDAO = patientAppointmentDAO;
+    }
 
     public boolean isDateValid(PatientAppointmentDTO appointment) {
         String date = appointment.getDate();
@@ -25,7 +33,6 @@ public class PatientAppointmentValidator {
         try {
             LocalDate appointmentDate = LocalDate.parse(date, DATE_FORMATTER);
             LocalDate today = LocalDate.now();
-            // appointment date must be today or in the future
             return appointmentDate.isEqual(today) || appointmentDate.isAfter(today);
         } catch (DateTimeParseException e) {
             return false;
@@ -52,7 +59,6 @@ public class PatientAppointmentValidator {
             return false;
         }
         try {
-            // convert DTO values to java.sql.Date / java.sql.Time for SQL method
             Date sqlDate = Date.valueOf(appointment.getDate());
             Time sqlStart = Time.valueOf(LocalTime.parse(appointment.getStartTime(), TIME_FORMATTER));
             Time sqlEnd = Time.valueOf(LocalTime.parse(appointment.getEndTime(), TIME_FORMATTER));

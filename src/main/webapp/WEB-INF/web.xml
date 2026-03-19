@@ -1,32 +1,41 @@
 <!DOCTYPE web-app PUBLIC
         "-//Sun Microsystems, Inc.//DTD Web Application 2.3//EN"
-        "http://java.sun.com/dtd/web-app_2_3.dtd" >
+        "http://java.sun.com/dtd/web-app_2_3.dtd">
 
 <web-app>
     <display-name>healthcare application</display-name>
 
+    <!-- Dispatcher Servlet -->
     <servlet>
-        <servlet-name>ServletContainer</servlet-name>
-        <servlet-class>org.glassfish.jersey.servlet.ServletContainer</servlet-class>
+        <servlet-name>spring-dispatcher</servlet-name>
+        <servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+
+        <!-- Use Annotation-based config -->
         <init-param>
-            <param-name>jersey.config.server.provider.packages</param-name>
-            <param-value>com.really.good.sir</param-value>
+            <param-name>contextClass</param-name>
+            <param-value>org.springframework.web.context.support.AnnotationConfigWebApplicationContext</param-value>
         </init-param>
+
+        <!-- Point to WebConfig class -->
         <init-param>
-            <param-name>jersey.config.server.provider.classnames</param-name>
-            <param-value>
-                org.glassfish.jersey.server.filter.RolesAllowedDynamicFeature
-            </param-value>
+            <param-name>contextConfigLocation</param-name>
+            <param-value>com.really.good.sir.config.WebConfig</param-value>
         </init-param>
+
         <load-on-startup>1</load-on-startup>
     </servlet>
 
-
     <servlet-mapping>
-        <servlet-name>ServletContainer</servlet-name>
+        <servlet-name>spring-dispatcher</servlet-name>
         <url-pattern>/api/*</url-pattern>
     </servlet-mapping>
 
+    <!-- Optional: MySQL cleanup listener -->
+    <listener>
+        <listener-class>com.really.good.sir.listener.MySQLCleanupListener</listener-class>
+    </listener>
+
+    <!-- Welcome file -->
     <welcome-file-list>
         <welcome-file>home.html</welcome-file>
     </welcome-file-list>

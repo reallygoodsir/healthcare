@@ -3,9 +3,11 @@ package com.really.good.sir.converter;
 
 import com.really.good.sir.dto.PatientAppointmentDTO;
 import com.really.good.sir.entity.PatientAppointmentEntity;
+import org.springframework.stereotype.Component;
 
 import java.sql.Date;
 import java.sql.Time;
+@Component
 
 public class PatientAppointmentConverter {
 

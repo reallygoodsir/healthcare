@@ -4,12 +4,13 @@ import com.really.good.sir.config.EntityManagerConfiguration;
 import com.really.good.sir.entity.ServiceEntity;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.stereotype.Repository;
 
 import javax.persistence.EntityManager;
 import java.util.List;
 import javax.persistence.*;
 import javax.persistence.criteria.*;
-
+@Repository
 public class ServiceDAO {
 
     private static final Logger LOGGER = LogManager.getLogger(ServiceDAO.class);

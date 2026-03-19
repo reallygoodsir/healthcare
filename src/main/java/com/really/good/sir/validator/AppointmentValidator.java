@@ -6,22 +6,36 @@ import com.really.good.sir.dao.DoctorScheduleDAO;
 import com.really.good.sir.dao.PatientDAO;
 import com.really.good.sir.dto.AppointmentDTO;
 import com.really.good.sir.dto.AppointmentOutcomeDTO;
-import com.really.good.sir.dto.PatientDTO;
 import com.really.good.sir.entity.AppointmentEntity;
 import com.really.good.sir.entity.DoctorEntity;
 import com.really.good.sir.entity.PatientEntity;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
 import java.time.Period;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 
+@Component
 public class AppointmentValidator {
-    private final DoctorScheduleDAO doctorScheduleDAO = new DoctorScheduleDAO();
-    private final DoctorDAO doctorDAO = new DoctorDAO();
-    private final PatientDAO patientDAO = new PatientDAO();
-    private final AppointmentDAO appointmentDAO = new AppointmentDAO();
+
+    private final DoctorScheduleDAO doctorScheduleDAO;
+    private final DoctorDAO doctorDAO;
+    private final PatientDAO patientDAO;
+    private final AppointmentDAO appointmentDAO;
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+
+    @Autowired
+    public AppointmentValidator(DoctorScheduleDAO doctorScheduleDAO,
+                                DoctorDAO doctorDAO,
+                                PatientDAO patientDAO,
+                                AppointmentDAO appointmentDAO) {
+        this.doctorScheduleDAO = doctorScheduleDAO;
+        this.doctorDAO = doctorDAO;
+        this.patientDAO = patientDAO;
+        this.appointmentDAO = appointmentDAO;
+    }
 
     public boolean isScheduleIdEmpty(AppointmentDTO appointmentDTO) {
         return appointmentDTO.getScheduleId() == null;
@@ -71,7 +85,6 @@ public class AppointmentValidator {
         return doctor == null;
     }
 
-
     public boolean isPatientIdInvalid(AppointmentDTO appointmentDTO) {
         PatientEntity patient = patientDAO.getPatientById(appointmentDTO.getPatientId());
         return patient == null;
@@ -93,5 +106,4 @@ public class AppointmentValidator {
             return false;
         }
     }
-
 }

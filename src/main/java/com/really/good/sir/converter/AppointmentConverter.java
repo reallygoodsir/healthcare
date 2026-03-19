@@ -2,10 +2,12 @@ package com.really.good.sir.converter;
 
 import com.really.good.sir.dto.AppointmentDTO;
 import com.really.good.sir.entity.AppointmentEntity;
+import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
 
+@Component
 public class AppointmentConverter {
 
     public AppointmentEntity convert(AppointmentDTO dto) {

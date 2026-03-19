@@ -4,6 +4,7 @@ import com.really.good.sir.config.EntityManagerConfiguration;
 import com.really.good.sir.entity.AppointmentEntity;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.stereotype.Repository;
 
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
@@ -11,7 +12,7 @@ import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Root;
 import java.util.List;
-
+@Repository
 public class AppointmentDAO {
 
     private static final Logger LOGGER = LogManager.getLogger(AppointmentDAO.class);

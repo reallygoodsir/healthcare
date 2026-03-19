@@ -4,10 +4,11 @@ import com.really.good.sir.config.EntityManagerConfiguration;
 import com.really.good.sir.entity.PatientAppointmentOutcomeEntity;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.stereotype.Repository;
 
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
-
+@Repository
 public class PatientAppointmentOutcomeDAO {
 
     private static final Logger LOGGER = LogManager.getLogger(PatientAppointmentOutcomeDAO.class);

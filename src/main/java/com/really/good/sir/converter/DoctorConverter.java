@@ -5,9 +5,11 @@ import com.really.good.sir.entity.CredentialEntity;
 import com.really.good.sir.entity.DoctorEntity;
 import com.really.good.sir.entity.Role;
 import com.really.good.sir.service.PasswordGenerator;
+import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
+@Component
 
 public class DoctorConverter {
 

@@ -5,16 +5,26 @@ import com.really.good.sir.dao.DoctorDAO;
 import com.really.good.sir.dao.SpecializationDAO;
 import com.really.good.sir.dto.DoctorDTO;
 import com.really.good.sir.entity.DoctorEntity;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
+@Component
 public class DoctorValidator {
 
     private static final String NAME_REGEX = "^[A-Za-z\\s'-]{2,25}$";
     private static final String EMAIL_REGEX = "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$";
     private static final String PHONE_REGEX = "^[+()\\d\\s-]{7,20}$";
-    private final DoctorDAO doctorDAO = new DoctorDAO();
-    private final CredentialDAO credentialDAO = new CredentialDAO();
 
-    private final SpecializationDAO specializationDAO = new SpecializationDAO();
+    private final DoctorDAO doctorDAO;
+    private final CredentialDAO credentialDAO;
+    private final SpecializationDAO specializationDAO;
+
+    @Autowired
+    public DoctorValidator(DoctorDAO doctorDAO, CredentialDAO credentialDAO, SpecializationDAO specializationDAO) {
+        this.doctorDAO = doctorDAO;
+        this.credentialDAO = credentialDAO;
+        this.specializationDAO = specializationDAO;
+    }
 
     public boolean isIdEmpty(DoctorDTO doctor) {
         return doctor.getId() == null;
@@ -43,7 +53,6 @@ public class DoctorValidator {
         }
         return true;
     }
-
 
     public boolean isPhoneValid(DoctorDTO doctor) {
         String phone = doctor.getPhone();

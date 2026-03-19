@@ -2,6 +2,9 @@ package com.really.good.sir.converter;
 
 import com.really.good.sir.dto.UserSessionDTO;
 import com.really.good.sir.entity.UserSessionEntity;
+import org.springframework.stereotype.Component;
+
+@Component
 
 public class UserSessionConverter {
     public UserSessionDTO convert(UserSessionEntity entity) {

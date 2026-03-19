@@ -1,7 +1,9 @@
 package com.really.good.sir.validator;
 
 import com.really.good.sir.dto.PatientAppointmentOutcomeDTO;
+import org.springframework.stereotype.Component;
 
+@Component
 public class PatientAppointmentOutcomeValidator {
 
     public boolean isResultValid(PatientAppointmentOutcomeDTO outcome) {

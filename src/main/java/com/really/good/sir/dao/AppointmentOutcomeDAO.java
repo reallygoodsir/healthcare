@@ -2,12 +2,14 @@ package com.really.good.sir.dao;
 
 import com.really.good.sir.config.EntityManagerConfiguration;
 import com.really.good.sir.entity.AppointmentOutcomeEntity;
+import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Repository;
 
 import javax.persistence.*;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Root;
-
+@Repository
 public class AppointmentOutcomeDAO {
 
     public AppointmentOutcomeEntity saveOrUpdateOutcome(AppointmentOutcomeEntity entity) {

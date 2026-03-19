@@ -11,34 +11,40 @@ import com.really.good.sir.validator.DoctorValidator;
 import com.really.good.sir.validator.ServiceValidator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
-import javax.ws.rs.*;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriInfo;
 import java.util.List;
 
-@Path("/doctors")
-@Produces(MediaType.APPLICATION_JSON)
-@Consumes(MediaType.APPLICATION_JSON)
-public class DoctorResource {
-    private static final Logger LOGGER = LogManager.getLogger(DoctorResource.class);
-    private final DoctorService doctorService = new DoctorService();
-    private final UserSessionService userSessionService = new UserSessionService();
-    private final DoctorValidator doctorValidator = new DoctorValidator();
-    private final ServiceValidator serviceValidator = new ServiceValidator();
+@RestController
+@RequestMapping("/doctors")
+public class DoctorController {
 
-    @GET
-    public Response getAllDoctors(@CookieParam("session_id") final String sessionId) {
+    private static final Logger LOGGER = LogManager.getLogger(DoctorController.class);
+
+    private final DoctorService doctorService;
+    private final UserSessionService userSessionService;
+    private final DoctorValidator doctorValidator;
+    private final ServiceValidator serviceValidator;
+
+    public DoctorController(DoctorService doctorService,
+                            UserSessionService userSessionService,
+                            DoctorValidator doctorValidator,
+                            ServiceValidator serviceValidator) {
+        this.doctorService = doctorService;
+        this.userSessionService = userSessionService;
+        this.doctorValidator = doctorValidator;
+        this.serviceValidator = serviceValidator;
+    }
+
+    @GetMapping
+    public ResponseEntity<?> getAllDoctors(@CookieValue(value = "session_id", required = false) final String sessionId) {
         try {
             if (sessionId == null || sessionId.isEmpty()) {
                 LOGGER.error("Session id is empty");
                 final ErrorDTO errorDTO = new ErrorDTO();
                 errorDTO.setMessage("Session id is empty");
-                return Response.status(Response.Status.UNAUTHORIZED)
-                        .entity(errorDTO)
-                        .build();
+                return ResponseEntity.status(401).body(errorDTO);
             }
 
             int sessionIdInt;
@@ -48,9 +54,7 @@ public class DoctorResource {
                 LOGGER.error("Session id is not valid", exception);
                 ErrorDTO errorDTO = new ErrorDTO();
                 errorDTO.setMessage("Not authorized. Session id has incorrect format");
-                return Response.status(Response.Status.UNAUTHORIZED)
-                        .entity(errorDTO)
-                        .build();
+                return ResponseEntity.status(401).body(errorDTO);
             }
 
             UserSessionDTO session = userSessionService.getSessionById(sessionIdInt);
@@ -58,9 +62,7 @@ public class DoctorResource {
                 LOGGER.error("Session id does not exist [{}]", sessionId);
                 final ErrorDTO errorDTO = new ErrorDTO();
                 errorDTO.setMessage("Not authorized. Session id does not exist");
-                return Response.status(Response.Status.UNAUTHORIZED)
-                        .entity(errorDTO)
-                        .build();
+                return ResponseEntity.status(401).body(errorDTO);
             }
 
             if (!Role.ADMIN.toString().equalsIgnoreCase(session.getRole()) &&
@@ -68,33 +70,26 @@ public class DoctorResource {
                 LOGGER.error("Session id does not belong to admin or call center agent role [{}]", sessionIdInt);
                 final ErrorDTO errorDTO = new ErrorDTO();
                 errorDTO.setMessage("Forbidden to access resource. Role is not allowed.");
-                return Response.status(Response.Status.FORBIDDEN)
-                        .entity(errorDTO)
-                        .build();
+                return ResponseEntity.status(403).body(errorDTO);
             }
             final List<DoctorDTO> doctorDTOs = doctorService.getAllDoctors();
-            return Response.ok(doctorDTOs).build();
+            return ResponseEntity.ok(doctorDTOs);
         } catch (final Exception exception) {
             LOGGER.error("Error trying to get all doctors", exception);
             final ErrorDTO errorDTO = new ErrorDTO();
             errorDTO.setMessage("Error trying to get all doctors");
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity(errorDTO)
-                    .build();
+            return ResponseEntity.status(500).body(errorDTO);
         }
     }
 
-    @GET
-    @Path("/{doctorId}")
-    public Response getDoctor(@PathParam("doctorId") final Integer doctorId,
-                              @CookieParam("session_id") final String sessionId) {
+    @GetMapping("/{doctorId}")
+    public ResponseEntity<?> getDoctor(@PathVariable final Integer doctorId,
+                                       @CookieValue(value = "session_id", required = false) final String sessionId) {
         try {
             if (sessionId == null || sessionId.isEmpty()) {
                 final ErrorDTO errorDTO = new ErrorDTO();
                 errorDTO.setMessage("Session id is empty");
-                return Response.status(Response.Status.UNAUTHORIZED)
-                        .entity(errorDTO)
-                        .build();
+                return ResponseEntity.status(401).body(errorDTO);
             }
 
             int sessionIdInt;
@@ -104,9 +99,7 @@ public class DoctorResource {
                 LOGGER.error("Session id is not valid", exception);
                 ErrorDTO errorDTO = new ErrorDTO();
                 errorDTO.setMessage("Not authorized. Session id has incorrect format");
-                return Response.status(Response.Status.UNAUTHORIZED)
-                        .entity(errorDTO)
-                        .build();
+                return ResponseEntity.status(401).body(errorDTO);
             }
 
             UserSessionDTO session = userSessionService.getSessionById(sessionIdInt);
@@ -114,61 +107,48 @@ public class DoctorResource {
                 LOGGER.error("Session id does not exist [{}]", sessionId);
                 final ErrorDTO errorDTO = new ErrorDTO();
                 errorDTO.setMessage("Not authorized. Session id does not exist");
-                return Response.status(Response.Status.UNAUTHORIZED)
-                        .entity(errorDTO)
-                        .build();
+                return ResponseEntity.status(401).body(errorDTO);
             }
 
             if (!Role.CALL_CENTER_AGENT.toString().equalsIgnoreCase(session.getRole())) {
                 LOGGER.error("Session id does not belong to call center agent role [{}]", sessionIdInt);
                 final ErrorDTO errorDTO = new ErrorDTO();
                 errorDTO.setMessage("Forbidden to access resource. Role is not allowed.");
-                return Response.status(Response.Status.FORBIDDEN)
-                        .entity(errorDTO)
-                        .build();
+                return ResponseEntity.status(403).body(errorDTO);
             }
 
             if (doctorValidator.isIdEmpty(doctorId)) {
                 LOGGER.error("Doctor id is empty");
                 final ErrorDTO errorDTO = new ErrorDTO();
                 errorDTO.setMessage("No doctor id provided");
-                return Response.status(Response.Status.BAD_REQUEST)
-                        .entity(errorDTO)
-                        .build();
+                return ResponseEntity.badRequest().body(errorDTO);
             }
 
             if (!doctorValidator.idExists(doctorId)) {
                 LOGGER.error("Doctor id does not exist");
                 final ErrorDTO errorDTO = new ErrorDTO();
                 errorDTO.setMessage("Doctor id does not exist");
-                return Response.status(Response.Status.BAD_REQUEST)
-                        .entity(errorDTO)
-                        .build();
+                return ResponseEntity.badRequest().body(errorDTO);
             }
 
             final DoctorDTO doctorDTO = doctorService.getDoctorById(doctorId);
-            return Response.ok(doctorDTO).build();
+            return ResponseEntity.ok(doctorDTO);
         } catch (final Exception exception) {
             LOGGER.error("Error trying to get doctor by id", exception);
             final ErrorDTO errorDTO = new ErrorDTO();
             errorDTO.setMessage("Error trying to get doctor by id");
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity(errorDTO)
-                    .build();
+            return ResponseEntity.status(500).body(errorDTO);
         }
     }
 
-    @GET
-    @Path("/service/{serviceId}")
-    public Response getDoctorsByService(@PathParam("serviceId") final Integer serviceId,
-                                        @CookieParam("session_id") final String sessionId) {
+    @GetMapping("/service/{serviceId}")
+    public ResponseEntity<?> getDoctorsByService(@PathVariable final Integer serviceId,
+                                                 @CookieValue(value = "session_id", required = false) final String sessionId) {
         try {
             if (sessionId == null || sessionId.isEmpty()) {
                 final ErrorDTO errorDTO = new ErrorDTO();
                 errorDTO.setMessage("Session id is empty");
-                return Response.status(Response.Status.UNAUTHORIZED)
-                        .entity(errorDTO)
-                        .build();
+                return ResponseEntity.status(401).body(errorDTO);
             }
 
             int sessionIdInt;
@@ -178,9 +158,7 @@ public class DoctorResource {
                 LOGGER.error("Session id is not valid", exception);
                 ErrorDTO errorDTO = new ErrorDTO();
                 errorDTO.setMessage("Not authorized. Session id has incorrect format");
-                return Response.status(Response.Status.UNAUTHORIZED)
-                        .entity(errorDTO)
-                        .build();
+                return ResponseEntity.status(401).body(errorDTO);
             }
 
             UserSessionDTO session = userSessionService.getSessionById(sessionIdInt);
@@ -188,61 +166,49 @@ public class DoctorResource {
                 LOGGER.error("Session id does not exist [{}]", sessionId);
                 final ErrorDTO errorDTO = new ErrorDTO();
                 errorDTO.setMessage("Not authorized. Session id does not exist");
-                return Response.status(Response.Status.UNAUTHORIZED)
-                        .entity(errorDTO)
-                        .build();
+                return ResponseEntity.status(401).body(errorDTO);
             }
 
             if (!Role.CALL_CENTER_AGENT.toString().equalsIgnoreCase(session.getRole())) {
                 LOGGER.error("Session id does not belong to call center agent role [{}]", sessionIdInt);
                 final ErrorDTO errorDTO = new ErrorDTO();
                 errorDTO.setMessage("Forbidden to access resource. Role is not allowed.");
-                return Response.status(Response.Status.FORBIDDEN)
-                        .entity(errorDTO)
-                        .build();
+                return ResponseEntity.status(403).body(errorDTO);
             }
 
             if (serviceValidator.isEmpty(serviceId)) {
                 LOGGER.error("Service id is empty");
                 final ErrorDTO errorDTO = new ErrorDTO();
                 errorDTO.setMessage("Service id is empty");
-                return Response.status(Response.Status.BAD_REQUEST)
-                        .entity(errorDTO)
-                        .build();
+                return ResponseEntity.badRequest().body(errorDTO);
             }
 
             if (!serviceValidator.exists(serviceId)) {
                 LOGGER.error("Service id does not exist");
                 final ErrorDTO errorDTO = new ErrorDTO();
                 errorDTO.setMessage("Service id does not exist");
-                return Response.status(Response.Status.BAD_REQUEST)
-                        .entity(errorDTO)
-                        .build();
+                return ResponseEntity.badRequest().body(errorDTO);
             }
 
             final List<DoctorDTO> doctorDTOs = doctorService.getDoctorsByServiceId(serviceId);
-            return Response.ok(doctorDTOs).build();
+            return ResponseEntity.ok(doctorDTOs);
         } catch (final Exception exception) {
             LOGGER.error("Error trying to get doctors by service id", exception);
             final ErrorDTO errorDTO = new ErrorDTO();
             errorDTO.setMessage("Error trying to get doctors by service id");
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity(errorDTO)
-                    .build();
+            return ResponseEntity.status(500).body(errorDTO);
         }
     }
 
-    @GET
-    @Path("/credential/{credentialId}")
-    public Response getDoctorIdByCredential(@PathParam("credentialId") final Integer credentialId, @CookieParam("session_id") final String sessionId) {
+    @GetMapping("/credential/{credentialId}")
+    public ResponseEntity<?> getDoctorIdByCredential(@PathVariable final Integer credentialId,
+                                                     @CookieValue(value = "session_id", required = false) final String sessionId) {
         try {
             if (sessionId == null || sessionId.isEmpty()) {
                 LOGGER.error("Session id is empty");
                 final ErrorDTO errorDTO = new ErrorDTO();
                 errorDTO.setMessage("Session id is empty");
-                return Response.status(Response.Status.UNAUTHORIZED)
-                        .entity(errorDTO)
-                        .build();
+                return ResponseEntity.status(401).body(errorDTO);
             }
 
             int sessionIdInt;
@@ -252,9 +218,7 @@ public class DoctorResource {
                 LOGGER.error("Session id is not valid", exception);
                 ErrorDTO errorDTO = new ErrorDTO();
                 errorDTO.setMessage("Not authorized. Session id has incorrect format");
-                return Response.status(Response.Status.UNAUTHORIZED)
-                        .entity(errorDTO)
-                        .build();
+                return ResponseEntity.status(401).body(errorDTO);
             }
 
             UserSessionDTO session = userSessionService.getSessionById(sessionIdInt);
@@ -262,71 +226,58 @@ public class DoctorResource {
                 LOGGER.error("Session id does not exist [{}]", sessionId);
                 final ErrorDTO errorDTO = new ErrorDTO();
                 errorDTO.setMessage("Not authorized. Session id does not exist");
-                return Response.status(Response.Status.UNAUTHORIZED)
-                        .entity(errorDTO)
-                        .build();
+                return ResponseEntity.status(401).body(errorDTO);
             }
 
             if (!Role.DOCTOR.toString().equalsIgnoreCase(session.getRole())) {
                 LOGGER.error("Session id does not belong to doctor role [{}]", sessionIdInt);
                 final ErrorDTO errorDTO = new ErrorDTO();
                 errorDTO.setMessage("Forbidden to access resource. Role is not allowed.");
-                return Response.status(Response.Status.FORBIDDEN)
-                        .entity(errorDTO)
-                        .build();
+                return ResponseEntity.status(403).body(errorDTO);
             }
 
             if (credentialId == null) {
                 LOGGER.error("Credential id is empty");
                 final ErrorDTO errorDTO = new ErrorDTO();
                 errorDTO.setMessage("Credential id is empty");
-                return Response.status(Response.Status.BAD_REQUEST)
-                        .entity(errorDTO)
-                        .build();
+                return ResponseEntity.badRequest().body(errorDTO);
             }
 
-            if (credentialId != session.getCredentialId()) {
+            if (!credentialId.equals(session.getCredentialId())) {
                 LOGGER.error("Credential id does not belong to existing session");
                 final ErrorDTO errorDTO = new ErrorDTO();
                 errorDTO.setMessage("Credential id does not belong to existing session");
-                return Response.status(Response.Status.BAD_REQUEST)
-                        .entity(errorDTO)
-                        .build();
+                return ResponseEntity.badRequest().body(errorDTO);
             }
+
             final int doctorId = doctorService.getDoctorIdByCredentialId(credentialId);
             if (doctorId == -1) {
                 LOGGER.error("Doctor id not found");
                 final ErrorDTO errorDTO = new ErrorDTO();
                 errorDTO.setMessage("Doctor id not found");
-                return Response.status(Response.Status.NOT_FOUND)
-                        .entity(errorDTO)
-                        .build();
+                return ResponseEntity.status(404).body(errorDTO);
             }
+
             DoctorIdDTO doctorIdDTO = new DoctorIdDTO();
             doctorIdDTO.setId(doctorId);
-            return Response.ok(doctorIdDTO).build();
+            return ResponseEntity.ok(doctorIdDTO);
         } catch (final Exception exception) {
             LOGGER.error("Error trying to get doctor id by credential id", exception);
             final ErrorDTO errorDTO = new ErrorDTO();
             errorDTO.setMessage("Error trying to get doctor id by credential id");
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity(errorDTO)
-                    .build();
+            return ResponseEntity.status(500).body(errorDTO);
         }
     }
 
-    @POST
-    public Response createDoctor(final DoctorDTO doctorDTO,
-                                 @Context final UriInfo uriInfo,
-                                 @CookieParam("session_id") final String sessionId) {
+    @PostMapping
+    public ResponseEntity<?> createDoctor(@RequestBody final DoctorDTO doctorDTO,
+                                          @CookieValue(value = "session_id", required = false) final String sessionId) {
         try {
             if (sessionId == null || sessionId.isEmpty()) {
                 LOGGER.error("Session id is empty");
                 final ErrorDTO errorDTO = new ErrorDTO();
                 errorDTO.setMessage("Session id is empty");
-                return Response.status(Response.Status.UNAUTHORIZED)
-                        .entity(errorDTO)
-                        .build();
+                return ResponseEntity.status(401).body(errorDTO);
             }
 
             int sessionIdInt;
@@ -334,11 +285,9 @@ public class DoctorResource {
                 sessionIdInt = Integer.parseInt(sessionId);
             } catch (NumberFormatException exception) {
                 LOGGER.error("Session id is not valid", exception);
-                ErrorDTO errorDTO = new ErrorDTO();
+                final ErrorDTO errorDTO = new ErrorDTO();
                 errorDTO.setMessage("Not authorized. Session id has incorrect format");
-                return Response.status(Response.Status.UNAUTHORIZED)
-                        .entity(errorDTO)
-                        .build();
+                return ResponseEntity.status(401).body(errorDTO);
             }
 
             UserSessionDTO session = userSessionService.getSessionById(sessionIdInt);
@@ -346,108 +295,85 @@ public class DoctorResource {
                 LOGGER.error("Session id does not exist [{}]", sessionId);
                 final ErrorDTO errorDTO = new ErrorDTO();
                 errorDTO.setMessage("Not authorized. Session id does not exist");
-                return Response.status(Response.Status.UNAUTHORIZED)
-                        .entity(errorDTO)
-                        .build();
+                return ResponseEntity.status(401).body(errorDTO);
             }
 
             if (!Role.ADMIN.toString().equalsIgnoreCase(session.getRole())) {
                 LOGGER.error("Session id does not belong to admin role [{}]", sessionIdInt);
                 final ErrorDTO errorDTO = new ErrorDTO();
                 errorDTO.setMessage("Forbidden to access resource. Role is not allowed.");
-                return Response.status(Response.Status.FORBIDDEN)
-                        .entity(errorDTO)
-                        .build();
+                return ResponseEntity.status(403).body(errorDTO);
             }
 
+            // All validations remain exactly the same
             if (!doctorValidator.isIdEmpty(doctorDTO)) {
                 LOGGER.error("Doctor id must be empty when new doctor is created");
                 ErrorDTO errorDTO = new ErrorDTO();
                 errorDTO.setMessage("Doctor id must be empty when new doctor is created");
-                return Response.status(Response.Status.BAD_REQUEST)
-                        .entity(errorDTO)
-                        .build();
+                return ResponseEntity.badRequest().body(errorDTO);
             }
 
             if (!doctorValidator.isFirstNameValid(doctorDTO)) {
                 LOGGER.error("First name has the wrong format");
                 ErrorDTO errorDTO = new ErrorDTO();
                 errorDTO.setMessage("First name has the wrong format");
-                return Response.status(Response.Status.BAD_REQUEST)
-                        .entity(errorDTO)
-                        .build();
+                return ResponseEntity.badRequest().body(errorDTO);
             }
 
             if (!doctorValidator.isLastNameValid(doctorDTO)) {
                 LOGGER.error("Last name has the wrong format");
                 ErrorDTO errorDTO = new ErrorDTO();
                 errorDTO.setMessage("Last name has the wrong format");
-                return Response.status(Response.Status.BAD_REQUEST)
-                        .entity(errorDTO)
-                        .build();
+                return ResponseEntity.badRequest().body(errorDTO);
             }
 
             if (doctorValidator.isSpecializationIdEmpty(doctorDTO)) {
                 LOGGER.error("Specialization id is empty");
                 ErrorDTO errorDTO = new ErrorDTO();
                 errorDTO.setMessage("Specialization id is empty");
-                return Response.status(Response.Status.BAD_REQUEST)
-                        .entity(errorDTO)
-                        .build();
+                return ResponseEntity.badRequest().body(errorDTO);
             }
 
             if (!doctorValidator.isSpecializationIdValid(doctorDTO)) {
                 LOGGER.error("Specialization id does not exist");
                 ErrorDTO errorDTO = new ErrorDTO();
                 errorDTO.setMessage("Specialization id does not exist");
-                return Response.status(Response.Status.BAD_REQUEST)
-                        .entity(errorDTO)
-                        .build();
+                return ResponseEntity.badRequest().body(errorDTO);
             }
 
             if (!doctorValidator.isEmailValid(doctorDTO)) {
                 LOGGER.error("Email has the wrong format");
                 ErrorDTO errorDTO = new ErrorDTO();
                 errorDTO.setMessage("Email has the wrong format");
-                return Response.status(Response.Status.BAD_REQUEST)
-                        .entity(errorDTO)
-                        .build();
+                return ResponseEntity.badRequest().body(errorDTO);
             }
 
             if (!doctorValidator.isEmailUnique(doctorDTO)) {
                 LOGGER.error("Email already exists");
                 ErrorDTO errorDTO = new ErrorDTO();
                 errorDTO.setMessage("Email already exists");
-                return Response.status(Response.Status.BAD_REQUEST)
-                        .entity(errorDTO)
-                        .build();
+                return ResponseEntity.badRequest().body(errorDTO);
             }
 
             if (!doctorValidator.isPhoneValid(doctorDTO)) {
                 LOGGER.error("Phone number has the wrong format");
                 ErrorDTO errorDTO = new ErrorDTO();
                 errorDTO.setMessage("Phone number has the wrong format");
-                return Response.status(Response.Status.BAD_REQUEST)
-                        .entity(errorDTO)
-                        .build();
+                return ResponseEntity.badRequest().body(errorDTO);
             }
 
             if (!doctorValidator.isPhoneUnique(doctorDTO)) {
                 LOGGER.error("Phone number already exist");
                 ErrorDTO errorDTO = new ErrorDTO();
                 errorDTO.setMessage("Phone number already exist");
-                return Response.status(Response.Status.BAD_REQUEST)
-                        .entity(errorDTO)
-                        .build();
+                return ResponseEntity.badRequest().body(errorDTO);
             }
 
             if (!doctorValidator.isPhotoValid(doctorDTO)) {
                 LOGGER.error("Photo is not valid");
                 ErrorDTO errorDTO = new ErrorDTO();
                 errorDTO.setMessage("Photo is not valid");
-                return Response.status(Response.Status.BAD_REQUEST)
-                        .entity(errorDTO)
-                        .build();
+                return ResponseEntity.badRequest().body(errorDTO);
             }
 
             DoctorDTO doctor = doctorService.createDoctor(doctorDTO);
@@ -455,166 +381,132 @@ public class DoctorResource {
                 LOGGER.error("Doctor is not created");
                 ErrorDTO errorDTO = new ErrorDTO();
                 errorDTO.setMessage("Doctor is not created");
-                return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                        .entity(errorDTO)
-                        .build();
+                return ResponseEntity.status(500).body(errorDTO);
             }
-            return Response.created(uriInfo.getAbsolutePathBuilder()
-                            .path(String.valueOf(doctor.getId()))
-                            .build())
-                    .entity(doctor)
-                    .build();
+
+            return ResponseEntity
+                    .created(null) // In Spring Boot you can replace with URI if needed
+                    .body(doctor);
         } catch (final Exception exception) {
             LOGGER.error("Error trying to create doctor", exception);
             final ErrorDTO errorDTO = new ErrorDTO();
             errorDTO.setMessage("Error trying to create doctor");
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity(errorDTO)
-                    .build();
+            return ResponseEntity.status(500).body(errorDTO);
         }
     }
 
-    @PUT
-    public Response updateDoctor(final DoctorDTO doctorDTO,
-                                 @CookieParam("session_id") final String sessionId) {
+    @PutMapping
+    public ResponseEntity<?> updateDoctor(@RequestBody final DoctorDTO doctorDTO,
+                                          @CookieValue(value = "session_id", required = false) final String sessionId) {
         try {
             if (sessionId == null || sessionId.isEmpty()) {
                 LOGGER.error("Session id is empty");
-                final ErrorDTO errorDTO = new ErrorDTO();
+                ErrorDTO errorDTO = new ErrorDTO();
                 errorDTO.setMessage("Session id is empty");
-                return Response.status(Response.Status.UNAUTHORIZED)
-                        .entity(errorDTO)
-                        .build();
+                return ResponseEntity.status(401).body(errorDTO);
             }
 
             int sessionIdInt;
             try {
                 sessionIdInt = Integer.parseInt(sessionId);
-            } catch (NumberFormatException exception) {
-                LOGGER.error("Session id is not valid", exception);
+            } catch (NumberFormatException e) {
+                LOGGER.error("Session id is not valid", e);
                 ErrorDTO errorDTO = new ErrorDTO();
                 errorDTO.setMessage("Not authorized. Session id has incorrect format");
-                return Response.status(Response.Status.UNAUTHORIZED)
-                        .entity(errorDTO)
-                        .build();
+                return ResponseEntity.status(401).body(errorDTO);
             }
 
             UserSessionDTO session = userSessionService.getSessionById(sessionIdInt);
             if (session == null) {
                 LOGGER.error("Session id does not exist [{}]", sessionId);
-                final ErrorDTO errorDTO = new ErrorDTO();
+                ErrorDTO errorDTO = new ErrorDTO();
                 errorDTO.setMessage("Not authorized. Session id does not exist");
-                return Response.status(Response.Status.UNAUTHORIZED)
-                        .entity(errorDTO)
-                        .build();
+                return ResponseEntity.status(401).body(errorDTO);
             }
 
             if (!Role.ADMIN.toString().equalsIgnoreCase(session.getRole())) {
                 LOGGER.error("Session id does not belong to admin role [{}]", sessionIdInt);
-                final ErrorDTO errorDTO = new ErrorDTO();
+                ErrorDTO errorDTO = new ErrorDTO();
                 errorDTO.setMessage("Forbidden to access resource. Role is not allowed.");
-                return Response.status(Response.Status.FORBIDDEN)
-                        .entity(errorDTO)
-                        .build();
+                return ResponseEntity.status(403).body(errorDTO);
             }
 
+            // All validations remain exactly as original
             if (doctorValidator.isIdEmpty(doctorDTO)) {
                 LOGGER.error("Doctor id must not be empty when existing doctor is updated");
                 ErrorDTO errorDTO = new ErrorDTO();
                 errorDTO.setMessage("Doctor id must not be empty when existing doctor is updated");
-                return Response.status(Response.Status.BAD_REQUEST)
-                        .entity(errorDTO)
-                        .build();
+                return ResponseEntity.badRequest().body(errorDTO);
             }
 
             if (!doctorValidator.idExists(doctorDTO)) {
                 LOGGER.error("Doctor id does not exist");
                 ErrorDTO errorDTO = new ErrorDTO();
                 errorDTO.setMessage("Doctor id does not exist");
-                return Response.status(Response.Status.BAD_REQUEST)
-                        .entity(errorDTO)
-                        .build();
+                return ResponseEntity.badRequest().body(errorDTO);
             }
 
             if (!doctorValidator.isFirstNameValid(doctorDTO)) {
                 LOGGER.error("First name has the wrong format");
                 ErrorDTO errorDTO = new ErrorDTO();
                 errorDTO.setMessage("First name has the wrong format");
-                return Response.status(Response.Status.BAD_REQUEST)
-                        .entity(errorDTO)
-                        .build();
+                return ResponseEntity.badRequest().body(errorDTO);
             }
 
             if (!doctorValidator.isLastNameValid(doctorDTO)) {
                 LOGGER.error("Last name has the wrong format");
                 ErrorDTO errorDTO = new ErrorDTO();
                 errorDTO.setMessage("Last name has the wrong format");
-                return Response.status(Response.Status.BAD_REQUEST)
-                        .entity(errorDTO)
-                        .build();
+                return ResponseEntity.badRequest().body(errorDTO);
             }
 
             if (doctorValidator.isSpecializationIdEmpty(doctorDTO)) {
                 LOGGER.error("Specialization id is empty");
                 ErrorDTO errorDTO = new ErrorDTO();
                 errorDTO.setMessage("Specialization id is empty");
-                return Response.status(Response.Status.BAD_REQUEST)
-                        .entity(errorDTO)
-                        .build();
+                return ResponseEntity.badRequest().body(errorDTO);
             }
 
             if (!doctorValidator.isSpecializationIdValid(doctorDTO)) {
                 LOGGER.error("Specialization id does not exist");
                 ErrorDTO errorDTO = new ErrorDTO();
                 errorDTO.setMessage("Specialization id does not exist");
-                return Response.status(Response.Status.BAD_REQUEST)
-                        .entity(errorDTO)
-                        .build();
+                return ResponseEntity.badRequest().body(errorDTO);
             }
 
             if (!doctorValidator.isEmailValid(doctorDTO)) {
                 LOGGER.error("Email has the wrong format");
                 ErrorDTO errorDTO = new ErrorDTO();
                 errorDTO.setMessage("Email has the wrong format");
-                return Response.status(Response.Status.BAD_REQUEST)
-                        .entity(errorDTO)
-                        .build();
+                return ResponseEntity.badRequest().body(errorDTO);
             }
 
             if (!doctorValidator.isEmailUnique(doctorDTO)) {
                 LOGGER.error("Email already exists");
                 ErrorDTO errorDTO = new ErrorDTO();
                 errorDTO.setMessage("Email already exists");
-                return Response.status(Response.Status.BAD_REQUEST)
-                        .entity(errorDTO)
-                        .build();
+                return ResponseEntity.badRequest().body(errorDTO);
             }
 
             if (!doctorValidator.isPhoneValid(doctorDTO)) {
                 LOGGER.error("Phone number has the wrong format");
                 ErrorDTO errorDTO = new ErrorDTO();
                 errorDTO.setMessage("Phone number has the wrong format");
-                return Response.status(Response.Status.BAD_REQUEST)
-                        .entity(errorDTO)
-                        .build();
+                return ResponseEntity.badRequest().body(errorDTO);
             }
 
             if (!doctorValidator.isPhoneUnique(doctorDTO)) {
                 LOGGER.error("Phone number already exist");
                 ErrorDTO errorDTO = new ErrorDTO();
                 errorDTO.setMessage("Phone number already exist");
-                return Response.status(Response.Status.BAD_REQUEST)
-                        .entity(errorDTO)
-                        .build();
+                return ResponseEntity.badRequest().body(errorDTO);
             }
 
             if (!doctorValidator.isPhotoValid(doctorDTO)) {
                 LOGGER.error("Doctor photo is not valid");
                 ErrorDTO errorDTO = new ErrorDTO();
                 errorDTO.setMessage("Doctor photo is not valid");
-                return Response.status(Response.Status.BAD_REQUEST)
-                        .entity(errorDTO)
-                        .build();
+                return ResponseEntity.badRequest().body(errorDTO);
             }
 
             DoctorDTO updatedDoctorDTO = doctorService.updateDoctor(doctorDTO);
@@ -622,33 +514,28 @@ public class DoctorResource {
                 LOGGER.error("Doctor is not updated");
                 ErrorDTO errorDTO = new ErrorDTO();
                 errorDTO.setMessage("Doctor is not updated");
-                return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                        .entity(errorDTO)
-                        .build();
+                return ResponseEntity.status(500).body(errorDTO);
             }
-            return Response.ok(updatedDoctorDTO).build();
-        } catch (final Exception exception) {
+
+            return ResponseEntity.ok(updatedDoctorDTO);
+
+        } catch (Exception exception) {
             LOGGER.error("Error trying to update doctor", exception);
-            final ErrorDTO errorDTO = new ErrorDTO();
+            ErrorDTO errorDTO = new ErrorDTO();
             errorDTO.setMessage("Error trying to update doctor");
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity(errorDTO)
-                    .build();
+            return ResponseEntity.status(500).body(errorDTO);
         }
     }
 
-    @DELETE
-    @Path("/{doctorId}")
-    public Response deleteDoctor(@PathParam("doctorId") final Integer doctorId,
-                                 @CookieParam("session_id") final String sessionId) {
+    @DeleteMapping("/{doctorId}")
+    public ResponseEntity<?> deleteDoctor(@PathVariable final Integer doctorId,
+                                          @CookieValue(value = "session_id", required = false) final String sessionId) {
         try {
             if (sessionId == null || sessionId.isEmpty()) {
                 LOGGER.error("Session id is empty");
-                final ErrorDTO errorDTO = new ErrorDTO();
+                ErrorDTO errorDTO = new ErrorDTO();
                 errorDTO.setMessage("Session id is empty");
-                return Response.status(Response.Status.UNAUTHORIZED)
-                        .entity(errorDTO)
-                        .build();
+                return ResponseEntity.status(401).body(errorDTO);
             }
 
             int sessionIdInt;
@@ -658,46 +545,36 @@ public class DoctorResource {
                 LOGGER.error("Session id is not valid", exception);
                 ErrorDTO errorDTO = new ErrorDTO();
                 errorDTO.setMessage("Not authorized. Session id has incorrect format");
-                return Response.status(Response.Status.UNAUTHORIZED)
-                        .entity(errorDTO)
-                        .build();
+                return ResponseEntity.status(401).body(errorDTO);
             }
 
             UserSessionDTO session = userSessionService.getSessionById(sessionIdInt);
             if (session == null) {
                 LOGGER.error("Session id does not exist [{}]", sessionId);
-                final ErrorDTO errorDTO = new ErrorDTO();
+                ErrorDTO errorDTO = new ErrorDTO();
                 errorDTO.setMessage("Not authorized. Session id does not exist");
-                return Response.status(Response.Status.UNAUTHORIZED)
-                        .entity(errorDTO)
-                        .build();
+                return ResponseEntity.status(401).body(errorDTO);
             }
 
             if (!Role.ADMIN.toString().equalsIgnoreCase(session.getRole())) {
                 LOGGER.error("Session id does not belong to admin role [{}]", sessionIdInt);
-                final ErrorDTO errorDTO = new ErrorDTO();
+                ErrorDTO errorDTO = new ErrorDTO();
                 errorDTO.setMessage("Forbidden to access resource. Role is not allowed.");
-                return Response.status(Response.Status.FORBIDDEN)
-                        .entity(errorDTO)
-                        .build();
+                return ResponseEntity.status(403).body(errorDTO);
             }
 
             if (doctorValidator.isIdEmpty(doctorId)) {
                 LOGGER.error("Doctor id must not be empty when existing doctor is deleted");
                 ErrorDTO errorDTO = new ErrorDTO();
                 errorDTO.setMessage("Doctor id must not be empty when existing doctor is deleted");
-                return Response.status(Response.Status.BAD_REQUEST)
-                        .entity(errorDTO)
-                        .build();
+                return ResponseEntity.badRequest().body(errorDTO);
             }
 
             if (!doctorValidator.idExists(doctorId)) {
                 LOGGER.error("Doctor id does not exist");
                 ErrorDTO errorDTO = new ErrorDTO();
                 errorDTO.setMessage("Doctor id does not exist");
-                return Response.status(Response.Status.BAD_REQUEST)
-                        .entity(errorDTO)
-                        .build();
+                return ResponseEntity.badRequest().body(errorDTO);
             }
 
             final boolean isDoctorDeleted = doctorService.deleteDoctor(doctorId);
@@ -705,18 +582,16 @@ public class DoctorResource {
                 LOGGER.error("Doctor is not deleted");
                 ErrorDTO errorDTO = new ErrorDTO();
                 errorDTO.setMessage("Doctor is not deleted");
-                return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                        .entity(errorDTO)
-                        .build();
+                return ResponseEntity.status(500).body(errorDTO);
             }
-            return Response.noContent().build();
-        } catch (final Exception exception) {
+
+            return ResponseEntity.noContent().build();
+
+        } catch (Exception exception) {
             LOGGER.error("Error trying to delete doctor", exception);
-            final ErrorDTO errorDTO = new ErrorDTO();
+            ErrorDTO errorDTO = new ErrorDTO();
             errorDTO.setMessage("Error trying to delete doctor");
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity(errorDTO)
-                    .build();
+            return ResponseEntity.status(500).body(errorDTO);
         }
     }
 }

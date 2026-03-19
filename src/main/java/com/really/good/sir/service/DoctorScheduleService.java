@@ -4,12 +4,22 @@ import com.really.good.sir.converter.DoctorScheduleConverter;
 import com.really.good.sir.dao.DoctorScheduleDAO;
 import com.really.good.sir.dto.DoctorScheduleDTO;
 import com.really.good.sir.entity.DoctorScheduleEntity;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+@Service
 public class DoctorScheduleService {
-    private final DoctorScheduleConverter scheduleConverter = new DoctorScheduleConverter();
-    private final DoctorScheduleDAO scheduleDAO = new DoctorScheduleDAO();
+
+    private final DoctorScheduleDAO scheduleDAO;
+    private final DoctorScheduleConverter scheduleConverter;
+
+    @Autowired
+    public DoctorScheduleService(DoctorScheduleDAO scheduleDAO, DoctorScheduleConverter scheduleConverter) {
+        this.scheduleDAO = scheduleDAO;
+        this.scheduleConverter = scheduleConverter;
+    }
 
     public List<DoctorScheduleDTO> getSchedulesByDoctor(Integer doctorId) {
         List<DoctorScheduleEntity> schedulesByDoctor = scheduleDAO.getSchedulesByDoctor(doctorId);
@@ -17,27 +27,23 @@ public class DoctorScheduleService {
     }
 
     public List<DoctorScheduleDTO> getSchedulesForTodayWithAppointments(Integer doctorId) {
-        final List<DoctorScheduleEntity> schedules = scheduleDAO.getSchedulesForTodayWithAppointments(doctorId);
+        List<DoctorScheduleEntity> schedules = scheduleDAO.getSchedulesForTodayWithAppointments(doctorId);
         return scheduleConverter.convert(schedules);
     }
 
     public DoctorScheduleDTO createSchedule(DoctorScheduleDTO requestScheduleDTO) {
-        final DoctorScheduleEntity scheduleEntity = scheduleConverter.convert(requestScheduleDTO);
-        final DoctorScheduleEntity createdEntity = scheduleDAO.createSchedule(scheduleEntity);
+        DoctorScheduleEntity scheduleEntity = scheduleConverter.convert(requestScheduleDTO);
+        DoctorScheduleEntity createdEntity = scheduleDAO.createSchedule(scheduleEntity);
         return scheduleConverter.convert(createdEntity);
     }
 
     public DoctorScheduleDTO updateSchedule(DoctorScheduleDTO requestScheduleDTO) {
-        final DoctorScheduleEntity scheduleEntity = scheduleConverter.convert(requestScheduleDTO);
+        DoctorScheduleEntity scheduleEntity = scheduleConverter.convert(requestScheduleDTO);
         boolean updated = scheduleDAO.updateSchedule(scheduleEntity);
-        if(updated){
-            return scheduleConverter.convert(scheduleEntity);
-        }else{
-            return null;
-        }
+        return updated ? scheduleConverter.convert(scheduleEntity) : null;
     }
 
-    public boolean deleteSchedule(final Integer scheduleId) {
+    public boolean deleteSchedule(Integer scheduleId) {
         return scheduleDAO.deleteSchedule(scheduleId);
     }
 }

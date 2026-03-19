@@ -2,11 +2,19 @@ package com.really.good.sir.validator;
 
 import com.really.good.sir.dao.ServiceDAO;
 import com.really.good.sir.dto.ServiceDTO;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
+@Component
 public class ServiceValidator {
 
     private static final String NAME_REGEX = "^[A-Za-z0-9\\s'-]{2,50}$";
-    private final ServiceDAO serviceDAO = new ServiceDAO();
+    private final ServiceDAO serviceDAO;
+
+    @Autowired
+    public ServiceValidator(ServiceDAO serviceDAO) {
+        this.serviceDAO = serviceDAO;
+    }
 
     public boolean isNameValid(ServiceDTO service) {
         String name = service.getName();
@@ -17,7 +25,7 @@ public class ServiceValidator {
         Integer id = service.getId();
         try {
             return !serviceDAO.isServiceNameExists(service.getName(), id);
-        }catch(Exception exception){
+        } catch (Exception exception) {
             return true;
         }
     }

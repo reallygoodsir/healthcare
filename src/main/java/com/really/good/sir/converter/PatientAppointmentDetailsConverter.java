@@ -4,9 +4,11 @@ import com.really.good.sir.dto.PatientAppointmentDetailsDTO;
 import com.really.good.sir.entity.DoctorEntity;
 import com.really.good.sir.entity.PatientAppointmentEntity;
 import com.really.good.sir.entity.ServiceEntity;
+import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
+@Component
 
 public class PatientAppointmentDetailsConverter {
 

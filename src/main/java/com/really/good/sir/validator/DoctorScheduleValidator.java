@@ -3,6 +3,8 @@ package com.really.good.sir.validator;
 import com.really.good.sir.dao.DoctorScheduleDAO;
 import com.really.good.sir.dto.DoctorScheduleDTO;
 import com.really.good.sir.entity.DoctorScheduleEntity;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -10,12 +12,18 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.List;
 
+@Component
 public class DoctorScheduleValidator {
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
 
-    private final DoctorScheduleDAO doctorScheduleDAO = new DoctorScheduleDAO();
+    private final DoctorScheduleDAO doctorScheduleDAO;
+
+    @Autowired
+    public DoctorScheduleValidator(DoctorScheduleDAO doctorScheduleDAO) {
+        this.doctorScheduleDAO = doctorScheduleDAO;
+    }
 
     public boolean isScheduleDateValid(DoctorScheduleDTO schedule) {
         String scheduleDate = schedule.getScheduleDate();
@@ -86,7 +94,6 @@ public class DoctorScheduleValidator {
         return scheduleId == null;
     }
 
-
     public boolean isScheduleIdExists(DoctorScheduleDTO schedule) {
         return doctorScheduleDAO.scheduleExists(schedule.getId());
     }
@@ -94,5 +101,4 @@ public class DoctorScheduleValidator {
     public boolean isScheduleIdExists(Integer scheduleId) {
         return doctorScheduleDAO.scheduleExists(scheduleId);
     }
-
 }

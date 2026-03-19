@@ -5,11 +5,13 @@ import com.really.good.sir.entity.PatientEntity;
 import com.really.good.sir.entity.CredentialEntity;
 import com.really.good.sir.entity.Role;
 import com.really.good.sir.service.PasswordGenerator;
+import org.springframework.stereotype.Component;
 
 import java.sql.Date;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
+@Component
 
 public class PatientConverter {
 

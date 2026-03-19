@@ -4,10 +4,20 @@ import com.really.good.sir.converter.UserSessionConverter;
 import com.really.good.sir.dao.UserSessionDAO;
 import com.really.good.sir.dto.UserSessionDTO;
 import com.really.good.sir.entity.UserSessionEntity;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
+@Service
 public class UserSessionService {
-    private final UserSessionDAO userSessionDAO = new UserSessionDAO();
-    private final UserSessionConverter converter = new UserSessionConverter();
+
+    private final UserSessionDAO userSessionDAO;
+    private final UserSessionConverter converter;
+
+    @Autowired
+    public UserSessionService(UserSessionDAO userSessionDAO, UserSessionConverter converter) {
+        this.userSessionDAO = userSessionDAO;
+        this.converter = converter;
+    }
 
     public UserSessionDTO getSessionById(int sessionId) {
         UserSessionEntity session = userSessionDAO.getSessionById(sessionId);

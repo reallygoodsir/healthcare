@@ -5,6 +5,7 @@ import com.really.good.sir.entity.UserSessionEntity;
 import com.really.good.sir.entity.CredentialEntity;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.stereotype.Repository;
 
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
@@ -12,7 +13,7 @@ import javax.persistence.TypedQuery;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.Timestamp;
-
+@Repository
 public class UserSessionDAO {
     private static final Logger LOGGER = LogManager.getLogger(UserSessionDAO.class);
 
