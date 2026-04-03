@@ -5,4 +5,7 @@ public enum Role {
     DOCTOR,
     PATIENT,
     CALL_CENTER_AGENT;
+
+    public String asAuthority() {
+        return "ROLE_" + name();    }
 }

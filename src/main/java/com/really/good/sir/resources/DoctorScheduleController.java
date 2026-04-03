@@ -10,10 +10,16 @@ import com.really.good.sir.validator.DoctorScheduleValidator;
 import com.really.good.sir.validator.DoctorValidator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Collection;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/doctor-schedules")
@@ -40,36 +46,11 @@ public class DoctorScheduleController {
     public ResponseEntity<?> getSchedulesByDoctor(@PathVariable("doctorId") final Integer doctorId,
                                                   @CookieValue(value = "session_id", required = false) final String sessionId) {
         try {
-            if (sessionId == null || sessionId.isEmpty()) {
-                ErrorDTO errorDTO = new ErrorDTO();
-                errorDTO.setMessage("Session id is empty");
-                return ResponseEntity.status(401).body(errorDTO);
-            }
-
-            int sessionIdInt;
-            try {
-                sessionIdInt = Integer.parseInt(sessionId);
-            } catch (NumberFormatException exception) {
-                LOGGER.error("Session id is not valid", exception);
-                ErrorDTO errorDTO = new ErrorDTO();
-                errorDTO.setMessage("Not authorized. Session id has incorrect format");
-                return ResponseEntity.status(401).body(errorDTO);
-            }
-
-            UserSessionDTO session = userSessionService.getSessionById(sessionIdInt);
-            if (session == null) {
-                LOGGER.error("Session id does not exist [{}]", sessionId);
-                ErrorDTO errorDTO = new ErrorDTO();
-                errorDTO.setMessage("Not authorized. Session id does not exist");
-                return ResponseEntity.status(401).body(errorDTO);
-            }
-
-            if (!Role.ADMIN.toString().equalsIgnoreCase(session.getRole()) &&
-                    !Role.CALL_CENTER_AGENT.toString().equalsIgnoreCase(session.getRole())) {
-                LOGGER.error("Session id does not belong to admin or call center agent role [{}]", sessionIdInt);
-                ErrorDTO errorDTO = new ErrorDTO();
-                errorDTO.setMessage("Forbidden to access resource. Role is not allowed.");
-                return ResponseEntity.status(403).body(errorDTO);
+            Collection<? extends GrantedAuthority> authorities = SecurityContextHolder.getContext().getAuthentication().getAuthorities();
+            Set<String> roles = authorities.stream().map(GrantedAuthority::getAuthority).collect(Collectors.toSet());
+            if (!roles.contains(Role.CALL_CENTER_AGENT.asAuthority()) && !roles.contains(Role.ADMIN.asAuthority())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(new ErrorDTO("Forbidden to access resource. Role is not allowed."));
             }
 
             if (doctorValidator.isIdEmpty(doctorId)) {
@@ -101,35 +82,11 @@ public class DoctorScheduleController {
     public ResponseEntity<?> getSchedulesWithAppointments(@PathVariable("doctorId") final int doctorId,
                                                           @CookieValue(value = "session_id", required = false) final String sessionId) {
         try {
-            if (sessionId == null || sessionId.isEmpty()) {
-                ErrorDTO errorDTO = new ErrorDTO();
-                errorDTO.setMessage("Session id is empty");
-                return ResponseEntity.status(401).body(errorDTO);
-            }
-
-            int sessionIdInt;
-            try {
-                sessionIdInt = Integer.parseInt(sessionId);
-            } catch (NumberFormatException exception) {
-                LOGGER.error("Session id is not valid", exception);
-                ErrorDTO errorDTO = new ErrorDTO();
-                errorDTO.setMessage("Not authorized. Session id has incorrect format");
-                return ResponseEntity.status(401).body(errorDTO);
-            }
-
-            UserSessionDTO session = userSessionService.getSessionById(sessionIdInt);
-            if (session == null) {
-                LOGGER.error("Session id does not exist [{}]", sessionId);
-                ErrorDTO errorDTO = new ErrorDTO();
-                errorDTO.setMessage("Not authorized. Session id does not exist");
-                return ResponseEntity.status(401).body(errorDTO);
-            }
-
-            if (!Role.DOCTOR.toString().equalsIgnoreCase(session.getRole())) {
-                LOGGER.error("Session id does not belong to doctor role [{}]", sessionIdInt);
-                ErrorDTO errorDTO = new ErrorDTO();
-                errorDTO.setMessage("Forbidden to access resource. Role is not allowed.");
-                return ResponseEntity.status(403).body(errorDTO);
+            Collection<? extends GrantedAuthority> authorities = SecurityContextHolder.getContext().getAuthentication().getAuthorities();
+            Set<String> roles = authorities.stream().map(GrantedAuthority::getAuthority).collect(Collectors.toSet());
+            if (!roles.contains(Role.DOCTOR.asAuthority())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(new ErrorDTO("Forbidden to access resource. Role is not allowed."));
             }
 
             if (doctorValidator.isIdEmpty(doctorId)) {
@@ -160,35 +117,11 @@ public class DoctorScheduleController {
     public ResponseEntity<?> createSchedule(@RequestBody final DoctorScheduleDTO requestScheduleDTO,
                                             @CookieValue(value = "session_id", required = false) final String sessionId) {
         try {
-            if (sessionId == null || sessionId.isEmpty()) {
-                ErrorDTO errorDTO = new ErrorDTO();
-                errorDTO.setMessage("Session id is empty");
-                return ResponseEntity.status(401).body(errorDTO);
-            }
-
-            int sessionIdInt;
-            try {
-                sessionIdInt = Integer.parseInt(sessionId);
-            } catch (NumberFormatException exception) {
-                LOGGER.error("Session id is not valid", exception);
-                ErrorDTO errorDTO = new ErrorDTO();
-                errorDTO.setMessage("Not authorized. Session id has incorrect format");
-                return ResponseEntity.status(401).body(errorDTO);
-            }
-
-            UserSessionDTO session = userSessionService.getSessionById(sessionIdInt);
-            if (session == null) {
-                LOGGER.error("Session id does not exist [{}]", sessionId);
-                ErrorDTO errorDTO = new ErrorDTO();
-                errorDTO.setMessage("Not authorized. Session id does not exist");
-                return ResponseEntity.status(401).body(errorDTO);
-            }
-
-            if (!Role.ADMIN.toString().equalsIgnoreCase(session.getRole())) {
-                LOGGER.error("Session id does not belong to admin role [{}]", sessionIdInt);
-                ErrorDTO errorDTO = new ErrorDTO();
-                errorDTO.setMessage("Forbidden to access resource. Role is not allowed.");
-                return ResponseEntity.status(403).body(errorDTO);
+            Collection<? extends GrantedAuthority> authorities = SecurityContextHolder.getContext().getAuthentication().getAuthorities();
+            Set<String> roles = authorities.stream().map(GrantedAuthority::getAuthority).collect(Collectors.toSet());
+            if (!roles.contains(Role.ADMIN.asAuthority())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(new ErrorDTO("Forbidden to access resource. Role is not allowed."));
             }
 
             if (requestScheduleDTO.getId() != null) {
@@ -254,35 +187,11 @@ public class DoctorScheduleController {
     public ResponseEntity<?> updateSchedule(@RequestBody final DoctorScheduleDTO requestScheduleDTO,
                                             @CookieValue(value = "session_id", required = false) final String sessionId) {
         try {
-            if (sessionId == null || sessionId.isEmpty()) {
-                ErrorDTO errorDTO = new ErrorDTO();
-                errorDTO.setMessage("Session id is empty");
-                return ResponseEntity.status(401).body(errorDTO);
-            }
-
-            int sessionIdInt;
-            try {
-                sessionIdInt = Integer.parseInt(sessionId);
-            } catch (NumberFormatException exception) {
-                LOGGER.error("Session id is not valid", exception);
-                ErrorDTO errorDTO = new ErrorDTO();
-                errorDTO.setMessage("Not authorized. Session id has incorrect format");
-                return ResponseEntity.status(401).body(errorDTO);
-            }
-
-            UserSessionDTO session = userSessionService.getSessionById(sessionIdInt);
-            if (session == null) {
-                LOGGER.error("Session id does not exist [{}]", sessionId);
-                ErrorDTO errorDTO = new ErrorDTO();
-                errorDTO.setMessage("Not authorized. Session id does not exist");
-                return ResponseEntity.status(401).body(errorDTO);
-            }
-
-            if (!Role.ADMIN.toString().equalsIgnoreCase(session.getRole())) {
-                LOGGER.error("Session id does not belong to admin role [{}]", sessionIdInt);
-                ErrorDTO errorDTO = new ErrorDTO();
-                errorDTO.setMessage("Forbidden to access resource. Role is not allowed.");
-                return ResponseEntity.status(403).body(errorDTO);
+            Collection<? extends GrantedAuthority> authorities = SecurityContextHolder.getContext().getAuthentication().getAuthorities();
+            Set<String> roles = authorities.stream().map(GrantedAuthority::getAuthority).collect(Collectors.toSet());
+            if (!roles.contains(Role.ADMIN.asAuthority())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(new ErrorDTO("Forbidden to access resource. Role is not allowed."));
             }
 
             if (doctorScheduleValidator.isScheduleIdEmpty(requestScheduleDTO)) {
@@ -357,35 +266,11 @@ public class DoctorScheduleController {
                                             @PathVariable("scheduleId") final Integer scheduleId,
                                             @CookieValue(value = "session_id", required = false) final String sessionId) {
         try {
-            if (sessionId == null || sessionId.isEmpty()) {
-                ErrorDTO errorDTO = new ErrorDTO();
-                errorDTO.setMessage("Session id is empty");
-                return ResponseEntity.status(401).body(errorDTO);
-            }
-
-            int sessionIdInt;
-            try {
-                sessionIdInt = Integer.parseInt(sessionId);
-            } catch (NumberFormatException exception) {
-                LOGGER.error("Session id is not valid", exception);
-                ErrorDTO errorDTO = new ErrorDTO();
-                errorDTO.setMessage("Not authorized. Session id has incorrect format");
-                return ResponseEntity.status(401).body(errorDTO);
-            }
-
-            UserSessionDTO session = userSessionService.getSessionById(sessionIdInt);
-            if (session == null) {
-                LOGGER.error("Session id does not exist [{}]", sessionId);
-                ErrorDTO errorDTO = new ErrorDTO();
-                errorDTO.setMessage("Not authorized. Session id does not exist");
-                return ResponseEntity.status(401).body(errorDTO);
-            }
-
-            if (!Role.ADMIN.toString().equalsIgnoreCase(session.getRole())) {
-                LOGGER.error("Session id does not belong to admin role [{}]", sessionIdInt);
-                ErrorDTO errorDTO = new ErrorDTO();
-                errorDTO.setMessage("Forbidden to access resource. Role is not allowed.");
-                return ResponseEntity.status(403).body(errorDTO);
+            Collection<? extends GrantedAuthority> authorities = SecurityContextHolder.getContext().getAuthentication().getAuthorities();
+            Set<String> roles = authorities.stream().map(GrantedAuthority::getAuthority).collect(Collectors.toSet());
+            if (!roles.contains(Role.ADMIN.asAuthority())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(new ErrorDTO("Forbidden to access resource. Role is not allowed."));
             }
 
             if (doctorScheduleValidator.isScheduleIdEmpty(scheduleId)) {

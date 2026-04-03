@@ -5,6 +5,7 @@
 <web-app>
     <display-name>healthcare application</display-name>
 
+
     <!-- Dispatcher Servlet -->
     <servlet>
         <servlet-name>spring-dispatcher</servlet-name>
@@ -30,13 +31,42 @@
         <url-pattern>/api/*</url-pattern>
     </servlet-mapping>
 
+    <context-param>
+        <param-name>contextClass</param-name>
+        <param-value>
+            org.springframework.web.context.support.AnnotationConfigWebApplicationContext
+        </param-value>
+    </context-param>
+
+    <context-param>
+        <param-name>contextConfigLocation</param-name>
+        <param-value>
+            com.really.good.sir.config.SecurityConfiguration
+        </param-value>
+    </context-param>
+
+    <listener>
+        <listener-class>
+            org.springframework.web.context.ContextLoaderListener
+        </listener-class>
+    </listener>
+
     <!-- Optional: MySQL cleanup listener -->
     <listener>
         <listener-class>com.really.good.sir.listener.MySQLCleanupListener</listener-class>
     </listener>
+    <filter>
+        <filter-name>springSecurityFilterChain</filter-name>
+        <filter-class>org.springframework.web.filter.DelegatingFilterProxy</filter-class>
+    </filter>
 
+    <filter-mapping>
+        <filter-name>springSecurityFilterChain</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
     <!-- Welcome file -->
     <welcome-file-list>
         <welcome-file>home.html</welcome-file>
     </welcome-file-list>
+
 </web-app>

@@ -11,9 +11,14 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Collection;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/specializations")
@@ -39,10 +44,12 @@ public class SpecializationController {
             @CookieValue(value = "session_id", required = false) String sessionId) {
 
         try {
-
-            ResponseEntity<ErrorDTO> authError =
-                    validateSession(sessionId, Role.ADMIN);
-            if (authError != null) return authError;
+            Collection<? extends GrantedAuthority> authorities = SecurityContextHolder.getContext().getAuthentication().getAuthorities();
+            Set<String> roles = authorities.stream().map(GrantedAuthority::getAuthority).collect(Collectors.toSet());
+            if (!roles.contains(Role.ADMIN.asAuthority())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(new ErrorDTO("Forbidden to access resource. Role is not allowed."));
+            }
 
             List<SpecializationDTO> specializations =
                     specializationService.getAllSpecializations();
@@ -62,10 +69,12 @@ public class SpecializationController {
             @CookieValue(value = "session_id", required = false) String sessionId) {
 
         try {
-
-            ResponseEntity<ErrorDTO> authError =
-                    validateSession(sessionId, Role.ADMIN, Role.CALL_CENTER_AGENT);
-            if (authError != null) return authError;
+            Collection<? extends GrantedAuthority> authorities = SecurityContextHolder.getContext().getAuthentication().getAuthorities();
+            Set<String> roles = authorities.stream().map(GrantedAuthority::getAuthority).collect(Collectors.toSet());
+            if (!roles.contains(Role.ADMIN.asAuthority())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(new ErrorDTO("Forbidden to access resource. Role is not allowed."));
+            }
 
             if (specializationValidator.isEmpty(specializationId)) {
                 LOGGER.error("Specialization id is empty");
@@ -95,51 +104,6 @@ public class SpecializationController {
             return buildError(HttpStatus.INTERNAL_SERVER_ERROR,
                     "Error trying to get specialization by id");
         }
-    }
-
-    private ResponseEntity<ErrorDTO> validateSession(
-            String sessionId,
-            Role... allowedRoles) {
-
-        if (sessionId == null || sessionId.isEmpty()) {
-            LOGGER.error("Session id is empty");
-            return buildError(HttpStatus.UNAUTHORIZED,
-                    "Session id is empty");
-        }
-
-        int sessionIdInt;
-        try {
-            sessionIdInt = Integer.parseInt(sessionId);
-        } catch (NumberFormatException e) {
-            LOGGER.error("Session id has invalid format", e);
-            return buildError(HttpStatus.UNAUTHORIZED,
-                    "Not authorized. Session id has incorrect format");
-        }
-
-        UserSessionDTO session =
-                userSessionService.getSessionById(sessionIdInt);
-
-        if (session == null) {
-            LOGGER.error("Session id does not exist [{}]", sessionId);
-            return buildError(HttpStatus.UNAUTHORIZED,
-                    "Not authorized. Session id does not exist");
-        }
-
-        boolean allowed = false;
-        for (Role role : allowedRoles) {
-            if (role.toString().equalsIgnoreCase(session.getRole())) {
-                allowed = true;
-                break;
-            }
-        }
-
-        if (!allowed) {
-            LOGGER.error("Role [{}] not allowed", session.getRole());
-            return buildError(HttpStatus.FORBIDDEN,
-                    "Forbidden to access resource. Role is not allowed.");
-        }
-
-        return null;
     }
 
     private ResponseEntity<ErrorDTO> buildError(
