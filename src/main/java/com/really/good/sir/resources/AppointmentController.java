@@ -13,6 +13,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
@@ -46,16 +47,16 @@ public class AppointmentController {
         this.appointmentValidator = appointmentValidator;
     }
 
-    //    @PreAuthorize("hasRole('ROLE_CALL_CENTER_AGENT')")
+    @PreAuthorize("hasRole('ROLE_CALL_CENTER_AGENT')")
     @PostMapping
     public ResponseEntity<?> createAppointment(@RequestBody AppointmentDTO appointmentDTO,
                                                @CookieValue(value = "session_id", required = false) String sessionId) {
-        Collection<? extends GrantedAuthority> authorities = SecurityContextHolder.getContext().getAuthentication().getAuthorities();
-        Set<String> roles = authorities.stream().map(GrantedAuthority::getAuthority).collect(Collectors.toSet());
-        if (!roles.contains(Role.CALL_CENTER_AGENT.asAuthority())) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(new ErrorDTO("Forbidden to access resource. Role is not allowed."));
-        }
+//        Collection<? extends GrantedAuthority> authorities = SecurityContextHolder.getContext().getAuthentication().getAuthorities();
+//        Set<String> roles = authorities.stream().map(GrantedAuthority::getAuthority).collect(Collectors.toSet());
+//        if (!roles.contains(Role.CALL_CENTER_AGENT.asAuthority())) {
+//            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+//                    .body(new ErrorDTO("Forbidden to access resource. Role is not allowed."));
+//        }
 
         // Validation
         if (!appointmentValidator.isAppointmentIdEmpty(appointmentDTO)) {
@@ -101,15 +102,16 @@ public class AppointmentController {
         return ResponseEntity.ok(created);
     }
 
+    @PreAuthorize("hasRole('ROLE_DOCTOR')")
     @PutMapping
     public ResponseEntity<?> updateAppointmentOutcome(@RequestBody AppointmentOutcomeDTO appointmentOutcomeDTO,
                                                       @CookieValue(value = "session_id", required = false) String sessionId) {
-        Collection<? extends GrantedAuthority> authorities = SecurityContextHolder.getContext().getAuthentication().getAuthorities();
-        Set<String> roles = authorities.stream().map(GrantedAuthority::getAuthority).collect(Collectors.toSet());
-        if (!roles.contains(Role.DOCTOR.asAuthority())) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(new ErrorDTO("Forbidden to access resource. Role is not allowed."));
-        }
+//        Collection<? extends GrantedAuthority> authorities = SecurityContextHolder.getContext().getAuthentication().getAuthorities();
+//        Set<String> roles = authorities.stream().map(GrantedAuthority::getAuthority).collect(Collectors.toSet());
+//        if (!roles.contains(Role.DOCTOR.asAuthority())) {
+//            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+//                    .body(new ErrorDTO("Forbidden to access resource. Role is not allowed."));
+//        }
 
         if (patientValidator.isAppointmentIdEmpty(appointmentOutcomeDTO)) {
             return ResponseEntity.badRequest().body(new ErrorDTO("No appointment id provided"));
@@ -133,28 +135,30 @@ public class AppointmentController {
         }
     }
 
+    @PreAuthorize("hasAnyRole('ROLE_DOCTOR', 'ROLE_CALL_CENTER_AGENT')")
     @GetMapping
     public ResponseEntity<?> getAllAppointments(@CookieValue(value = "session_id", required = false) String sessionId) {
-        Collection<? extends GrantedAuthority> authorities = SecurityContextHolder.getContext().getAuthentication().getAuthorities();
-        Set<String> roles = authorities.stream().map(GrantedAuthority::getAuthority).collect(Collectors.toSet());
-        if (!roles.contains(Role.CALL_CENTER_AGENT.asAuthority()) && !roles.contains(Role.DOCTOR.asAuthority())) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(new ErrorDTO("Forbidden to access resource. Role is not allowed."));
-        }
+//        Collection<? extends GrantedAuthority> authorities = SecurityContextHolder.getContext().getAuthentication().getAuthorities();
+//        Set<String> roles = authorities.stream().map(GrantedAuthority::getAuthority).collect(Collectors.toSet());
+//        if (!roles.contains(Role.CALL_CENTER_AGENT.asAuthority()) && !roles.contains(Role.DOCTOR.asAuthority())) {
+//            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+//                    .body(new ErrorDTO("Forbidden to access resource. Role is not allowed."));
+//        }
 
         List<AppointmentDTO> appointments = appointmentService.getAllAppointments();
         return ResponseEntity.ok(appointments);
     }
 
+    @PreAuthorize("hasRole('ROLE_DOCTOR')")
     @GetMapping("/{appointmentId}")
     public ResponseEntity<?> getAppointmentById(@PathVariable int appointmentId,
                                                 @CookieValue(value = "session_id", required = false) String sessionId) {
-        Collection<? extends GrantedAuthority> authorities = SecurityContextHolder.getContext().getAuthentication().getAuthorities();
-        Set<String> roles = authorities.stream().map(GrantedAuthority::getAuthority).collect(Collectors.toSet());
-        if (!roles.contains(Role.DOCTOR.asAuthority())) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(new ErrorDTO("Forbidden to access resource. Role is not allowed."));
-        }
+//        Collection<? extends GrantedAuthority> authorities = SecurityContextHolder.getContext().getAuthentication().getAuthorities();
+//        Set<String> roles = authorities.stream().map(GrantedAuthority::getAuthority).collect(Collectors.toSet());
+//        if (!roles.contains(Role.DOCTOR.asAuthority())) {
+//            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+//                    .body(new ErrorDTO("Forbidden to access resource. Role is not allowed."));
+//        }
 
         AppointmentDTO appointment = appointmentService.getAppointmentById(appointmentId);
         if (appointment == null) {
@@ -165,16 +169,16 @@ public class AppointmentController {
         return ResponseEntity.ok(appointment);
     }
 
-    // doctor
+    @PreAuthorize("hasRole('ROLE_DOCTOR')")
     @GetMapping("/{appointmentId}/outcome")
     public ResponseEntity<?> getAppointmentOutcome(@PathVariable int appointmentId,
                                                    @CookieValue(value = "session_id", required = false) String sessionId) {
-        Collection<? extends GrantedAuthority> authorities = SecurityContextHolder.getContext().getAuthentication().getAuthorities();
-        Set<String> roles = authorities.stream().map(GrantedAuthority::getAuthority).collect(Collectors.toSet());
-        if (!roles.contains(Role.DOCTOR.asAuthority())) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(new ErrorDTO("Forbidden to access resource. Role is not allowed."));
-        }
+//        Collection<? extends GrantedAuthority> authorities = SecurityContextHolder.getContext().getAuthentication().getAuthorities();
+//        Set<String> roles = authorities.stream().map(GrantedAuthority::getAuthority).collect(Collectors.toSet());
+//        if (!roles.contains(Role.DOCTOR.asAuthority())) {
+//            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+//                    .body(new ErrorDTO("Forbidden to access resource. Role is not allowed."));
+//        }
 
         AppointmentOutcomeDTO outcome = outcomeService.getOutcomeByAppointmentId(appointmentId);
         if (outcome == null) {
@@ -185,16 +189,17 @@ public class AppointmentController {
         return ResponseEntity.ok(outcome);
     }
 
+    @PreAuthorize("hasRole('ROLE_DOCTOR')")
     @PatchMapping("/{appointmentId}/{status}")
     public ResponseEntity<?> updateStatus(@PathVariable int appointmentId,
                                           @PathVariable String status,
                                           @CookieValue(value = "session_id", required = false) String sessionId) {
-        Collection<? extends GrantedAuthority> authorities = SecurityContextHolder.getContext().getAuthentication().getAuthorities();
-        Set<String> roles = authorities.stream().map(GrantedAuthority::getAuthority).collect(Collectors.toSet());
-        if (!roles.contains(Role.DOCTOR.asAuthority())) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(new ErrorDTO("Forbidden to access resource. Role is not allowed."));
-        }
+//        Collection<? extends GrantedAuthority> authorities = SecurityContextHolder.getContext().getAuthentication().getAuthorities();
+//        Set<String> roles = authorities.stream().map(GrantedAuthority::getAuthority).collect(Collectors.toSet());
+//        if (!roles.contains(Role.DOCTOR.asAuthority())) {
+//            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+//                    .body(new ErrorDTO("Forbidden to access resource. Role is not allowed."));
+//        }
 
         if (!appointmentValidator.isAppointmentIdValid(appointmentId)) {
             return ResponseEntity.badRequest().body(new ErrorDTO("Appointment id not found"));
@@ -213,15 +218,16 @@ public class AppointmentController {
         return ResponseEntity.noContent().build();
     }
 
+    @PreAuthorize("hasRole('ROLE_CALL_CENTER_AGENT')")
     @DeleteMapping("/{appointmentId}")
     public ResponseEntity<?> deleteAppointment(@PathVariable int appointmentId,
                                                @CookieValue(value = "session_id", required = false) String sessionId) {
-        Collection<? extends GrantedAuthority> authorities = SecurityContextHolder.getContext().getAuthentication().getAuthorities();
-        Set<String> roles = authorities.stream().map(GrantedAuthority::getAuthority).collect(Collectors.toSet());
-        if (!roles.contains(Role.CALL_CENTER_AGENT.asAuthority())) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(new ErrorDTO("Forbidden to access resource. Role is not allowed."));
-        }
+//        Collection<? extends GrantedAuthority> authorities = SecurityContextHolder.getContext().getAuthentication().getAuthorities();
+//        Set<String> roles = authorities.stream().map(GrantedAuthority::getAuthority).collect(Collectors.toSet());
+//        if (!roles.contains(Role.CALL_CENTER_AGENT.asAuthority())) {
+//            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+//                    .body(new ErrorDTO("Forbidden to access resource. Role is not allowed."));
+//        }
 
         if (!appointmentValidator.isAppointmentIdValid(appointmentId)) {
             return ResponseEntity.badRequest().body(new ErrorDTO("Appointment id not found"));

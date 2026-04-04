@@ -43,6 +43,16 @@ public class SecurityConfiguration {
                 .authorizeRequests()
                 .antMatchers("/authorization/**").permitAll()
                 .antMatchers("/api/doctors").authenticated()
+                .antMatchers("/api/appointments").authenticated()
+                .antMatchers("/api/patients").authenticated()
+                .antMatchers("/api/services").authenticated()
+                .antMatchers("/api/specializations").authenticated()
+                .antMatchers("/api/patient-appointments").authenticated()
+                .antMatchers("/api/doctor-schedules").authenticated()
+
+                .and()
+                .exceptionHandling()
+                .accessDeniedHandler(new CustomAccessDeniedHandler())
                 .and()
                 .addFilterBefore(customFilter, UsernamePasswordAuthenticationFilter.class);
         LOGGER.info("======================================================filterchain2");

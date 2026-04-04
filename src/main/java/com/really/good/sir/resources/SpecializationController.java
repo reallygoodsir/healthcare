@@ -11,6 +11,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
@@ -39,17 +40,18 @@ public class SpecializationController {
         this.specializationValidator = specializationValidator;
     }
 
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     @GetMapping
     public ResponseEntity<?> getAllSpecializations(
             @CookieValue(value = "session_id", required = false) String sessionId) {
 
         try {
-            Collection<? extends GrantedAuthority> authorities = SecurityContextHolder.getContext().getAuthentication().getAuthorities();
-            Set<String> roles = authorities.stream().map(GrantedAuthority::getAuthority).collect(Collectors.toSet());
-            if (!roles.contains(Role.ADMIN.asAuthority())) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                        .body(new ErrorDTO("Forbidden to access resource. Role is not allowed."));
-            }
+//            Collection<? extends GrantedAuthority> authorities = SecurityContextHolder.getContext().getAuthentication().getAuthorities();
+//            Set<String> roles = authorities.stream().map(GrantedAuthority::getAuthority).collect(Collectors.toSet());
+//            if (!roles.contains(Role.ADMIN.asAuthority())) {
+//                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+//                        .body(new ErrorDTO("Forbidden to access resource. Role is not allowed."));
+//            }
 
             List<SpecializationDTO> specializations =
                     specializationService.getAllSpecializations();
@@ -63,18 +65,19 @@ public class SpecializationController {
         }
     }
 
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     @GetMapping("/{specializationId}")
     public ResponseEntity<?> getSpecializationById(
             @PathVariable int specializationId,
             @CookieValue(value = "session_id", required = false) String sessionId) {
 
         try {
-            Collection<? extends GrantedAuthority> authorities = SecurityContextHolder.getContext().getAuthentication().getAuthorities();
-            Set<String> roles = authorities.stream().map(GrantedAuthority::getAuthority).collect(Collectors.toSet());
-            if (!roles.contains(Role.ADMIN.asAuthority())) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                        .body(new ErrorDTO("Forbidden to access resource. Role is not allowed."));
-            }
+//            Collection<? extends GrantedAuthority> authorities = SecurityContextHolder.getContext().getAuthentication().getAuthorities();
+//            Set<String> roles = authorities.stream().map(GrantedAuthority::getAuthority).collect(Collectors.toSet());
+//            if (!roles.contains(Role.ADMIN.asAuthority())) {
+//                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+//                        .body(new ErrorDTO("Forbidden to access resource. Role is not allowed."));
+//            }
 
             if (specializationValidator.isEmpty(specializationId)) {
                 LOGGER.error("Specialization id is empty");
