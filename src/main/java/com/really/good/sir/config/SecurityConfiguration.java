@@ -42,6 +42,7 @@ public class SecurityConfiguration {
         http.csrf().disable()
                 .authorizeRequests()
                 .antMatchers("/authorization/**").permitAll()
+                .antMatchers("/", "/home.html", "/login.html", "/admin/admin.html").permitAll()
                 .antMatchers("/api/doctors").authenticated()
                 .antMatchers("/api/appointments").authenticated()
                 .antMatchers("/api/patients").authenticated()

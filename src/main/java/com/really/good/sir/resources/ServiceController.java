@@ -63,7 +63,7 @@ public class ServiceController {
         }
     }
 
-    @PreAuthorize("hasAnyRole('ROLE_ADMIN', 'ROLE_CALL_CENTER_AGENT')")
+    @PreAuthorize("hasAnyRole('ROLE_ADMIN', 'ROLE_CALL_CENTER_AGENT', 'ROLE_DOCTOR')")
     @GetMapping("/{id}")
     public ResponseEntity<?> getServiceById(
             @PathVariable Integer id,

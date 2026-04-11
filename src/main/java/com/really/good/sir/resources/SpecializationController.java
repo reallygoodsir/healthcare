@@ -65,7 +65,7 @@ public class SpecializationController {
         }
     }
 
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    @PreAuthorize("hasAnyRole('ROLE_ADMIN', 'ROLE_CALL_CENTER_AGENT')")
     @GetMapping("/{specializationId}")
     public ResponseEntity<?> getSpecializationById(
             @PathVariable int specializationId,

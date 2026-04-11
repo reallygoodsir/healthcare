@@ -13,6 +13,7 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
 @Repository
 public class PatientAppointmentDAO {
     private static final Logger LOGGER = LogManager.getLogger(PatientAppointmentDAO.class);
@@ -37,23 +38,98 @@ public class PatientAppointmentDAO {
     public List<PatientAppointmentEntity> getAllAppointments() {
         EntityManager em = EntityManagerConfiguration.getEntityManager();
         try {
-            return em.createQuery(
-                    "SELECT p FROM PatientAppointmentEntity p",
-                    PatientAppointmentEntity.class
-            ).getResultList();
+            String sql =
+                    "SELECT pa.*, p.first_name, p.last_name, s.name AS service_name " +
+                            "FROM patient_appointments pa " +
+                            "JOIN patients p ON pa.patient_id = p.patient_id " +
+                            "JOIN service s ON pa.service_id = s.id";
+
+            List<Object[]> rows = em.createNativeQuery(sql).getResultList();
+
+            List<PatientAppointmentEntity> result = new ArrayList<>();
+
+            for (Object[] row : rows) {
+                PatientAppointmentEntity entity = new PatientAppointmentEntity();
+
+                // --- patient_appointments (order matters!)
+                entity.setAppointmentId(((Number) row[0]).intValue());
+                entity.setPatientId(((Number) row[1]).intValue());
+                entity.setServiceId(((Number) row[2]).intValue());
+                entity.setDoctorId(((Number) row[3]).intValue());
+                entity.setDate((Date) row[4]);
+                entity.setStartTime((Time) row[5]);
+                entity.setEndTime((Time) row[6]);
+                entity.setStatus((String) row[7]);
+
+                // --- extra joined fields
+                entity.setPatientFirstName((String) row[10]);
+                entity.setPatientLastName((String) row[11]);
+                entity.setServiceName((String) row[12]);
+
+                result.add(entity);
+            }
+
+            return result;
+
+        } catch (Exception exception) {
+            LOGGER.error("Error while creating appointment", exception);
+            return null;
         } finally {
             em.close();
         }
     }
 
+//    public List<PatientAppointmentEntity> getAppointmentsByDoctorId(int doctorId) {
+//        EntityManager em = EntityManagerConfiguration.getEntityManager();
+//        try {
+//            return em.createQuery(
+//                            "SELECT p FROM PatientAppointmentEntity p WHERE p.doctorId = :doctorId",
+//                            PatientAppointmentEntity.class
+//                    ).setParameter("doctorId", doctorId)
+//                    .getResultList();
+//        } finally {
+//            em.close();
+//        }
+//    }
+
     public List<PatientAppointmentEntity> getAppointmentsByDoctorId(int doctorId) {
         EntityManager em = EntityManagerConfiguration.getEntityManager();
         try {
-            return em.createQuery(
-                            "SELECT p FROM PatientAppointmentEntity p WHERE p.doctorId = :doctorId",
-                            PatientAppointmentEntity.class
-                    ).setParameter("doctorId", doctorId)
+            String sql =
+                    "SELECT pa.*, p.first_name, p.last_name, s.name AS service_name " +
+                            "FROM patient_appointments pa " +
+                            "JOIN patients p ON pa.patient_id = p.patient_id " +
+                            "JOIN service s ON pa.service_id = s.id " +
+                            "WHERE pa.doctor_id = :doctorId";
+
+            List<Object[]> results = em.createNativeQuery(sql)
+                    .setParameter("doctorId", doctorId)
                     .getResultList();
+
+            List<PatientAppointmentEntity> list = new ArrayList<>();
+
+            for (Object[] row : results) {
+                PatientAppointmentEntity pa = new PatientAppointmentEntity();
+
+                // map main entity fields (by index)
+                pa.setAppointmentId((Integer) row[0]);
+                pa.setPatientId((Integer) row[1]);
+                pa.setServiceId((Integer) row[2]);
+                pa.setDoctorId((Integer) row[3]);
+                pa.setDate((Date) row[4]);
+                pa.setStartTime((Time) row[5]);
+                pa.setEndTime((Time) row[6]);
+                pa.setStatus((String) row[7]);
+
+                // transient fields
+                pa.setPatientFirstName((String) row[10]);
+                pa.setPatientLastName((String) row[11]);
+                pa.setServiceName((String) row[12]);
+
+                list.add(pa);
+            }
+
+            return list;
         } finally {
             em.close();
         }

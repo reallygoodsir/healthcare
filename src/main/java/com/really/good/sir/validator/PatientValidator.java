@@ -54,6 +54,7 @@ public class PatientValidator {
     public boolean isEmailUnique(PatientDTO patient) {
         String email = patient.getEmail();
         int credentialId = credentialDAO.getCredentialIdByEmail(email);
+        if (credentialId == -1) return true;
         if (patient.getId() == null) {
             return credentialDAO.isEmailUnique(email);
         }
@@ -76,6 +77,7 @@ public class PatientValidator {
     public boolean isPhoneUnique(PatientDTO patient) {
         String phone = patient.getPhone();
         int credentialId = credentialDAO.getCredentialIdByPhone(phone);
+        if (credentialId == -1) return true;
         if (patient.getId() == null) {
             return credentialDAO.isPhoneUnique(phone);
         }

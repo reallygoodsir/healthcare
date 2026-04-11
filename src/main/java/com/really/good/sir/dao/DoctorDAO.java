@@ -5,6 +5,7 @@ import com.really.good.sir.entity.CredentialEntity;
 import com.really.good.sir.entity.DoctorEntity;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.hibernate.Hibernate;
 import org.springframework.stereotype.Repository;
 
 import javax.persistence.EntityManager;
@@ -159,10 +160,17 @@ public class DoctorDAO {
             String sql = "SELECT d.* FROM doctors d " +
                     "WHERE d.specialization_id IN " +
                     "(SELECT ss.specialization_id FROM `service-specializations` ss WHERE ss.service_id = :serviceId)";
-            @SuppressWarnings("unchecked")
+
             List<DoctorEntity> doctors = em.createNativeQuery(sql, DoctorEntity.class)
                     .setParameter("serviceId", serviceId)
                     .getResultList();
+
+            for (DoctorEntity d : doctors) {
+                if (d.getCredentialEntity() != null) {
+                    Hibernate.initialize(d.getCredentialEntity());
+                }
+            }
+
             return doctors;
         } finally {
             em.close();

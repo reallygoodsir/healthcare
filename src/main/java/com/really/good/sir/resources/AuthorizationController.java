@@ -59,7 +59,7 @@ public class AuthorizationController {
             ResponseCookie cookie = ResponseCookie.from("session_id", String.valueOf(sessionDTO.getId()))
                     .path("/")
                     .maxAge(30 * 60)
-                    .httpOnly(true)
+                    .httpOnly(false) // changed from true
                     .build();
 
             LOGGER.info("User logged in with credential_id {} and role {}",

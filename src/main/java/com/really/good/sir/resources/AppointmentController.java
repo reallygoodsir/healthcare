@@ -3,7 +3,6 @@ package com.really.good.sir.resources;
 import com.really.good.sir.dto.AppointmentDTO;
 import com.really.good.sir.dto.AppointmentOutcomeDTO;
 import com.really.good.sir.dto.ErrorDTO;
-import com.really.good.sir.entity.Role;
 import com.really.good.sir.service.AppointmentOutcomeService;
 import com.really.good.sir.service.AppointmentService;
 import com.really.good.sir.service.UserSessionService;
@@ -14,14 +13,9 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Collection;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/appointments")

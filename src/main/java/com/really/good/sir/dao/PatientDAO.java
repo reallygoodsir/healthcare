@@ -152,6 +152,7 @@ public class PatientDAO {
     public int getPatientIdByCredentialId(int credentialId) {
         EntityManager entityManager = EntityManagerConfiguration.getEntityManager();
         try {
+            LOGGER.info("==================================================="+credentialId);
             TypedQuery<Integer> query = entityManager.createQuery(
                     "SELECT p.id FROM PatientEntity p WHERE p.credentialEntity.credentialId = :cid",
                     Integer.class

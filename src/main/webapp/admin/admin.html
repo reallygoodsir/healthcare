@@ -146,7 +146,6 @@
 
             if (response.ok) {
                 const data = await response.json();
-                // ✅ check JSON payload instead of nonexistent data.valid
                 if (data && data.role) {
                     console.log('Session valid for role:', data.role);
                     return true;

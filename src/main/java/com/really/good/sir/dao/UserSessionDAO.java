@@ -111,4 +111,17 @@ public class UserSessionDAO {
         for (byte b : hash) sb.append(String.format("%02x", b));
         return sb.toString();
     }
+
+//    private static String hashPassword2(String password) throws NoSuchAlgorithmException {
+//        MessageDigest md = MessageDigest.getInstance("SHA-256");
+//        byte[] hash = md.digest(password.getBytes());
+//        StringBuilder sb = new StringBuilder();
+//        for (byte b : hash) sb.append(String.format("%02x", b));
+//        return sb.toString();
+//    }
+//
+//    public static void main(String[] args) throws NoSuchAlgorithmException {
+//        String s = hashPassword2("64986912");
+//        System.out.println(s);
+//    }
 }

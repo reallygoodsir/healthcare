@@ -38,8 +38,10 @@ public class DoctorConverter {
         doctorDTO.setLastName(doctorEntity.getLastName());
 
         if (doctorEntity.getCredentialEntity() != null) {
-            doctorDTO.setEmail(doctorEntity.getCredentialEntity().getEmail());
-            doctorDTO.setPhone(doctorEntity.getCredentialEntity().getPhone());
+            String email = doctorEntity.getCredentialEntity().getEmail();
+            if(email != null) doctorDTO.setEmail(email);
+            String phone = doctorEntity.getCredentialEntity().getPhone();
+            if(phone != null) doctorDTO.setPhone(phone);
         }
 
         doctorDTO.setSpecializationId(doctorEntity.getSpecializationId());

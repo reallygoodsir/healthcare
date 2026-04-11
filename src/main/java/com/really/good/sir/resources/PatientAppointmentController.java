@@ -397,11 +397,11 @@ public class PatientAppointmentController {
 //                        .body(new ErrorDTO("Forbidden to access resource. Role is not allowed."));
 //            }
 
-            if (outcomeValidator.isOutcomeIdEmpty(dto)) {
-                LOGGER.error("Outcome id is empty");
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body(new ErrorDTO("Outcome id is empty"));
-            }
+//            if (outcomeValidator.isOutcomeIdEmpty(dto)) {
+//                LOGGER.error("Outcome id is empty");
+//                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+//                        .body(new ErrorDTO("Outcome id is empty"));
+//            }
 
             if (patientAppointmentValidator.isIdEmpty(dto.getAppointmentId()) ||
                     !patientAppointmentValidator.isIdExists(dto.getAppointmentId())) {

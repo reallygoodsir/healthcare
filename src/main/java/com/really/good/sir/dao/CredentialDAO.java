@@ -45,6 +45,7 @@ public class CredentialDAO {
     }
 
     public int getCredentialIdByPhone(String phone) {
+        LOGGER.info("\n\n\n\n\n\n\n"+phone+"\n\n\n\n\n\n\n\n");
         EntityManager em = null;
         try {
             em = EntityManagerConfiguration.getEntityManager();

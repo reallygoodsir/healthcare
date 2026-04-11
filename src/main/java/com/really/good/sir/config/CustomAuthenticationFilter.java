@@ -1,11 +1,7 @@
 package com.really.good.sir.config;
 
-import com.really.good.sir.dto.ErrorDTO;
-import com.really.good.sir.dto.UserSessionDTO;
-import com.really.good.sir.resources.DoctorController;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -44,8 +40,13 @@ public class CustomAuthenticationFilter extends OncePerRequestFilter {
         LOGGER.info("PATH: [" + path + "]");
 
         // Skip login endpoint (robust)
-        if (path.startsWith("/api/authorization")) {
-            LOGGER.info("SKIP AUTH ENDPOINT");
+        if (path.startsWith("/api/authorization")
+                || path.equals("/")
+                || path.equals("/home.html")
+                || path.equals("/login.html")
+                || path.equals("/admin/admin.html")) {
+
+            LOGGER.info("Publicly accessible endpoint skipped");
             filterChain.doFilter(request, response);
             return;
         }
@@ -92,9 +93,6 @@ public class CustomAuthenticationFilter extends OncePerRequestFilter {
                     new UsernamePasswordAuthenticationToken(sessionId, null);
 
             Authentication authResult = authenticationManager.authenticate(authRequest);
-            LOGGER.info("AUTH START"+authResult);
-
-
 
             SecurityContextHolder.getContext().setAuthentication(authResult);
 
@@ -107,7 +105,6 @@ public class CustomAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
-        // Continue
         filterChain.doFilter(request, response);
     }
 
