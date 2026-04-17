@@ -127,7 +127,7 @@
     async function loadDoctors(){
         document.getElementById('content').innerHTML = `<h2>Our Doctors</h2><div class="loading">Loading doctors...</div>`;
         try {
-            const response = await fetch('http://localhost:8080/healthcare/api/doctors');
+            const response = await fetch('/healthcare/api/doctors');
             const doctors = await response.json();
 
             let doctorsHTML = `<h2>Our Doctors</h2><div class="doctorEntities-grid">`;
@@ -135,7 +135,7 @@
                 let specializationName = 'General Practitioner';
                 if (doctor.specializationId) {
                     try {
-                        const specResp = await fetch(`http://localhost:8080/healthcare/api/specializations/${doctor.specializationId}`);
+                        const specResp = await fetch(`/healthcare/api/specializations/${doctor.specializationId}`);
                         if (specResp.ok) {
                             const specData = await specResp.json();
                             specializationName = specData.name || specializationName;
@@ -183,19 +183,19 @@
     async function checkSessionAndRedirect(){
         const sessionId = getCookie('session_id');
         if (!sessionId){
-            window.location.href = 'http://localhost:8080/healthcare/login.html';
+            window.location.href = '/healthcare/login.html';
             return;
         }
 
         try {
-            const resp = await fetch('http://localhost:8080/healthcare/api/authorization/session',{
+            const resp = await fetch('/healthcare/api/authorization/session',{
                 method:'POST',
                 headers:{'Content-Type':'application/json'},
                 body:JSON.stringify({sessionId:parseInt(sessionId)})
             });
 
             if (!resp.ok){
-                window.location.href = 'http://localhost:8080/healthcare/login.html';
+                window.location.href = '/healthcare/login.html';
                 return;
             }
 
@@ -203,18 +203,18 @@
 
             if (data && data.role){
                 switch(data.role){
-                    case 'ADMIN': window.location.href='http://localhost:8080/healthcare/admin/admin.html'; break;
-                    case 'CALL_CENTER_AGENT': window.location.href='http://localhost:8080/healthcare/agent/home-agent.html'; break;
-                    case 'DOCTOR': window.location.href='http://localhost:8080/healthcare/doctor/home-doctor.html'; break;
-                    case 'PATIENT': window.location.href='http://localhost:8080/healthcare/patient/patient-home.html'; break;
-                    default: window.location.href='http://localhost:8080/healthcare/login.html';
+                    case 'ADMIN': window.location.href='/healthcare/admin/admin.html'; break;
+                    case 'CALL_CENTER_AGENT': window.location.href='/healthcare/agent/home-agent.html'; break;
+                    case 'DOCTOR': window.location.href='/healthcare/doctor/home-doctor.html'; break;
+                    case 'PATIENT': window.location.href='/healthcare/patient/patient-home.html'; break;
+                    default: window.location.href='/healthcare/login.html';
                 }
             } else {
-                window.location.href='http://localhost:8080/healthcare/login.html';
+                window.location.href='/healthcare/login.html';
             }
         } catch(e){
             console.error('Error checking session:', e);
-            window.location.href='http://localhost:8080/healthcare/login.html';
+            window.location.href='/healthcare/login.html';
         }
     }
 

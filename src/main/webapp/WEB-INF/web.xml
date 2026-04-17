@@ -5,6 +5,10 @@
 <web-app>
     <display-name>healthcare application</display-name>
 
+    <context-param>
+        <param-name>spring.profiles.active</param-name>
+        <param-value>dev</param-value>
+    </context-param>
 
     <!-- Dispatcher Servlet -->
     <servlet>

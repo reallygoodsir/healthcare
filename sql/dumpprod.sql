@@ -1,8 +1,8 @@
-CREATE DATABASE  IF NOT EXISTS `healthcare_app` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci */ /*!80016 DEFAULT ENCRYPTION='N' */;
-USE `healthcare_app`;
+CREATE DATABASE  IF NOT EXISTS `healthcare_prod` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci */ /*!80016 DEFAULT ENCRYPTION='N' */;
+USE `healthcare_prod`;
 -- MySQL dump 10.13  Distrib 8.0.41, for Win64 (x86_64)
 --
--- Host: 127.0.0.1    Database: healthcare_app
+-- Host: 127.0.0.1    Database: healthcare_prod
 -- ------------------------------------------------------
 -- Server version	8.0.41
 
@@ -353,11 +353,11 @@ CREATE TABLE `user_sessions` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping events for database 'healthcare_app'
+-- Dumping events for database 'healthcare_prod'
 --
 
 --
--- Dumping routines for database 'healthcare_app'
+-- Dumping routines for database 'healthcare_prod'
 --
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -370,7 +370,7 @@ CREATE TABLE `user_sessions` (
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 -- CREDENTIALS (ADMIN)
-INSERT INTO `healthcare_app`.`credentials` (
+INSERT INTO `healthcare_prod`.`credentials` (
     `phone`,
     `email`,
     `password_hash`,
@@ -385,7 +385,7 @@ INSERT INTO `healthcare_app`.`credentials` (
 SET @admin_cred_id = LAST_INSERT_ID();
 
 -- ADMINS
-INSERT INTO `healthcare_app`.`admins` (
+INSERT INTO `healthcare_prod`.`admins` (
     `first_name`,
     `last_name`,
     `credential_id`
@@ -396,7 +396,7 @@ INSERT INTO `healthcare_app`.`admins` (
 );
 
 -- CREDENTIALS (CALL CENTER AGENT)
-INSERT INTO `healthcare_app`.`credentials` (
+INSERT INTO `healthcare_prod`.`credentials` (
     `phone`,
     `email`,
     `password_hash`,
@@ -411,10 +411,10 @@ INSERT INTO `healthcare_app`.`credentials` (
 SET @cca_cred_id = LAST_INSERT_ID();
 
 -- SERVICE CHECK
-SELECT * FROM `healthcare_app`.`service`;
+SELECT * FROM `healthcare_prod`.`service`;
 
 -- SERVICE INSERT
-INSERT INTO `healthcare_app`.`service` (
+INSERT INTO `healthcare_prod`.`service` (
     `id`,
     `name`,
     `price`
@@ -425,7 +425,7 @@ INSERT INTO `healthcare_app`.`service` (
 );
 
 -- SPECIALIZATIONS
-INSERT INTO `healthcare_app`.`specializations` (
+INSERT INTO `healthcare_prod`.`specializations` (
     `id`,
     `name`
 ) VALUES (
@@ -434,7 +434,7 @@ INSERT INTO `healthcare_app`.`specializations` (
 );
 
 -- SERVICE-SPECIALIZATIONS (JOIN TABLE)
-INSERT INTO `healthcare_app`.`service-specializations` (
+INSERT INTO `healthcare_prod`.`service-specializations` (
     `service_id`,
     `specialization_id`
 ) VALUES (
@@ -442,7 +442,7 @@ INSERT INTO `healthcare_app`.`service-specializations` (
     1
 );
 
-INSERT INTO `healthcare_app`.`credentials` (
+INSERT INTO `healthcare_prod`.`credentials` (
     `phone`,
     `email`,
     `password_hash`,
@@ -456,7 +456,7 @@ INSERT INTO `healthcare_app`.`credentials` (
 
 SET @doctor_cred_id = LAST_INSERT_ID();
 
-INSERT INTO `healthcare_app`.`doctors`
+INSERT INTO `healthcare_prod`.`doctors`
     (`first_name`,
     `last_name`,
     `specialization_id`,
@@ -474,7 +474,7 @@ VALUES
 );
 
 
-INSERT INTO `healthcare_app`.`credentials` (
+INSERT INTO `healthcare_prod`.`credentials` (
     `phone`,
     `email`,
     `password_hash`,
@@ -488,7 +488,7 @@ INSERT INTO `healthcare_app`.`credentials` (
 
 SET @patient_cred_id = LAST_INSERT_ID();
 
-INSERT INTO `healthcare_app`.`patients`
+INSERT INTO `healthcare_prod`.`patients`
 (
 `first_name`,
 `last_name`,

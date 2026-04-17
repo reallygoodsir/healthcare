@@ -9,7 +9,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Random;
 
 public class PasswordGenerator {
-    private static final Logger LOGGER = LogManager.getLogger(DoctorController.class);
+    private static final Logger LOGGER = LogManager.getLogger(PasswordGenerator.class);
 
     public String hashPassword() {
         try {

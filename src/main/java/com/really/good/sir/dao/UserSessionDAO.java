@@ -1,13 +1,14 @@
 package com.really.good.sir.dao;
 
-import com.really.good.sir.config.EntityManagerConfiguration;
 import com.really.good.sir.entity.UserSessionEntity;
 import com.really.good.sir.entity.CredentialEntity;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
 import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
 import javax.persistence.NoResultException;
 import javax.persistence.TypedQuery;
 import java.security.MessageDigest;
@@ -15,10 +16,13 @@ import java.security.NoSuchAlgorithmException;
 import java.sql.Timestamp;
 @Repository
 public class UserSessionDAO {
+    @Autowired
+    private EntityManagerFactory entityManagerFactory;
+
     private static final Logger LOGGER = LogManager.getLogger(UserSessionDAO.class);
 
     public UserSessionEntity authorize(String email, String password) {
-        EntityManager em = EntityManagerConfiguration.getEntityManager();
+        EntityManager em = entityManagerFactory.createEntityManager();
 
         try {
             TypedQuery<CredentialEntity> query = em.createQuery(
@@ -66,7 +70,7 @@ public class UserSessionDAO {
 
 
     public UserSessionEntity getSessionById(int sessionId) {
-        EntityManager em = EntityManagerConfiguration.getEntityManager();
+        EntityManager em = entityManagerFactory.createEntityManager();
         try {
             UserSessionEntity session = em.find(UserSessionEntity.class, sessionId);
             if (session != null) {
@@ -85,7 +89,7 @@ public class UserSessionDAO {
     }
 
     public boolean deleteSessionById(int sessionId) {
-        EntityManager em = EntityManagerConfiguration.getEntityManager();
+        EntityManager em = entityManagerFactory.createEntityManager();
         try {
             UserSessionEntity session = em.find(UserSessionEntity.class, sessionId);
             if (session == null) return false;

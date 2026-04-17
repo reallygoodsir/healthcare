@@ -5,67 +5,71 @@ import org.hibernate.boot.Metadata;
 import org.hibernate.boot.MetadataSources;
 import org.hibernate.boot.registry.StandardServiceRegistry;
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
-import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.Properties;
 
+@Configuration
 public class EntityManagerConfiguration {
 
-    private static EntityManagerFactory emf;
+    // These will be automatically injected from the active profile's properties file
+    @Value("${hibernate.connection.driver_class}")
+    private String driverClass;
 
-    private static EntityManagerFactory getEntityManagerFactory() {
-        if (emf == null) {
-            Properties props = new Properties();
+    @Value("${hibernate.connection.url}")
+    private String url;
 
-            try (InputStream is = EntityManagerConfiguration.class
-                    .getClassLoader()
-                    .getResourceAsStream("application.properties")) {
+    @Value("${hibernate.connection.username}")
+    private String username;
 
-                if (is == null) {
-                    throw new RuntimeException("Cannot find application.properties in classpath");
-                }
+    @Value("${hibernate.connection.password}")
+    private String password;
 
-                props.load(is);
+    @Value("${hibernate.dialect:org.hibernate.dialect.MySQL8Dialect}")
+    private String dialect;
 
-            } catch (IOException e) {
-                throw new RuntimeException("Failed to load application.properties", e);
-            }
+    @Value("${hibernate.show_sql:false}")
+    private boolean showSql;
 
-            StandardServiceRegistry registry = new StandardServiceRegistryBuilder()
-                    .applySettings(props)
-                    .build();
+    @Bean
+    public EntityManagerFactory entityManagerFactory() {
+        System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> start");
+        Properties props = new Properties();
+        props.setProperty("hibernate.connection.driver_class", driverClass);
+        props.setProperty("hibernate.connection.url", url);
+        props.setProperty("hibernate.connection.username", username);
+        props.setProperty("hibernate.connection.password", password);
+        props.setProperty("hibernate.dialect", dialect);
+        props.setProperty("hibernate.show_sql", String.valueOf(showSql));
+        props.setProperty("hibernate.format_sql", "false");
 
-            MetadataSources sources = new MetadataSources(registry);
+        StandardServiceRegistry registry = new StandardServiceRegistryBuilder()
+                .applySettings(props)
+                .build();
 
-            sources.addAnnotatedClass(com.really.good.sir.entity.CredentialEntity.class);
-            sources.addAnnotatedClass(com.really.good.sir.entity.UserSessionEntity.class);
-            sources.addAnnotatedClass(com.really.good.sir.entity.DoctorEntity.class);
-            sources.addAnnotatedClass(com.really.good.sir.entity.PatientEntity.class);
-            sources.addAnnotatedClass(com.really.good.sir.entity.AppointmentEntity.class);
-            sources.addAnnotatedClass(com.really.good.sir.entity.AppointmentOutcomeEntity.class);
-            sources.addAnnotatedClass(com.really.good.sir.entity.DoctorScheduleEntity.class);
-            sources.addAnnotatedClass(com.really.good.sir.entity.PatientAppointmentEntity.class);
-            sources.addAnnotatedClass(com.really.good.sir.entity.PatientAppointmentOutcomeEntity.class);
-            sources.addAnnotatedClass(com.really.good.sir.entity.ServiceEntity.class);
-            sources.addAnnotatedClass(com.really.good.sir.entity.SpecializationEntity.class);
+        MetadataSources sources = new MetadataSources(registry);
 
-            Metadata metadata = sources.getMetadataBuilder().build();
+        // Add all your entities here
+        sources.addAnnotatedClass(com.really.good.sir.entity.CredentialEntity.class);
+        sources.addAnnotatedClass(com.really.good.sir.entity.UserSessionEntity.class);
+        sources.addAnnotatedClass(com.really.good.sir.entity.DoctorEntity.class);
+        sources.addAnnotatedClass(com.really.good.sir.entity.PatientEntity.class);
+        sources.addAnnotatedClass(com.really.good.sir.entity.AppointmentEntity.class);
+        sources.addAnnotatedClass(com.really.good.sir.entity.AppointmentOutcomeEntity.class);
+        sources.addAnnotatedClass(com.really.good.sir.entity.DoctorScheduleEntity.class);
+        sources.addAnnotatedClass(com.really.good.sir.entity.PatientAppointmentEntity.class);
+        sources.addAnnotatedClass(com.really.good.sir.entity.PatientAppointmentOutcomeEntity.class);
+        sources.addAnnotatedClass(com.really.good.sir.entity.ServiceEntity.class);
+        sources.addAnnotatedClass(com.really.good.sir.entity.SpecializationEntity.class);
 
-            SessionFactory sessionFactory = metadata
-                    .getSessionFactoryBuilder()
-                    .build();
+        Metadata metadata = sources.getMetadataBuilder().build();
 
-            emf = sessionFactory.unwrap(EntityManagerFactory.class);
-        }
+        SessionFactory sessionFactory = metadata.getSessionFactoryBuilder().build();
+        System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> end");
 
-        return emf;
-    }
-
-    public static EntityManager getEntityManager() {
-        EntityManagerFactory entityManagerFactory = getEntityManagerFactory();
-        return entityManagerFactory.createEntityManager();
+        return sessionFactory.unwrap(EntityManagerFactory.class);
     }
 }

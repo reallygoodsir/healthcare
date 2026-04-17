@@ -2,6 +2,7 @@ package com.really.good.sir.dao;
 
 import com.really.good.sir.config.EntityManagerConfiguration;
 import com.really.good.sir.entity.AppointmentOutcomeEntity;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Repository;
 
@@ -12,8 +13,11 @@ import javax.persistence.criteria.Root;
 @Repository
 public class AppointmentOutcomeDAO {
 
+    @Autowired
+    private EntityManagerFactory entityManagerFactory;
+
     public AppointmentOutcomeEntity saveOrUpdateOutcome(AppointmentOutcomeEntity entity) {
-        EntityManager em = EntityManagerConfiguration.getEntityManager();
+        EntityManager em = entityManagerFactory.createEntityManager();
         try {
             em.getTransaction().begin();
 
@@ -38,7 +42,7 @@ public class AppointmentOutcomeDAO {
     }
 
     public AppointmentOutcomeEntity getOutcomeByAppointmentId(int appointmentId) {
-        EntityManager em = EntityManagerConfiguration.getEntityManager();
+        EntityManager em = entityManagerFactory.createEntityManager();
         try {
             TypedQuery<AppointmentOutcomeEntity> query =
                     em.createNamedQuery(
@@ -54,7 +58,7 @@ public class AppointmentOutcomeDAO {
     }
 
     public AppointmentOutcomeEntity getOutcomeByAppointmentIdCriteria(int appointmentId) {
-        EntityManager em = EntityManagerConfiguration.getEntityManager();
+        EntityManager em = entityManagerFactory.createEntityManager();
         try {
             CriteriaBuilder cb = em.getCriteriaBuilder();
             CriteriaQuery<AppointmentOutcomeEntity> cq =
@@ -75,7 +79,7 @@ public class AppointmentOutcomeDAO {
     }
 
     public AppointmentOutcomeEntity getOutcomeByAppointmentIdNative(int appointmentId) {
-        EntityManager em = EntityManagerConfiguration.getEntityManager();
+        EntityManager em = entityManagerFactory.createEntityManager();
         try {
             return (AppointmentOutcomeEntity) em.createNativeQuery(
                             "SELECT * FROM appointment_outcomes WHERE appointment_id = ?",

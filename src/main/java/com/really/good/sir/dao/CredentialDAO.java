@@ -1,13 +1,19 @@
 package com.really.good.sir.dao;
 
-import com.really.good.sir.config.EntityManagerConfiguration;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
 import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
+
 @Repository
 public class CredentialDAO {
+
+    @Autowired
+    private EntityManagerFactory entityManagerFactory;
+
     private static final Logger LOGGER = LogManager.getLogger(CredentialDAO.class);
 
     private static final String GET_ID_BY_EMAIL =
@@ -28,7 +34,7 @@ public class CredentialDAO {
     public int getCredentialIdByEmail(String email) {
         EntityManager em = null;
         try {
-            em = EntityManagerConfiguration.getEntityManager();
+            em = entityManagerFactory.createEntityManager();
             Object result = em.createNativeQuery(GET_ID_BY_EMAIL)
                     .setParameter(1, email)
                     .getResultStream()
@@ -48,7 +54,7 @@ public class CredentialDAO {
         LOGGER.info("\n\n\n\n\n\n\n"+phone+"\n\n\n\n\n\n\n\n");
         EntityManager em = null;
         try {
-            em = EntityManagerConfiguration.getEntityManager();
+            em = entityManagerFactory.createEntityManager();
             Object result = em.createNativeQuery(GET_ID_BY_PHONE)
                     .setParameter(1, phone)
                     .getResultStream()
@@ -67,7 +73,7 @@ public class CredentialDAO {
     public int getCredentialIdById(Integer id) {
         EntityManager em = null;
         try {
-            em = EntityManagerConfiguration.getEntityManager();
+            em = entityManagerFactory.createEntityManager();
             Object result = em.createNativeQuery(GET_ID_BY_ID)
                     .setParameter(1, id)
                     .getResultStream()
@@ -86,7 +92,7 @@ public class CredentialDAO {
     public boolean isEmailUnique(String email) {
         EntityManager em = null;
         try {
-            em = EntityManagerConfiguration.getEntityManager();
+            em = entityManagerFactory.createEntityManager();
             return em.createNativeQuery(VERIFY_EMAIL)
                     .setParameter(1, email)
                     .getResultList()
@@ -102,7 +108,7 @@ public class CredentialDAO {
     public boolean isPhoneUnique(String phone) {
         EntityManager em = null;
         try {
-            em = EntityManagerConfiguration.getEntityManager();
+            em = entityManagerFactory.createEntityManager();
             return em.createNativeQuery(VERIFY_PHONE)
                     .setParameter(1, phone)
                     .getResultList()

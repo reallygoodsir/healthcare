@@ -1,22 +1,26 @@
 package com.really.good.sir.dao;
 
-import com.really.good.sir.config.EntityManagerConfiguration;
 import com.really.good.sir.entity.PatientEntity;
 import com.really.good.sir.entity.CredentialEntity;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
 import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
 import javax.persistence.TypedQuery;
 import java.util.List;
 @Repository
 public class PatientDAO {
 
+    @Autowired
+    private EntityManagerFactory entityManagerFactory;
+    
     private static final Logger LOGGER = LogManager.getLogger(PatientDAO.class);
 
     public PatientEntity createPatient(PatientEntity patientEntity) {
-        EntityManager entityManager = EntityManagerConfiguration.getEntityManager();
+        EntityManager entityManager = entityManagerFactory.createEntityManager();
         try {
             entityManager.getTransaction().begin();
 
@@ -37,7 +41,7 @@ public class PatientDAO {
     }
 
     public List<PatientEntity> getAllPatients() {
-        EntityManager entityManager = EntityManagerConfiguration.getEntityManager();
+        EntityManager entityManager = entityManagerFactory.createEntityManager();
         try {
             return entityManager.createQuery(
                     "SELECT DISTINCT p FROM PatientEntity p " +
@@ -50,7 +54,7 @@ public class PatientDAO {
     }
 
     public PatientEntity getPatientById(int patientId) {
-        EntityManager entityManager = EntityManagerConfiguration.getEntityManager();
+        EntityManager entityManager = entityManagerFactory.createEntityManager();
         try {
             List<PatientEntity> results = entityManager.createQuery(
                             "SELECT p FROM PatientEntity p " +
@@ -68,7 +72,7 @@ public class PatientDAO {
     }
 
     public PatientEntity getPatientByPhone(String phone) {
-        EntityManager entityManager = EntityManagerConfiguration.getEntityManager();
+        EntityManager entityManager = entityManagerFactory.createEntityManager();
         try {
             List<PatientEntity> results = entityManager.createQuery(
                             "SELECT p FROM PatientEntity p " +
@@ -86,7 +90,7 @@ public class PatientDAO {
     }
 
     public boolean updatePatient(PatientEntity patientEntity) {
-        EntityManager entityManager = EntityManagerConfiguration.getEntityManager();
+        EntityManager entityManager = entityManagerFactory.createEntityManager();
         try {
             entityManager.getTransaction().begin();
 
@@ -130,7 +134,7 @@ public class PatientDAO {
 
     // DELETE
     public boolean deletePatient(int patientId) {
-        EntityManager entityManager = EntityManagerConfiguration.getEntityManager();
+        EntityManager entityManager = entityManagerFactory.createEntityManager();
         try {
             entityManager.getTransaction().begin();
             PatientEntity patient = entityManager.find(PatientEntity.class, patientId);
@@ -150,7 +154,7 @@ public class PatientDAO {
 
     // LOOKUP
     public int getPatientIdByCredentialId(int credentialId) {
-        EntityManager entityManager = EntityManagerConfiguration.getEntityManager();
+        EntityManager entityManager = entityManagerFactory.createEntityManager();
         try {
             LOGGER.info("==================================================="+credentialId);
             TypedQuery<Integer> query = entityManager.createQuery(

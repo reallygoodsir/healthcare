@@ -1,9 +1,9 @@
 package com.really.good.sir.dao;
 
-import com.really.good.sir.config.EntityManagerConfiguration;
 import com.really.good.sir.entity.ServiceEntity;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
 import javax.persistence.EntityManager;
@@ -13,6 +13,9 @@ import javax.persistence.criteria.*;
 @Repository
 public class ServiceDAO {
 
+    @Autowired
+    private EntityManagerFactory entityManagerFactory;
+    
     private static final Logger LOGGER = LogManager.getLogger(ServiceDAO.class);
 
     /* =========================
@@ -21,7 +24,7 @@ public class ServiceDAO {
     public ServiceEntity createService(ServiceEntity service) {
         EntityManager em = null;
         try {
-            em = EntityManagerConfiguration.getEntityManager();
+            em = entityManagerFactory.createEntityManager();
             em.getTransaction().begin();
 
             service.setId(null); // required for IDENTITY
@@ -45,7 +48,7 @@ public class ServiceDAO {
     public List<ServiceEntity> getAllServices() {
         EntityManager em = null;
         try {
-            em = EntityManagerConfiguration.getEntityManager();
+            em = entityManagerFactory.createEntityManager();
             TypedQuery<ServiceEntity> query = em.createQuery("SELECT s FROM ServiceEntity s", ServiceEntity.class);
             return query.getResultList();
         } catch (Exception e) {
@@ -62,7 +65,7 @@ public class ServiceDAO {
     public ServiceEntity getServiceById(Integer id) {
         EntityManager em = null;
         try {
-            em = EntityManagerConfiguration.getEntityManager();
+            em = entityManagerFactory.createEntityManager();
             return em.find(ServiceEntity.class, id);
         } catch (Exception e) {
             LOGGER.error("Error fetching service by id {}", id, e);
@@ -78,7 +81,7 @@ public class ServiceDAO {
     public boolean updateService(ServiceEntity service) {
         EntityManager em = null;
         try {
-            em = EntityManagerConfiguration.getEntityManager();
+            em = entityManagerFactory.createEntityManager();
             em.getTransaction().begin();
 
             em.merge(service);  // merge updates the entity in DB
@@ -100,7 +103,7 @@ public class ServiceDAO {
     public boolean deleteService(Integer id) {
         EntityManager em = null;
         try {
-            em = EntityManagerConfiguration.getEntityManager();
+            em = entityManagerFactory.createEntityManager();
             em.getTransaction().begin();
 
             ServiceEntity entity = em.find(ServiceEntity.class, id);
@@ -127,7 +130,7 @@ public class ServiceDAO {
     public boolean isServiceNameExists(String name, Integer excludeId) {
         EntityManager em = null;
         try {
-            em = EntityManagerConfiguration.getEntityManager();
+            em = entityManagerFactory.createEntityManager();
             CriteriaBuilder cb = em.getCriteriaBuilder();
             CriteriaQuery<Long> cq = cb.createQuery(Long.class);
 

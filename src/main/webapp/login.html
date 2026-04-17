@@ -121,7 +121,7 @@
   <div class="logo">Healthcare</div>
   <nav>
     <ul>
-      <li><a href="http://localhost:8080/healthcare/">Home</a></li>
+      <li><a href="/healthcare/">Home</a></li>
       <li><a href="login.html">Login</a></li>
     </ul>
   </nav>
@@ -162,7 +162,7 @@
     const password = document.getElementById('password').value.trim();
 
     try {
-      const response = await fetch('http://localhost:8080/healthcare/api/authorization/', {
+      const response = await fetch('/healthcare/api/authorization/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
@@ -178,16 +178,16 @@
         // Redirect based on role
         switch(data.role) {
           case 'ADMIN':
-            window.location.href = "http://localhost:8080/healthcare/admin/admin.html";
+            window.location.href = "/healthcare/admin/admin.html";
             break;
           case 'CALL_CENTER_AGENT':
-            window.location.href = "http://localhost:8080/healthcare/agent/home-agent.html";
+            window.location.href = "/healthcare/agent/home-agent.html";
             break;
           case 'DOCTOR':
-            window.location.href = "http://localhost:8080/healthcare/doctor/home-doctor.html";
+            window.location.href = "/healthcare/doctor/home-doctor.html";
             break;
           case 'PATIENT':
-            window.location.href = "http://localhost:8080/healthcare/patient/patient-home.html";
+            window.location.href = "/healthcare/patient/patient-home.html";
             break;
           default:
             messageEl.textContent = 'Unknown role. Cannot redirect.';

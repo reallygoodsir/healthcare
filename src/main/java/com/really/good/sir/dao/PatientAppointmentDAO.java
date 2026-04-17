@@ -1,14 +1,15 @@
 package com.really.good.sir.dao;
 
-import com.really.good.sir.config.EntityManagerConfiguration;
 import com.really.good.sir.entity.DoctorEntity;
 import com.really.good.sir.entity.PatientAppointmentEntity;
 import com.really.good.sir.entity.ServiceEntity;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
 import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -16,11 +17,15 @@ import java.util.List;
 
 @Repository
 public class PatientAppointmentDAO {
+
+    @Autowired
+    private EntityManagerFactory entityManagerFactory;
+    
     private static final Logger LOGGER = LogManager.getLogger(PatientAppointmentDAO.class);
 
 
     public PatientAppointmentEntity createAppointment(PatientAppointmentEntity entity) {
-        EntityManager em = EntityManagerConfiguration.getEntityManager();
+        EntityManager em = entityManagerFactory.createEntityManager();
         try {
             em.getTransaction().begin();
             em.persist(entity);
@@ -36,7 +41,7 @@ public class PatientAppointmentDAO {
     }
 
     public List<PatientAppointmentEntity> getAllAppointments() {
-        EntityManager em = EntityManagerConfiguration.getEntityManager();
+        EntityManager em = entityManagerFactory.createEntityManager();
         try {
             String sql =
                     "SELECT pa.*, p.first_name, p.last_name, s.name AS service_name " +
@@ -80,7 +85,7 @@ public class PatientAppointmentDAO {
     }
 
 //    public List<PatientAppointmentEntity> getAppointmentsByDoctorId(int doctorId) {
-//        EntityManager em = EntityManagerConfiguration.getEntityManager();
+//        EntityManager em = entityManagerFactory.createEntityManager();
 //        try {
 //            return em.createQuery(
 //                            "SELECT p FROM PatientAppointmentEntity p WHERE p.doctorId = :doctorId",
@@ -93,7 +98,7 @@ public class PatientAppointmentDAO {
 //    }
 
     public List<PatientAppointmentEntity> getAppointmentsByDoctorId(int doctorId) {
-        EntityManager em = EntityManagerConfiguration.getEntityManager();
+        EntityManager em = entityManagerFactory.createEntityManager();
         try {
             String sql =
                     "SELECT pa.*, p.first_name, p.last_name, s.name AS service_name " +
@@ -136,7 +141,7 @@ public class PatientAppointmentDAO {
     }
 
     public List<PatientAppointmentEntity> getTodaysAppointmentsByDoctor(int doctorId) {
-        EntityManager em = EntityManagerConfiguration.getEntityManager();
+        EntityManager em = entityManagerFactory.createEntityManager();
         try {
             return em.createQuery(
                             "SELECT p FROM PatientAppointmentEntity p " +
@@ -150,7 +155,7 @@ public class PatientAppointmentDAO {
     }
 
     public String getAppointmentStatusById(int appointmentId) {
-        EntityManager em = EntityManagerConfiguration.getEntityManager();
+        EntityManager em = entityManagerFactory.createEntityManager();
         try {
             return em.createQuery(
                             "SELECT p.status FROM PatientAppointmentEntity p WHERE p.appointmentId = :id",
@@ -166,7 +171,7 @@ public class PatientAppointmentDAO {
     }
 
     public List<List<Object>> getAppointmentDetailsByPatientId(int patientId) {
-        EntityManager em = EntityManagerConfiguration.getEntityManager();
+        EntityManager em = entityManagerFactory.createEntityManager();
         List<List<Object>> result = new ArrayList<>();
 
         try {
@@ -217,7 +222,7 @@ public class PatientAppointmentDAO {
 
 
     public boolean updateStatus(int appointmentId, String status) {
-        EntityManager em = EntityManagerConfiguration.getEntityManager();
+        EntityManager em = entityManagerFactory.createEntityManager();
         try {
             em.getTransaction().begin();
             int updated = em.createQuery(
@@ -239,7 +244,7 @@ public class PatientAppointmentDAO {
 
 
     public boolean deleteAppointment(int appointmentId) {
-        EntityManager em = EntityManagerConfiguration.getEntityManager();
+        EntityManager em = entityManagerFactory.createEntityManager();
         try {
             em.getTransaction().begin();
             PatientAppointmentEntity entity =
@@ -261,7 +266,7 @@ public class PatientAppointmentDAO {
     public boolean hasOverlappingAppointment(
             int doctorId, Date date, Time startTime, Time endTime) {
 
-        EntityManager em = EntityManagerConfiguration.getEntityManager();
+        EntityManager em = entityManagerFactory.createEntityManager();
         try {
             Long count = em.createQuery(
                             "SELECT COUNT(p) FROM PatientAppointmentEntity p " +

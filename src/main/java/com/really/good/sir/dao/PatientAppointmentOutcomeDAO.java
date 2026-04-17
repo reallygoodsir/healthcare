@@ -1,20 +1,24 @@
 package com.really.good.sir.dao;
 
-import com.really.good.sir.config.EntityManagerConfiguration;
 import com.really.good.sir.entity.PatientAppointmentOutcomeEntity;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
 import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
 import javax.persistence.NoResultException;
 @Repository
 public class PatientAppointmentOutcomeDAO {
 
+    @Autowired
+    private EntityManagerFactory entityManagerFactory;
+    
     private static final Logger LOGGER = LogManager.getLogger(PatientAppointmentOutcomeDAO.class);
 
     public PatientAppointmentOutcomeEntity getOutcomeByAppointmentId(int appointmentId) {
-        EntityManager em = EntityManagerConfiguration.getEntityManager();;
+        EntityManager em = entityManagerFactory.createEntityManager();
         try {
             return em.createNamedQuery("PatientAppointmentOutcomeEntity.getByAppointmentId", PatientAppointmentOutcomeEntity.class)
                     .setParameter("appointmentId", appointmentId)
@@ -31,7 +35,7 @@ public class PatientAppointmentOutcomeDAO {
 
 
     public PatientAppointmentOutcomeEntity saveOrUpdateOutcome(PatientAppointmentOutcomeEntity entity) throws Exception {
-        EntityManager em = EntityManagerConfiguration.getEntityManager();;
+        EntityManager em = entityManagerFactory.createEntityManager();
         try {
             em.getTransaction().begin();
 

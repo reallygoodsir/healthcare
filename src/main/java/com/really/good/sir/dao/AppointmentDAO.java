@@ -1,12 +1,13 @@
 package com.really.good.sir.dao;
 
-import com.really.good.sir.config.EntityManagerConfiguration;
 import com.really.good.sir.entity.AppointmentEntity;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
 import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
 import javax.persistence.TypedQuery;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
@@ -17,13 +18,16 @@ public class AppointmentDAO {
 
     private static final Logger LOGGER = LogManager.getLogger(AppointmentDAO.class);
 
+    @Autowired
+    private EntityManagerFactory entityManagerFactory;
+
     // =========================
     // persist
     // =========================
     public AppointmentEntity createAppointment(AppointmentEntity entity) {
         EntityManager em = null;
         try {
-            em = EntityManagerConfiguration.getEntityManager();
+            em = entityManagerFactory.createEntityManager();
             em.getTransaction().begin();
             em.persist(entity);
             em.getTransaction().commit();
@@ -45,7 +49,7 @@ public class AppointmentDAO {
     public AppointmentEntity getAppointmentById(int appointmentId) {
         EntityManager em = null;
         try {
-            em = EntityManagerConfiguration.getEntityManager();
+            em = entityManagerFactory.createEntityManager();
             return em.find(AppointmentEntity.class, appointmentId);
         } catch (Exception e) {
             LOGGER.error("Error fetching appointment with id {}", appointmentId, e);
@@ -61,7 +65,7 @@ public class AppointmentDAO {
     public List<AppointmentEntity> getAllAppointments() {
         EntityManager em = null;
         try {
-            em = EntityManagerConfiguration.getEntityManager();
+            em = entityManagerFactory.createEntityManager();
 
             CriteriaBuilder cb = em.getCriteriaBuilder();
             CriteriaQuery<AppointmentEntity> cq = cb.createQuery(AppointmentEntity.class);
@@ -86,7 +90,7 @@ public class AppointmentDAO {
     public boolean updateAppointmentStatus(int appointmentId, String status) {
         EntityManager em = null;
         try {
-            em = EntityManagerConfiguration.getEntityManager();
+            em = entityManagerFactory.createEntityManager();
             em.getTransaction().begin();
 
             int updated = em.createNamedQuery("Appointment.updateStatus")
@@ -114,7 +118,7 @@ public class AppointmentDAO {
     public boolean deleteAppointment(int appointmentId) {
         EntityManager em = null;
         try {
-            em = EntityManagerConfiguration.getEntityManager();
+            em = entityManagerFactory.createEntityManager();
             em.getTransaction().begin();
 
             int deleted = em.createNativeQuery(

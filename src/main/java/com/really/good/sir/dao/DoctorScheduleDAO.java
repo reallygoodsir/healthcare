@@ -1,12 +1,13 @@
 package com.really.good.sir.dao;
 
-import com.really.good.sir.config.EntityManagerConfiguration;
 import com.really.good.sir.entity.DoctorScheduleEntity;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
 import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
 import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 import java.sql.Date;
@@ -14,13 +15,16 @@ import java.util.List;
 @Repository
 public class DoctorScheduleDAO {
 
+    @Autowired
+    private EntityManagerFactory entityManagerFactory;
+    
     private static final Logger LOGGER = LogManager.getLogger(DoctorScheduleDAO.class);
 
     // =====================================================
     // GET schedules by doctor
     // =====================================================
     public List<DoctorScheduleEntity> getSchedulesByDoctor(final int doctorId) {
-        EntityManager em = EntityManagerConfiguration.getEntityManager();
+        EntityManager em = entityManagerFactory.createEntityManager();
         try {
             TypedQuery<DoctorScheduleEntity> query =
                     em.createQuery(
@@ -44,7 +48,7 @@ public class DoctorScheduleDAO {
     // EXISTS check
     // =====================================================
     public boolean scheduleExists(int scheduleId) {
-        EntityManager em = EntityManagerConfiguration.getEntityManager();
+        EntityManager em = entityManagerFactory.createEntityManager();
         try {
             Query query = em.createQuery(
                     "SELECT COUNT(ds.id) FROM DoctorScheduleEntity ds WHERE ds.id = :id");
@@ -65,7 +69,7 @@ public class DoctorScheduleDAO {
     // CREATE
     // =====================================================
     public DoctorScheduleEntity createSchedule(final DoctorScheduleEntity schedule) {
-        EntityManager em = EntityManagerConfiguration.getEntityManager();
+        EntityManager em = entityManagerFactory.createEntityManager();
         try {
             em.getTransaction().begin();
             em.persist(schedule);
@@ -87,7 +91,7 @@ public class DoctorScheduleDAO {
     // UPDATE
     // =====================================================
     public boolean updateSchedule(final DoctorScheduleEntity schedule) {
-        EntityManager em = EntityManagerConfiguration.getEntityManager();
+        EntityManager em = entityManagerFactory.createEntityManager();
         try {
             em.getTransaction().begin();
 
@@ -123,7 +127,7 @@ public class DoctorScheduleDAO {
     // DELETE
     // =====================================================
     public boolean deleteSchedule(final int id) {
-        EntityManager em = EntityManagerConfiguration.getEntityManager();
+        EntityManager em = entityManagerFactory.createEntityManager();
         try {
             em.getTransaction().begin();
 
@@ -151,7 +155,7 @@ public class DoctorScheduleDAO {
     // TODAY schedules WITH appointments (native SQL, unchanged semantics)
     // =====================================================
     public List<DoctorScheduleEntity> getSchedulesForTodayWithAppointments(final int doctorId) {
-        EntityManager em = EntityManagerConfiguration.getEntityManager();
+        EntityManager em = entityManagerFactory.createEntityManager();
         try {
             String sql =
                     "SELECT ds.* " +
@@ -185,7 +189,7 @@ public class DoctorScheduleDAO {
             final int doctorId,
             final String scheduleDate) {
 
-        EntityManager em = EntityManagerConfiguration.getEntityManager();
+        EntityManager em = entityManagerFactory.createEntityManager();
         try {
             TypedQuery<DoctorScheduleEntity> query =
                     em.createQuery(
