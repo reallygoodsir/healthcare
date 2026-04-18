@@ -100,8 +100,8 @@
     <div class="logo">Healthcare</div>
     <div class="nav-buttons" id="navButtons">
         <button class="nav-button" id="logoutBtn">Log Out</button>
-        <a href="http://localhost:8080/healthcare/agent/doctors.html" class="nav-button">Doctors</a>
-        <a href="http://localhost:8080/healthcare/agent/service-appointments.html" class="nav-button">Service Appointments</a>
+        <a href="/healthcare/agent/doctors.html" class="nav-button">Doctors</a>
+        <a href="/healthcare/agent/service-appointments.html" class="nav-button">Service Appointments</a>
     </div>
 </header>
 
@@ -134,12 +134,12 @@
     async function checkSession() {
         const sessionId = getCookie('session_id');
         if (!sessionId) {
-            window.location.href = 'http://localhost:8080/healthcare/';
+            window.location.href = '/healthcare/';
             return false;
         }
 
         try {
-            const response = await fetch('http://localhost:8080/healthcare/api/authorization/session', {
+            const response = await fetch('/healthcare/api/authorization/session', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ sessionId: parseInt(sessionId) })
@@ -154,11 +154,11 @@
             }
 
             deleteCookie('session_id');
-            window.location.href = 'http://localhost:8080/healthcare/';
+            window.location.href = '/healthcare/';
         } catch (e) {
             console.error('Session check failed:', e);
             deleteCookie('session_id');
-            window.location.href = 'http://localhost:8080/healthcare/';
+            window.location.href = '/healthcare/';
         }
 
         return false;
@@ -168,18 +168,18 @@
     async function logout() {
         const sessionId = getCookie('session_id');
         if (!sessionId) {
-            window.location.href = 'http://localhost:8080/healthcare/';
+            window.location.href = '/healthcare/';
             return;
         }
 
         try {
-            const response = await fetch(`http://localhost:8080/healthcare/api/authorization/session/${sessionId}`, {
+            const response = await fetch(`/healthcare/api/authorization/session/${sessionId}`, {
                 method: 'DELETE'
             });
 
             if (response.ok) {
                 deleteCookie('session_id');
-                window.location.href = 'http://localhost:8080/healthcare/';
+                window.location.href = '/healthcare/';
             } else {
                 console.warn('Logout failed: session could not be deleted');
             }

@@ -93,7 +93,7 @@
 </div>
 
 <script>
-    const API_BASE = 'http://localhost:8080/healthcare/api/doctor-schedules';
+    const API_BASE = '/healthcare/api/doctor-schedules';
     const urlParams = new URLSearchParams(window.location.search);
     const doctorId = urlParams.get('doctorId');
     const tableBody = document.querySelector('#scheduleTable tbody');

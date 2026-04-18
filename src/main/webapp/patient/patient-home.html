@@ -107,13 +107,13 @@
     async function initializePatientPage() {
         const sessionId = getCookie('session_id');
         if (!sessionId) {
-            window.location.href = 'http://localhost:8080/healthcare/';
+            window.location.href = '/healthcare/';
             return;
         }
 
         try {
             // 1️⃣ Check session → get credentialId
-            const sessionResponse = await fetch('http://localhost:8080/healthcare/api/authorization/session', {
+            const sessionResponse = await fetch('/healthcare/api/authorization/session', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ sessionId: parseInt(sessionId) })
@@ -126,7 +126,7 @@
             if (!credentialId) throw new Error('Credential ID missing');
 
             // 2️⃣ Get patientId using credentialId
-            const patientResponse = await fetch(`http://localhost:8080/healthcare/api/patients/credentials/${credentialId}`, {
+            const patientResponse = await fetch(`/healthcare/api/patients/credentials/${credentialId}`, {
                 headers: { 'Content-Type': 'application/json' }
             });
 
@@ -138,7 +138,7 @@
         } catch (error) {
             console.error('Initialization failed:', error);
             deleteCookie('session_id');
-            window.location.href = 'http://localhost:8080/healthcare/';
+            window.location.href = '/healthcare/';
         }
     }
 
@@ -146,18 +146,18 @@
     async function logout() {
         const sessionId = getCookie('session_id');
         if (!sessionId) {
-            window.location.href = 'http://localhost:8080/healthcare/';
+            window.location.href = '/healthcare/';
             return;
         }
 
         try {
-            const response = await fetch(`http://localhost:8080/healthcare/api/authorization/session/${sessionId}`, {
+            const response = await fetch(`/healthcare/api/authorization/session/${sessionId}`, {
                 method: 'DELETE'
             });
 
             if (response.ok) {
                 deleteCookie('session_id');
-                window.location.href = 'http://localhost:8080/healthcare/';
+                window.location.href = '/healthcare/';
             } else {
                 console.warn('Logout failed');
             }

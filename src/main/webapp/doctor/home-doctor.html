@@ -133,13 +133,13 @@
     async function initializeDoctorPage() {
         const sessionId = getCookie('session_id');
         if (!sessionId) {
-            window.location.href = 'http://localhost:8080/healthcare/';
+            window.location.href = '/healthcare/';
             return;
         }
 
         try {
             // 1️⃣ Check session → get credentialId
-            const sessionResponse = await fetch('http://localhost:8080/healthcare/api/authorization/session', {
+            const sessionResponse = await fetch('/healthcare/api/authorization/session', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ sessionId: parseInt(sessionId) })
@@ -152,7 +152,7 @@
             if (!credentialId) throw new Error('Credential ID missing');
 
             // 2️⃣ Get doctorId using credentialId
-            const doctorResponse = await fetch(`http://localhost:8080/healthcare/api/doctors/credential/${credentialId}`);
+            const doctorResponse = await fetch(`/healthcare/api/doctors/credential/${credentialId}`);
             if (!doctorResponse.ok) throw new Error('Doctor not found');
 
             const doctorIdResponse = await doctorResponse.json();
@@ -167,12 +167,12 @@
 
             // Update appointments button link
             const appointmentsBtn = document.getElementById('appointmentsBtn');
-            appointmentsBtn.href = `http://localhost:8080/healthcare/doctor/doctor-appointments.html?doctorId=${doctorId}`;
+            appointmentsBtn.href = `/healthcare/doctor/doctor-appointments.html?doctorId=${doctorId}`;
 
         } catch (error) {
             console.error('Initialization failed:', error);
             deleteCookie('session_id');
-            window.location.href = 'http://localhost:8080/healthcare/';
+            window.location.href = '/healthcare/';
         }
     }
 
@@ -180,18 +180,18 @@
     async function logout() {
         const sessionId = getCookie('session_id');
         if (!sessionId) {
-            window.location.href = 'http://localhost:8080/healthcare/';
+            window.location.href = '/healthcare/';
             return;
         }
 
         try {
-            const response = await fetch(`http://localhost:8080/healthcare/api/authorization/session/${sessionId}`, {
+            const response = await fetch(`/healthcare/api/authorization/session/${sessionId}`, {
                 method: 'DELETE'
             });
 
             if (response.ok) {
                 deleteCookie('session_id');
-                window.location.href = 'http://localhost:8080/healthcare/';
+                window.location.href = '/healthcare/';
             } else {
                 console.warn('Logout failed');
             }

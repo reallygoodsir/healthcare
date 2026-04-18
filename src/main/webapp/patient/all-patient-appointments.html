@@ -48,7 +48,7 @@
 </main>
 
 <script>
-    const API_BASE = 'http://localhost:8080/healthcare/api/patient-appointments';
+    const API_BASE = '/healthcare/api/patient-appointments';
     const urlParams = new URLSearchParams(window.location.search);
     const patientId = urlParams.get('patientId');
     const tableBody = document.querySelector('#appointmentsTable tbody');
