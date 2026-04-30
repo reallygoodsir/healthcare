@@ -64,6 +64,8 @@ public class EntityManagerConfiguration {
         sources.addAnnotatedClass(com.really.good.sir.entity.PatientAppointmentOutcomeEntity.class);
         sources.addAnnotatedClass(com.really.good.sir.entity.ServiceEntity.class);
         sources.addAnnotatedClass(com.really.good.sir.entity.SpecializationEntity.class);
+        sources.addAnnotatedClass(com.really.good.sir.entity.AuditEntity.class);
+
 
         Metadata metadata = sources.getMetadataBuilder().build();
 

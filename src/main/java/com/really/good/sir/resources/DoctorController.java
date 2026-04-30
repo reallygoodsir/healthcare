@@ -47,16 +47,12 @@ public class DoctorController {
 
     @PreAuthorize("hasAnyRole('ROLE_ADMIN', 'ROLE_CALL_CENTER_AGENT')")
     @GetMapping
+
     public ResponseEntity<?> getAllDoctors(@CookieValue(value = "session_id", required = false) final String sessionId) {
         try {
-//            Collection<? extends GrantedAuthority> authorities = SecurityContextHolder.getContext().getAuthentication().getAuthorities();
-//            Set<String> roles = authorities.stream().map(GrantedAuthority::getAuthority).collect(Collectors.toSet());
-//            if (!roles.contains(Role.CALL_CENTER_AGENT.asAuthority()) && !roles.contains(Role.ADMIN.asAuthority())) {
-//                return ResponseEntity.status(HttpStatus.FORBIDDEN)
-//                        .body(new ErrorDTO("Forbidden to access resource. Role is not allowed."));
-//            }
-            final List<DoctorDTO> doctorDTOs = doctorService.getAllDoctors();
-            return ResponseEntity.ok(doctorDTOs);
+//        if (true) throw new RuntimeException("global exception handler test");
+        final List<DoctorDTO> doctorDTOs = doctorService.getAllDoctors();
+        return ResponseEntity.ok(doctorDTOs);
         } catch (final Exception exception) {
             LOGGER.error("Error trying to get all doctors", exception);
             final ErrorDTO errorDTO = new ErrorDTO();
@@ -67,6 +63,7 @@ public class DoctorController {
 
     @PreAuthorize("hasRole('ROLE_CALL_CENTER_AGENT')")
     @GetMapping("/{doctorId}")
+
     public ResponseEntity<?> getDoctor(@PathVariable final Integer doctorId,
                                        @CookieValue(value = "session_id", required = false) final String sessionId) {
         try {
@@ -103,6 +100,7 @@ public class DoctorController {
 
     @PreAuthorize("hasRole('ROLE_CALL_CENTER_AGENT')")
     @GetMapping("/service/{serviceId}")
+
     public ResponseEntity<?> getDoctorsByService(@PathVariable final Integer serviceId,
                                                  @CookieValue(value = "session_id", required = false) final String sessionId) {
         try {
@@ -139,6 +137,7 @@ public class DoctorController {
 
     @PreAuthorize("hasRole('ROLE_DOCTOR')")
     @GetMapping("/credential/{credentialId}")
+
     public ResponseEntity<?> getDoctorIdByCredential(@PathVariable final Integer credentialId,
                                                      @CookieValue(value = "session_id", required = false) final String sessionId) {
         try {
@@ -187,6 +186,7 @@ public class DoctorController {
 
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     @PostMapping
+
     public ResponseEntity<?> createDoctor(@RequestBody final DoctorDTO doctorDTO,
                                           @CookieValue(value = "session_id", required = false) final String sessionId) {
         try {
@@ -289,6 +289,7 @@ public class DoctorController {
 
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     @PutMapping
+
     public ResponseEntity<?> updateDoctor(@RequestBody final DoctorDTO doctorDTO,
                                           @CookieValue(value = "session_id", required = false) final String sessionId) {
         try {
@@ -393,8 +394,10 @@ public class DoctorController {
             return ResponseEntity.status(500).body(errorDTO);
         }
     }
+
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     @DeleteMapping("/{doctorId}")
+
     public ResponseEntity<?> deleteDoctor(@PathVariable final Integer doctorId,
                                           @CookieValue(value = "session_id", required = false) final String sessionId) {
         try {
