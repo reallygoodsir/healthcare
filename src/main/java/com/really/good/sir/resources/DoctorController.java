@@ -4,25 +4,21 @@ import com.really.good.sir.dto.DoctorDTO;
 import com.really.good.sir.dto.DoctorIdDTO;
 import com.really.good.sir.dto.ErrorDTO;
 import com.really.good.sir.dto.UserSessionDTO;
-import com.really.good.sir.entity.Role;
 import com.really.good.sir.service.DoctorService;
 import com.really.good.sir.service.UserSessionService;
 import com.really.good.sir.validator.DoctorValidator;
 import com.really.good.sir.validator.ServiceValidator;
+import com.really.good.sir.validator.ValidationResult;
+import com.really.good.sir.validator.pipeline.DoctorValidationPipeline;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Collection;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/doctors")
@@ -34,15 +30,18 @@ public class DoctorController {
     private final UserSessionService userSessionService;
     private final DoctorValidator doctorValidator;
     private final ServiceValidator serviceValidator;
+    private final DoctorValidationPipeline doctorValidationPipeline;
 
     public DoctorController(DoctorService doctorService,
                             UserSessionService userSessionService,
                             DoctorValidator doctorValidator,
-                            ServiceValidator serviceValidator) {
+                            ServiceValidator serviceValidator,
+                            DoctorValidationPipeline doctorValidationPipeline) {
         this.doctorService = doctorService;
         this.userSessionService = userSessionService;
         this.doctorValidator = doctorValidator;
         this.serviceValidator = serviceValidator;
+        this.doctorValidationPipeline = doctorValidationPipeline;
     }
 
     @PreAuthorize("hasAnyRole('ROLE_ADMIN', 'ROLE_CALL_CENTER_AGENT')")
@@ -186,93 +185,28 @@ public class DoctorController {
 
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     @PostMapping
-
     public ResponseEntity<?> createDoctor(@RequestBody final DoctorDTO doctorDTO,
                                           @CookieValue(value = "session_id", required = false) final String sessionId) {
         try {
-//            Collection<? extends GrantedAuthority> authorities = SecurityContextHolder.getContext().getAuthentication().getAuthorities();
-//            Set<String> roles = authorities.stream().map(GrantedAuthority::getAuthority).collect(Collectors.toSet());
-//            if (!roles.contains(Role.ADMIN.asAuthority())) {
-//                return ResponseEntity.status(HttpStatus.FORBIDDEN)
-//                        .body(new ErrorDTO("Forbidden to access resource. Role is not allowed."));
-//            }
+            ValidationResult validationResult = doctorValidationPipeline.validate(doctorDTO);
 
+            if (!validationResult.isValid()) {
+                LOGGER.error(validationResult.getMessage());
 
-            if (!doctorValidator.isIdEmpty(doctorDTO)) {
-                LOGGER.error("Doctor id must be empty when new doctor is created");
                 ErrorDTO errorDTO = new ErrorDTO();
-                errorDTO.setMessage("Doctor id must be empty when new doctor is created");
-                return ResponseEntity.badRequest().body(errorDTO);
-            }
+                errorDTO.setMessage(validationResult.getMessage());
 
-            if (!doctorValidator.isFirstNameValid(doctorDTO)) {
-                LOGGER.error("First name has the wrong format");
-                ErrorDTO errorDTO = new ErrorDTO();
-                errorDTO.setMessage("First name has the wrong format");
-                return ResponseEntity.badRequest().body(errorDTO);
-            }
-
-            if (!doctorValidator.isLastNameValid(doctorDTO)) {
-                LOGGER.error("Last name has the wrong format");
-                ErrorDTO errorDTO = new ErrorDTO();
-                errorDTO.setMessage("Last name has the wrong format");
-                return ResponseEntity.badRequest().body(errorDTO);
-            }
-
-            if (doctorValidator.isSpecializationIdEmpty(doctorDTO)) {
-                LOGGER.error("Specialization id is empty");
-                ErrorDTO errorDTO = new ErrorDTO();
-                errorDTO.setMessage("Specialization id is empty");
-                return ResponseEntity.badRequest().body(errorDTO);
-            }
-
-            if (!doctorValidator.isSpecializationIdValid(doctorDTO)) {
-                LOGGER.error("Specialization id does not exist");
-                ErrorDTO errorDTO = new ErrorDTO();
-                errorDTO.setMessage("Specialization id does not exist");
-                return ResponseEntity.badRequest().body(errorDTO);
-            }
-
-            if (!doctorValidator.isEmailValid(doctorDTO)) {
-                LOGGER.error("Email has the wrong format");
-                ErrorDTO errorDTO = new ErrorDTO();
-                errorDTO.setMessage("Email has the wrong format");
-                return ResponseEntity.badRequest().body(errorDTO);
-            }
-
-            if (!doctorValidator.isEmailUnique(doctorDTO)) {
-                LOGGER.error("Email already exists");
-                ErrorDTO errorDTO = new ErrorDTO();
-                errorDTO.setMessage("Email already exists");
-                return ResponseEntity.badRequest().body(errorDTO);
-            }
-
-            if (!doctorValidator.isPhoneValid(doctorDTO)) {
-                LOGGER.error("Phone number has the wrong format");
-                ErrorDTO errorDTO = new ErrorDTO();
-                errorDTO.setMessage("Phone number has the wrong format");
-                return ResponseEntity.badRequest().body(errorDTO);
-            }
-
-            if (!doctorValidator.isPhoneUnique(doctorDTO)) {
-                LOGGER.error("Phone number already exist");
-                ErrorDTO errorDTO = new ErrorDTO();
-                errorDTO.setMessage("Phone number already exist");
-                return ResponseEntity.badRequest().body(errorDTO);
-            }
-
-            if (!doctorValidator.isPhotoValid(doctorDTO)) {
-                LOGGER.error("Photo is not valid");
-                ErrorDTO errorDTO = new ErrorDTO();
-                errorDTO.setMessage("Photo is not valid");
                 return ResponseEntity.badRequest().body(errorDTO);
             }
 
             DoctorDTO doctor = doctorService.createDoctor(doctorDTO);
+
             if (doctor == null) {
                 LOGGER.error("Doctor is not created");
+
                 ErrorDTO errorDTO = new ErrorDTO();
                 errorDTO.setMessage("Doctor is not created");
+
                 return ResponseEntity.status(500).body(errorDTO);
             }
 
@@ -281,8 +215,10 @@ public class DoctorController {
                     .body(doctor);
         } catch (final Exception exception) {
             LOGGER.error("Error trying to create doctor", exception);
+
             final ErrorDTO errorDTO = new ErrorDTO();
             errorDTO.setMessage("Error trying to create doctor");
+
             return ResponseEntity.status(500).body(errorDTO);
         }
     }

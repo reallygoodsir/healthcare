@@ -4,7 +4,6 @@ import com.really.good.sir.dao.CredentialDAO;
 import com.really.good.sir.dao.DoctorDAO;
 import com.really.good.sir.dao.SpecializationDAO;
 import com.really.good.sir.dto.DoctorDTO;
-import com.really.good.sir.entity.DoctorEntity;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
