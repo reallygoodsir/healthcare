@@ -1,8 +1,24 @@
 package com.really.good.sir.dto;
 
+
+import com.really.good.sir.annotation.*;
+import com.really.good.sir.validation.group.*;
+
+import javax.validation.GroupSequence;
+
+@GroupSequence({
+        ServiceDTO.class,
+        NameValidGroup.class,
+        NameUniqueGroup.class,
+        PriceValidGroup.class
+})
+@UniqueServiceName(groups = NameUniqueGroup.class)
+@ValidServicePrice(groups = PriceValidGroup.class)
 public class ServiceDTO {
     private Integer id;
+    @ValidServiceName(groups = NameValidGroup.class)
     private String name;
+
     private Integer price;
 
     public Integer getId() {

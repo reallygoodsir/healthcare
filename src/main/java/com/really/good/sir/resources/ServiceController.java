@@ -2,8 +2,6 @@ package com.really.good.sir.resources;
 
 import com.really.good.sir.dto.ErrorDTO;
 import com.really.good.sir.dto.ServiceDTO;
-import com.really.good.sir.dto.UserSessionDTO;
-import com.really.good.sir.entity.Role;
 import com.really.good.sir.service.ServiceService;
 import com.really.good.sir.service.UserSessionService;
 import com.really.good.sir.validator.ServiceValidator;
@@ -12,14 +10,10 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Collection;
+import javax.validation.Valid;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/services")
@@ -100,36 +94,16 @@ public class ServiceController {
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     @PostMapping
     public ResponseEntity<?> createService(
-            @RequestBody ServiceDTO dto,
+            @Valid @RequestBody ServiceDTO dto,
             @CookieValue(value = "session_id", required = false) String sessionId) {
-
         try {
-//            Collection<? extends GrantedAuthority> authorities = SecurityContextHolder.getContext().getAuthentication().getAuthorities();
-//            Set<String> roles = authorities.stream().map(GrantedAuthority::getAuthority).collect(Collectors.toSet());
-//            if (!roles.contains(Role.ADMIN.asAuthority())) {
-//                return ResponseEntity.status(HttpStatus.FORBIDDEN)
-//                        .body(new ErrorDTO("Forbidden to access resource. Role is not allowed."));
-//            }
-
-            if (!serviceValidator.isNameValid(dto))
-                return buildError(HttpStatus.BAD_REQUEST,
-                        "Service name has the wrong format");
-
-            if (!serviceValidator.isNameUnique(dto))
-                return buildError(HttpStatus.BAD_REQUEST,
-                        "Service name already exists");
-
-            if (!serviceValidator.isPriceValid(dto))
-                return buildError(HttpStatus.BAD_REQUEST,
-                        "Price has to be over 0");
-
             ServiceDTO created = service.createService(dto);
-            if (created == null)
+            if (created == null) {
                 return buildError(HttpStatus.INTERNAL_SERVER_ERROR,
                         "Service is not created");
+            }
 
             return ResponseEntity.ok(created);
-
         } catch (Exception e) {
             LOGGER.error("Error trying to create new service", e);
             return buildError(HttpStatus.INTERNAL_SERVER_ERROR,
