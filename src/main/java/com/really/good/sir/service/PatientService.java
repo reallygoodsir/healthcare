@@ -6,6 +6,7 @@ import com.really.good.sir.dto.PatientDTO;
 import com.really.good.sir.entity.PatientEntity;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 

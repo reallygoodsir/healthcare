@@ -6,9 +6,11 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
+import javax.persistence.PersistenceContext;
 import javax.persistence.TypedQuery;
 import java.util.List;
 @Repository
@@ -16,27 +18,25 @@ public class PatientDAO {
 
     @Autowired
     private EntityManagerFactory entityManagerFactory;
-    
+
+    @PersistenceContext
+    private EntityManager entityManager;
+
     private static final Logger LOGGER = LogManager.getLogger(PatientDAO.class);
 
+    @Transactional
     public PatientEntity createPatient(PatientEntity patientEntity) {
-        EntityManager entityManager = entityManagerFactory.createEntityManager();
         try {
-            entityManager.getTransaction().begin();
-
             CredentialEntity credential = patientEntity.getCredentialEntity();
+
             entityManager.persist(credential);
             entityManager.persist(patientEntity);
 
-            entityManager.getTransaction().commit();
             return patientEntity;
 
         } catch (Exception exception) {
-            if (entityManager.getTransaction().isActive()) entityManager.getTransaction().rollback();
             LOGGER.error("Error creating patient", exception);
-            return null;
-        } finally {
-            entityManager.close();
+            throw exception;
         }
     }
 
