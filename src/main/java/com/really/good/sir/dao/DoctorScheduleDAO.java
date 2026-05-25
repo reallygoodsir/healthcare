@@ -211,4 +211,15 @@ public class DoctorScheduleDAO {
             em.close();
         }
     }
+
+    public DoctorScheduleEntity getById(int id) {
+
+        EntityManager em = entityManagerFactory.createEntityManager();
+
+        try {
+            return em.find(DoctorScheduleEntity.class, id);
+        } finally {
+            em.close();
+        }
+    }
 }

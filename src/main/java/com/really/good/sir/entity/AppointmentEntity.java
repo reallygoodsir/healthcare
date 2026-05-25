@@ -8,7 +8,7 @@ import javax.persistence.*;
         name = "Appointment.updateStatus",
         query = "UPDATE AppointmentEntity a SET a.status = :status WHERE a.appointmentId = :id"
 )
-public class AppointmentEntity {
+public class    AppointmentEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

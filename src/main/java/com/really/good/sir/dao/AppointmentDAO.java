@@ -139,4 +139,28 @@ public class AppointmentDAO {
             if (em != null) em.close();
         }
     }
+
+    public List<AppointmentEntity> findScheduledAppointments() {
+
+        EntityManager em = null;
+
+        try {
+            em = entityManagerFactory.createEntityManager();
+
+            TypedQuery<AppointmentEntity> query =
+                    em.createQuery(
+                            "SELECT a FROM AppointmentEntity a WHERE a.status = 'SCHEDULED'",
+                            AppointmentEntity.class
+                    );
+
+            return query.getResultList();
+
+        } catch (Exception e) {
+            LOGGER.error("Error fetching scheduled appointments", e);
+            return List.of();
+
+        } finally {
+            if (em != null) em.close();
+        }
+    }
 }
